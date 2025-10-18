@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "431243640261",
+    "project_id": "voicesewa",
+    "storage_bucket": "voicesewa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:431243640261:android:cb30687f94c4336493dfac",
+        "android_client_info": {
+          "package_name": "com.example.voicesewa_client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAa2I-7TTJ96aHU-Ab7wvdKy79hJbnkD9s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

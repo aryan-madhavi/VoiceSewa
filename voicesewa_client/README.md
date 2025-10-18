@@ -2,15 +2,51 @@
 
 Multilingual Voice-Assisted Job Connection Platform for Blue-Collar Services (Client-Side)
 
-## Getting Started
+# FlutterFire CLI Setup and Usage
 
-This project is a starting point for a Flutter application.
+## Installation
 
-A few resources to get you started if this is your first Flutter project:
+### Prerequisites: Firebase CLI
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+1. **Install Node.js** (via `nvm` recommended).
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+2. **Install Firebase CLI** globally:
+
+   ```bash
+   npm install -g firebase-tools
+   ```
+
+3. **Log in to Firebase**:
+
+   ```bash
+   firebase login
+   ```
+
+4. **Verify Firebase Projects**:
+
+   ```bash
+   firebase projects:list
+   ```
+
+### Install FlutterFire CLI
+
+**Install the FlutterFire CLI globally:**
+
+```bash
+dart pub global activate flutterfire_cli
+```
+
+---
+
+## Usage
+
+**Configure Firebase for Your Project:**
+
+   Run in your project root:
+
+   ```bash
+   flutterfire configure
+   ```
+
+   Follow the prompts to select your Firebase project, platforms, and apps. This generates `firebase_options.dart` with the required config for initializing Firebase.
+
