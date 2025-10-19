@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_client/core/constants/string_constants.dart';
 
 class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
-  
-  const AppBarWidget({super.key});
+  final String title;
+  const AppBarWidget({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      title: Text(StringConstants.appName),
+      title: Text(title),
     );
   }
 

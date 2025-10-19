@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:voicesewa_client/core/constants/string_constants.dart';
 
 class QuickActions extends StatefulWidget {
@@ -10,10 +11,10 @@ class QuickActions extends StatefulWidget {
 
 class _QuickActionsState extends State<QuickActions> {
   final List<List<dynamic>> _actions = [
-    [ Icons.add_box_outlined,          StringConstants.bookCTA,              '/comingSoonPage' ],
-    [ Icons.shopping_cart_outlined,    StringConstants.activeBookingsCTA,    '/comingSoonPage' ],
-    [ Icons.local_offer_outlined,      StringConstants.offersCTA,            '/comingSoonPage' ],
-    [ Icons.help_outline_outlined,     StringConstants.helpCTA,              '/comingSoonPage' ],
+    [ Icons.add_box_outlined,       StringConstants.bookCTA,           '/comingSoonPage' ],
+    [ Icons.shopping_cart_outlined, StringConstants.activeBookingsCTA, '/comingSoonPage' ],
+    [ Icons.local_offer_outlined,   StringConstants.offersCTA,         '/comingSoonPage' ],
+    [ Icons.help_outline_outlined,  StringConstants.helpCTA,           '/comingSoonPage' ],
   ];
 
   @override
@@ -33,7 +34,10 @@ class _QuickActionsState extends State<QuickActions> {
             padding: EdgeInsetsGeometry.symmetric(horizontal: 2, vertical: 1.5),
             child: GestureDetector(
               onTap: () {
-                Navigator.pushNamed(context, _actions[index][2]);
+                context.pushNamedTransition(
+                  routeName: _actions[index][2], 
+                  type: PageTransitionType.rightToLeft,
+                );
               },
               child: Card(
                   elevation: 1,

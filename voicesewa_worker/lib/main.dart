@@ -18,18 +18,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer (
-      builder: (context, ref, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: StringConstants.appName,
-          theme: ThemeData(
-            colorScheme: ColorConstants.colorScheme,
-          ),
-          home: RootScaffold(),
-          routes: AppRoutes.routes,
-        );
-      }
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: StringConstants.appName,
+      theme: ThemeData(colorScheme: ColorConstants.colorScheme),
+      home: RootScaffold(),
+      routes: AppRoutes.routes,
     );
   }
 }

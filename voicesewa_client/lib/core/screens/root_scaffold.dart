@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:voicesewa_client/core/constants/string_constants.dart';
 import 'package:voicesewa_client/core/widgets/bottom_navbar_widget.dart';
 import 'package:voicesewa_client/core/widgets/appbar_widget.dart';
 
@@ -8,7 +9,7 @@ class RootScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppBarWidget(),
+      appBar: const AppBarWidget(title: StringConstants.appName),
       body: const BottomNavBar(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: FloatingActionButton(
