@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_worker/core/screens/coming_soon_page.dart';
-import 'package:voicesewa_worker/presentation/home/screens/home_page.dart';
+import 'package:voicesewa_worker/screens/core/coming_soon_page.dart';
+import 'package:voicesewa_worker/screens/home/home_page.dart';
 
 class AppRoutes {
   static Map<String, WidgetBuilder> routes = {

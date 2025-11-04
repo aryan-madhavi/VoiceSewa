@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_worker/core/constants/string_constants.dart';
-import 'package:voicesewa_worker/core/widgets/coming_soon_widget.dart';
-import 'package:voicesewa_worker/presentation/home/screens/home_page.dart';
+import 'package:voicesewa_worker/constants/core/string_constants.dart';
+import 'package:voicesewa_worker/widgets/core/coming_soon_widget.dart';
+import 'package:voicesewa_worker/screens/home/home_page.dart';
 
 enum NavTab { home, jobs, speak, earnings, profile }
 

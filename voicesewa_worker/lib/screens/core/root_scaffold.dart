@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/core/constants/app_constants.dart';
-import 'package:voicesewa_client/core/constants/string_constants.dart';
-import 'package:voicesewa_client/core/widgets/bottom_navbar_widget.dart';
-import 'package:voicesewa_client/core/widgets/appbar_widget.dart';
-import 'package:voicesewa_client/providers/navbar_page_provider.dart';
+import 'package:voicesewa_worker/constants/core/string_constants.dart';
+import 'package:voicesewa_worker/widgets/core/bottom_navbar_widget.dart';
+import 'package:voicesewa_worker/widgets/core/appbar_widget.dart';
+import 'package:voicesewa_worker/constants/core/app_constants.dart';
+import 'package:voicesewa_worker/providers/navbar_page_provider.dart';
 
 class RootScaffold extends ConsumerWidget {
   const RootScaffold({super.key});

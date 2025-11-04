@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_worker/core/widgets/appbar_widget.dart';
-import 'package:voicesewa_worker/core/widgets/coming_soon_widget.dart';
+import 'package:voicesewa_worker/widgets/core/appbar_widget.dart';
+import 'package:voicesewa_worker/widgets/core/coming_soon_widget.dart';
 
 class ComingSoonPage extends StatelessWidget {
   

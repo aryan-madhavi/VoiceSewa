@@ -1,9 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/core/constants/color_constants.dart';
-import 'package:voicesewa_client/core/constants/string_constants.dart';
-import 'package:voicesewa_client/core/screens/root_scaffold.dart';
+import 'package:voicesewa_client/constants/core/color_constants.dart';
+import 'package:voicesewa_client/constants/core/string_constants.dart';
+import 'package:voicesewa_client/screens/core/root_scaffold.dart';
 import 'package:voicesewa_client/firebase_options.dart';
 import 'package:voicesewa_client/routes/navigation_routes.dart';
 

@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:voicesewa_worker/core/constants/app_constants.dart';
+import 'package:voicesewa_worker/constants/core/app_constants.dart';
 
 class NavTabNotifier extends StateNotifier<NavTab> {
   NavTabNotifier() : super(NavTab.home);

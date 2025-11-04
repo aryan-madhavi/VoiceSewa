@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_worker/core/constants/string_constants.dart';
+import 'package:voicesewa_worker/constants/core/string_constants.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
