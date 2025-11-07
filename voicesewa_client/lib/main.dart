@@ -6,6 +6,7 @@ import 'package:voicesewa_client/constants/core/string_constants.dart';
 import 'package:voicesewa_client/screens/core/root_scaffold.dart';
 import 'package:voicesewa_client/firebase_options.dart';
 import 'package:voicesewa_client/routes/navigation_routes.dart';
+import 'package:voicesewa_client/theme/light_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: StringConstants.appName,
-      theme: ThemeData(colorScheme: ColorConstants.colorScheme),
+      theme: lightThemeData,
       home: RootScaffold(),
       routes: AppRoutes.routes,
     );
