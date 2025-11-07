@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/widgets/home/quick_actions.dart';
+import 'package:voicesewa_client/widgets/home/quick_book.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -14,6 +15,7 @@ class HomePage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               QuickActionsGrid(),
+              QuickBookCard(),
             ],
           ),
         ),
