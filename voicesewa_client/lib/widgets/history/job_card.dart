@@ -1,93 +1,145 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/constants/core/color_constants.dart';
 import 'package:voicesewa_client/constants/core/helper_functions.dart';
-import 'package:voicesewa_client/widgets/history/status_badge.dart'; // for getStatusColor
+import 'package:voicesewa_client/widgets/history/status_badge.dart';
 
 class JobCard extends StatelessWidget {
   final Map<String, dynamic> job;
-
   const JobCard({super.key, required this.job});
 
   @override
   Widget build(BuildContext context) {
     final String status = job['status'];
-    final Color color = Helpers.getStatusColor(status);
+    final Color statusColor = Helpers.getStatusColor(status);
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    job['service'],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    // TODO: Handle repeat booking
-                  },
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text("Repeat Booking"),
-                  style: TextButton.styleFrom(
-                    foregroundColor: ColorConstants.seed,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            
+            // --- Title Row ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(job['date'], style: TextStyle(color: Colors.grey[700])),
+                Text(
+                  job['service'],
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                StatusBadge(status: status, color: statusColor),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            // --- Worker Name + Date ---
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.person_outline,
+                      size: 18,
+                      color: Colors.black87,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      job['worker'],
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    if (job['rating'] != null) ...[
+                      const SizedBox(width: 10),
+                      const Icon(Icons.star, size: 16, color: Colors.amber),
+                      const SizedBox(width: 3),
+                      Text(
+                        "${job['rating']}",
+                        style: const TextStyle(
+                          color: Colors.amber,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                Text(
+                  job['date'],
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            // --- Footer Row: Rating + Amount ---
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.star, size: 16, color: Colors.amber),
+                    const SizedBox(width: 4),
+                    Text(
+                      "Your Rating: ${job['userRating'] ?? '–'}",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
                 Text(
                   job['amount'],
                   style: const TextStyle(
+                    color: Colors.green,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    fontSize: 15,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            
+
+            const Divider(height: 20, color: Colors.grey),
+
+            // --- Buttons Row ---
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Worker: ${job['worker']}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "${job['eta']}",
-                        style: TextStyle(
-                          color: Colors.green.shade700,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
+                TextButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text("Book Again"),
+                  style: TextButton.styleFrom(
+                    foregroundColor: ColorConstants.seed,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
                   ),
                 ),
-                
-                StatusBadge(status: status, color: color),
+                TextButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.download, size: 16),
+                  label: const Text("Invoice"),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.black87,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
+                  label: const Text("Details"),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.black87,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                ),
               ],
             ),
           ],

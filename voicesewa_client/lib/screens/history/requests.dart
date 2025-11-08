@@ -4,6 +4,17 @@ import 'package:voicesewa_client/widgets/history/job_card.dart';
 
 final activeJobsProvider = Provider<List<Map<String, dynamic>>>((ref) => [
   {
+    'service': 'Wall Painting',
+    'description': 'Living room painting',
+    'worker': 'Ajay Singh',
+    'rating': '4.9',
+    'location': 'Wakad, Pune',
+    'date': 'Nov 28, 2024',
+    'amount': '₹2500',
+    'status': 'Completed',
+    'userRating': '5/5',
+  },
+  {
     'service': 'Plumbing Repair',
     'date': 'Nov 5, 2025',
     'amount': '₹450',
