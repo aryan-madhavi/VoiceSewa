@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/widgets/history/job_card.dart';
+import 'package:voicesewa_client/widgets/history/job_filter.dart';
 
 // Active Jobs — Scheduled or In Progress
 final activeJobsProvider = Provider<List<Map<String, dynamic>>>(
@@ -195,15 +196,42 @@ class _RequestPageState extends ConsumerState<RequestPage>
   }
 
   Widget _buildLazyJobList(List<Map<String, dynamic>> jobs) {
+    final statusFilter = ref.watch(statusFilterProvider);
+    final sortOption = ref.watch(sortOptionProvider);
+
+    // Apply Filter
+    List<Map<String, dynamic>> filteredJobs = jobs.where((job) {
+      if (statusFilter == 'All') return true;
+      return job['status'] == statusFilter;
+    }).toList();
+
+    // Apply Sorting
+    filteredJobs.sort((a, b) {
+      switch (sortOption) {
+        case 'Oldest First':
+          return a['date'].compareTo(b['date']);
+        case 'Amount ↑':
+          return _parseAmount(a['amount']).compareTo(_parseAmount(b['amount']));
+        case 'Amount ↓':
+          return _parseAmount(b['amount']).compareTo(_parseAmount(a['amount']));
+        case 'Rating ↑':
+          return double.parse(a['rating']).compareTo(double.parse(b['rating']));
+        case 'Rating ↓':
+          return double.parse(b['rating']).compareTo(double.parse(a['rating']));
+        default: // 'Newest First'
+          return b['date'].compareTo(a['date']);
+      }
+    });
+
     if (_initialLoading) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }
 
-    if (jobs.isEmpty) {
-      return const Center(child: Text("No jobs available."));
+    if (filteredJobs.isEmpty) {
+      return const Center(child: Text("No jobs match the selected filters."));
     }
 
-    final visibleJobs = jobs.take(_visibleCount).toList();
+    final visibleJobs = filteredJobs.take(_visibleCount).toList();
 
     return ListView.builder(
       controller: _scrollController,
@@ -219,6 +247,11 @@ class _RequestPageState extends ConsumerState<RequestPage>
         return JobCard(job: visibleJobs[index]);
       },
     );
+  }
+
+  // Helper for amount sorting
+  double _parseAmount(String amount) {
+    return double.tryParse(amount.replaceAll(RegExp(r'[₹,]'), '')) ?? 0.0;
   }
 
   @override
@@ -246,14 +279,27 @@ class _RequestPageState extends ConsumerState<RequestPage>
                   ],
                 ),
               ),
-          
+
+              // --- Job Filter ---
+              const JobFilterBar(),
+
               // --- Tab Views ---
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _buildLazyJobList(activeJobs),
-                    _buildLazyJobList(completedJobs),
+                    Column(
+                      children: [
+                        //const JobFilterBar(),
+                        Expanded(child: _buildLazyJobList(activeJobs)),
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        //const JobFilterBar(),
+                        Expanded(child: _buildLazyJobList(completedJobs)),
+                      ],
+                    ),
                   ],
                 ),
               ),
