@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/widgets/home/quick_actions.dart';
 import 'package:voicesewa_client/widgets/home/quick_book.dart';
+import 'package:voicesewa_client/widgets/home/recent_requests.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -16,6 +17,7 @@ class HomePage extends StatelessWidget {
             children: <Widget>[
               QuickActionsGrid(),
               QuickBookCard(),
+              RecentRequestCard(),
             ],
           ),
         ),

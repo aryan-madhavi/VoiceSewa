@@ -95,12 +95,12 @@ class _QuickBookCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 2),
         child: Card(
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.shade200),
+            side: BorderSide(color: Colors.grey.shade300),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

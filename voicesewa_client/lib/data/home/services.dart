@@ -23,7 +23,7 @@ class ServiceData {
   static final Map<Services, List<dynamic>> services = {
     Services.electrician: [
       Colors.amber,
-      Icons.electrical_services,
+      Icons.electric_bolt,
       'Electrician',
     ],
     Services.plumber: [
