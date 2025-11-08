@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/constants/core/color_constants.dart';
 import 'package:voicesewa_client/constants/core/string_constants.dart';
-import 'package:voicesewa_client/screens/core/root_scaffold.dart';
 import 'package:voicesewa_client/firebase_options.dart';
 import 'package:voicesewa_client/routes/navigation_routes.dart';
+import 'package:voicesewa_client/screens/core/app_gate.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: StringConstants.appName,
       theme: ThemeData(colorScheme: ColorConstants.colorScheme),
-      home: RootScaffold(),
+      home: const AppGate(),
       routes: AppRoutes.routes,
     );
   }
