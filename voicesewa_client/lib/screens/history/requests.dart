@@ -228,35 +228,37 @@ class _RequestPageState extends ConsumerState<RequestPage>
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // --- Tab Bar ---
-            Card(
-              margin: const EdgeInsets.all(8),
-              child: TabBar(
-                controller: _tabController,
-                labelColor: Colors.black87,
-                indicatorColor: Colors.black87,
-                dividerColor: Colors.transparent,
-                tabs: const [
-                  Tab(text: 'Active Jobs'),
-                  Tab(text: 'Completed Jobs'),
-                ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // --- Tab Bar ---
+              Card(
+                child: TabBar(
+                  controller: _tabController,
+                  labelColor: Colors.black87,
+                  indicatorColor: Colors.black87,
+                  dividerColor: Colors.transparent,
+                  tabs: const [
+                    Tab(text: 'Active Jobs'),
+                    Tab(text: 'Completed Jobs'),
+                  ],
+                ),
               ),
-            ),
-
-            // --- Tab Views ---
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildLazyJobList(activeJobs),
-                  _buildLazyJobList(completedJobs),
-                ],
+          
+              // --- Tab Views ---
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildLazyJobList(activeJobs),
+                    _buildLazyJobList(completedJobs),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
