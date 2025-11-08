@@ -10,7 +10,7 @@ class FindWork extends StatefulWidget {
 class _FindWorkState extends State<FindWork> {
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return const Card(
       child: Text("Find Work"),
     );
   }

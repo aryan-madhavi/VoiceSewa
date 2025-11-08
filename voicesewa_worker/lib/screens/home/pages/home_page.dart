@@ -12,6 +12,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool flag = false;
+  bool _showdata = false;
+  bool _iconarrowdirection = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,21 +24,57 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               SizedBox(height: 50),
+
               Dashboard(),
-              FindWork(),
+
+              SizedBox(height: 50),
+
+              Padding(
+                padding: EdgeInsets.all(10),
+                child: Card(
+                  margin: EdgeInsets.all(8),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _showdata = !_showdata;
+                        _iconarrowdirection = !_iconarrowdirection;
+                      });
+                    },
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            Text("Find Works"),
+
+                            SizedBox(width: 50),
+
+                            Switch(
+                              value: flag,
+                              activeThumbColor: Colors.green,
+                              onChanged: (bool value) {
+                                setState(() {
+                                  flag = value;
+                                });
+                              },
+                            ),
+                            Icon(
+                              _iconarrowdirection
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                            ),
+                          ],
+                        ),
+                        if (_showdata) FindWork(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 50),
+
               Rating(),
-              
-              // Text(
-              //   StringConstants.welcomeMessage,
-              //   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              //   textAlign: TextAlign.center,
-              // ),
-              // SizedBox(height: 20),
-              // Text(
-              //   'This is where you can manage your jobs and earnings.',
-              //   style: TextStyle(fontSize: 16),
-              //   textAlign: TextAlign.center,
-              // ),
             ],
           ),
         ),

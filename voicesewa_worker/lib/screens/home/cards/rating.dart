@@ -10,7 +10,7 @@ class Rating extends StatefulWidget {
 class _RatingState extends State<Rating> {
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return const Card(
       child: Text(
         "Rating Card"
       ),
