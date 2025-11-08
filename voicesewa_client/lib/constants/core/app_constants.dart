@@ -4,7 +4,7 @@ import 'package:voicesewa_client/screens/history/requests.dart';
 import 'package:voicesewa_client/widgets/core/coming_soon_widget.dart';
 import 'package:voicesewa_client/screens/home/home_page.dart';
 
-enum NavTab { home, search, speak, history, profile }
+enum NavTab { home, search, speak, history, settings }
 
 class AppConstants {
 
@@ -29,9 +29,9 @@ class AppConstants {
       StringConstants.historyTitle,
       RequestPage(),
     ],
-    NavTab.profile: [
-      Icon(Icons.person),
-      StringConstants.profileTitle,
+    NavTab.settings: [
+      Icon(Icons.settings),
+      StringConstants.settingsTitle,
       ComingSoon(),
     ],
   };
