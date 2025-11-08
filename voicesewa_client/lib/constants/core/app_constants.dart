@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/constants/core/string_constants.dart';
 import 'package:voicesewa_client/screens/history/requests.dart';
+import 'package:voicesewa_client/screens/settings/settings_page.dart';
 import 'package:voicesewa_client/widgets/core/coming_soon_widget.dart';
 import 'package:voicesewa_client/screens/home/home_page.dart';
 
@@ -32,7 +33,7 @@ class AppConstants {
     NavTab.settings: [
       Icon(Icons.settings),
       StringConstants.settingsTitle,
-      ComingSoon(),
+      SettingsPage(),
     ],
   };
   
