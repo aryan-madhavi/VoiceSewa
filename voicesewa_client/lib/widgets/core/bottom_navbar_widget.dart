@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/constants/core/app_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/providers/navbar_page_provider.dart';
+import 'package:voicesewa_client/providers/data/core/navbar_page_provider.dart';
 
 class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key});

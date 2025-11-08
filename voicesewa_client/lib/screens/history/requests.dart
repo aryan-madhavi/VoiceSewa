@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/constants/core/helper_functions.dart';
-import 'package:voicesewa_client/providers/job_filter_provider.dart';
+import 'package:voicesewa_client/providers/data/history/job_filter_provider.dart';
 import 'package:voicesewa_client/widgets/history/dynamic_job_filter.dart';
 import 'package:voicesewa_client/widgets/history/job_card.dart';
 
