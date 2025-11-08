@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:voicesewa_client/routes/navigation_routes.dart';
+import 'package:voicesewa_client/constants/core/helper_functions.dart';
+import 'package:voicesewa_client/widgets/history/status_badge.dart';
 
 class RecentRequestCard extends StatelessWidget {
   const RecentRequestCard({super.key});
@@ -20,14 +21,20 @@ class RecentRequestCard extends StatelessWidget {
       {
         'title': 'AC service',
         'worker': 'Anita S.',
-        'eta': '45 mins',
-        'status': 'On the way',
+        'eta': 'In Progress',
+        'status': 'In Progress',
       },
       {
         'title': 'Light fixture install',
         'worker': 'Kumar P.',
         'eta': 'Cancelled',
         'status': 'Cancelled',
+      },
+      {
+        'title': 'Light fixture install',
+        'worker': 'Sunil T.',
+        'eta': 'Completed',
+        'status': 'Completed',
       },
     ];
 
@@ -56,7 +63,7 @@ class RecentRequestCard extends StatelessWidget {
               itemBuilder: (context, index) {
                 final req = recentRequests[index];
                 final status = req['status']!;
-                final color = _getStatusColor(status);
+                final color = Helpers.getStatusColor(status);
 
                 return _RecentRequestTile(
                   title: req['title']!,
@@ -65,9 +72,7 @@ class RecentRequestCard extends StatelessWidget {
                   status: status,
                   color: color,
                   onTap: () => context.pushNamedTransition(
-                    routeName: AppRoutes.routes.containsKey('/trackWorker')
-                        ? '/trackWorker'
-                        : '/comingSoonPage',
+                    routeName: Helpers.getValidRoute('/trackWorker'),
                     type: PageTransitionType.rightToLeft,
                   ),
                 );
@@ -77,20 +82,6 @@ class RecentRequestCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// Helper to map status text to color
-  static Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Colors.orange;
-      case 'on the way':
-        return Colors.blue;
-      case 'cancelled':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
   }
 }
 
@@ -170,22 +161,7 @@ class _RecentRequestTile extends StatelessWidget {
               ),
             ),
 
-            // Status badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                status,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-            ),
+            StatusBadge(status: status, color: color),
           ],
         ),
       ),
