@@ -14,7 +14,7 @@ class ActionData {
       Colors.deepOrange,
       Icons.assignment_outlined,
       'My Requests',
-      '/comingSoonPage',
+      '/history',
     ],
     QuickActions.offers: [
       Colors.purpleAccent,
@@ -26,7 +26,7 @@ class ActionData {
       Colors.blueGrey,
       Icons.support_agent,
       'Help & Support',
-      '/comingSoonPage',
+      '/support',
     ],
   };
 }
