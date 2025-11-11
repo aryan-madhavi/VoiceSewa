@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
 
-class Pending extends StatefulWidget {
-  const Pending({super.key});
+class Ongoing extends StatefulWidget {
+  const Ongoing({super.key});
 
   @override
-  State<Pending> createState() => _PendingState();
+  State<Ongoing> createState() => _OngoingState();
 }
 
-class _PendingState extends State<Pending> {
+class _OngoingState extends State<Ongoing> {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -22,7 +22,7 @@ class _PendingState extends State<Pending> {
               children:[
                 Text("Task Name"),
                 Container(
-                  child: Text("pending"),
+                  child: Text("ongoing"),
                 ),
               ],
             ),
@@ -46,6 +46,8 @@ class _PendingState extends State<Pending> {
             SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
+              // spacing: 8,
+              // runSpacing: 4,
               children: [
                 ElevatedButton.icon(
                   icon: Icon(Icons.phone),
@@ -59,6 +61,10 @@ class _PendingState extends State<Pending> {
                 ),
               ],
             ),
+                ElevatedButton(
+                  child:Text("Mark As Completed"),
+                  onPressed:(){},
+                ),
             SizedBox(height: 20),
           ],
         ),
