@@ -4,7 +4,7 @@ import 'package:voicesewa_client/constants/core/app_constants.dart';
 import 'package:voicesewa_client/constants/core/string_constants.dart';
 import 'package:voicesewa_client/widgets/core/bottom_navbar_widget.dart';
 import 'package:voicesewa_client/widgets/core/appbar_widget.dart';
-import 'package:voicesewa_client/providers/navbar_page_provider.dart';
+import 'package:voicesewa_client/providers/data/core/navbar_page_provider.dart';
 
 class RootScaffold extends ConsumerWidget {
   const RootScaffold({super.key});
