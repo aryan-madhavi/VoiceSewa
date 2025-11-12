@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:voicesewa_client/providers/data/home/services.dart';
 import 'package:voicesewa_client/providers/model/worker_model.dart';
 
 final workerListProvider = FutureProvider<List<WorkerModel>>((ref) async {
@@ -8,22 +9,43 @@ final workerListProvider = FutureProvider<List<WorkerModel>>((ref) async {
 
   return [
     WorkerModel(
-      name: 'Ramesh Kumar',
+      name: 'Anita S.',
       rating: 4.8,
-      distance: '2.1 km',
-      priceRange: '₹200–₹300/hr',
+      distance: '2.4 km',
+      priceRange: '₹400 - ₹700',
       verified: true,
       photoUrl: '',
-      voiceText: 'Main Ramesh, 5 saal ka experience.',
+      voiceText: 'Hi, I’m Anita! I specialize in deep cleaning services.',
+      service: Services.houseCleaner,
+      experience: 5,
+      skills: ['Deep Cleaning', 'Kitchen Cleaning', 'Bathroom Sanitization'],
+      available: true,
     ),
     WorkerModel(
-      name: 'Sita Devi',
-      rating: 4.5,
-      distance: '3.4 km',
-      priceRange: '₹250–₹350/hr',
-      verified: false,
+      name: 'Ravi K.',
+      rating: 4.6,
+      distance: '3.1 km',
+      priceRange: '₹350 - ₹600',
+      verified: true,
       photoUrl: '',
-      voiceText: 'Main Sita, 3 saal ka experience.',
+      voiceText: 'Hello, I’m Ravi! I provide reliable plumbing and minor repair services.',
+      service: Services.plumber,
+      experience: 7,
+      skills: ['Pipe Fitting', 'Leak Fixing', 'Tap Installation'],
+      available: true,
+    ),
+    WorkerModel(
+      name: 'Priya D.',
+      rating: 4.9,
+      distance: '1.8 km',
+      priceRange: '₹500 - ₹900',
+      verified: true,
+      photoUrl: '',
+      voiceText: 'Hi there, I’m Priya! I’m a certified electrician offering safe and efficient electrical services.',
+      service: Services.electrician,
+      experience: 6,
+      skills: ['Wiring', 'Switchboard Installation', 'Appliance Repair'],
+      available: false,
     ),
   ];
 });

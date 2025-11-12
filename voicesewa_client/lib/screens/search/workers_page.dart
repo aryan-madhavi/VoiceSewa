@@ -17,7 +17,7 @@ class _SuggestedWorkersPageState
   @override
   Widget build(BuildContext context) {
     final workersAsync = ref.watch(workerListProvider);
-    final selectedFilter = ref.watch(selectedFilterProvider);
+    //final selectedFilter = ref.watch(selectedFilterProvider);
 
     return Scaffold(
       body: Column(
