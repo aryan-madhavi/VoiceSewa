@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/constants/core/color_constants.dart';
-import 'package:voicesewa_client/constants/core/helper_functions.dart';
+import 'package:voicesewa_client/providers/model/booking_model.dart';
 import 'package:voicesewa_client/widgets/history/status_badge.dart';
+import 'package:voicesewa_client/widgets/history/job_details_sheet.dart';
 
 class JobCard extends StatelessWidget {
-  final Map<String, dynamic> job;
+  final BookingModel job;
   const JobCard({super.key, required this.job});
 
   @override
   Widget build(BuildContext context) {
-    final String status = job['status'];
-    final Color statusColor = Helpers.getStatusColor(status);
+    final color = job.statusColor;
 
     return Card(
       child: Padding(
@@ -22,14 +22,20 @@ class JobCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  job['service'],
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Row(
+                  children: [
+                    Icon(job.serviceIcon, color: job.serviceColor, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      job.serviceName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                StatusBadge(status: status, color: statusColor),
+                StatusBadge(status: job.status, color: color),
               ],
             ),
 
@@ -48,30 +54,28 @@ class JobCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      job['worker'],
+                      job.workerName,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: Colors.black87,
                       ),
                     ),
-                    if (job['rating'] != null) ...[
-                      const SizedBox(width: 10),
-                      const Icon(Icons.star, size: 16, color: Colors.amber),
-                      const SizedBox(width: 3),
-                      Text(
-                        "${job['rating']}",
-                        style: const TextStyle(
-                          color: Colors.amber,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.star, size: 16, color: Colors.amber),
+                    const SizedBox(width: 3),
+                    Text(
+                      job.workerRating.toStringAsFixed(1),
+                      style: const TextStyle(
+                        color: Colors.amber,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
-                    ],
+                    ),
                   ],
                 ),
                 Text(
-                  job['date'],
+                  job.formattedDate,
                   style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
               ],
@@ -79,7 +83,7 @@ class JobCard extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            // --- Footer Row: Rating + Amount ---
+            // --- User Rating + Amount ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -88,7 +92,7 @@ class JobCard extends StatelessWidget {
                     const Icon(Icons.star, size: 16, color: Colors.amber),
                     const SizedBox(width: 4),
                     Text(
-                      "Your Rating: ${job['userRating'] ?? '–'}",
+                      "Your Rating: ${job.userRating?.toStringAsFixed(1) ?? '–'}",
                       style: const TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 13,
@@ -97,7 +101,7 @@ class JobCard extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  job['amount'],
+                  "₹${job.amount.toStringAsFixed(0)}",
                   style: const TextStyle(
                     color: Colors.green,
                     fontWeight: FontWeight.w600,
@@ -132,7 +136,18 @@ class JobCard extends StatelessWidget {
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(16),
+                        ),
+                      ),
+                      builder: (_) => JobDetailsSheet(job: job),
+                    );
+                  },
                   icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
                   label: const Text("Details"),
                   style: TextButton.styleFrom(

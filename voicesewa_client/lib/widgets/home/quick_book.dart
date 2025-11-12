@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:voicesewa_client/data/home/services.dart';
+import 'package:voicesewa_client/providers/data/home/services.dart';
 import 'package:voicesewa_client/routes/navigation_routes.dart';
 
 class QuickBookCard extends StatelessWidget {
