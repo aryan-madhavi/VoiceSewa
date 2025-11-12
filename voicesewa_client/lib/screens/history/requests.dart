@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/constants/core/helper_functions.dart';
-import 'package:voicesewa_client/providers/job_filter_provider.dart';
+import 'package:voicesewa_client/providers/data/history/booking_data_provider.dart';
+import 'package:voicesewa_client/providers/data/history/booking_filter_provider.dart';
+import 'package:voicesewa_client/providers/model/booking_model.dart';
 import 'package:voicesewa_client/widgets/history/dynamic_job_filter.dart';
 import 'package:voicesewa_client/widgets/history/job_card.dart';
 
@@ -62,63 +63,72 @@ class _RequestPageState extends ConsumerState<RequestPage>
     });
   }
 
-  List<Map<String, dynamic>> _applyFilter(
-      List<Map<String, dynamic>> jobs, String status, String sortOption) {
-    List<Map<String, dynamic>> filteredJobs = List.from(jobs);
-
-    if (status != 'All') {
-      filteredJobs = filteredJobs.where((job) => job['status'] == status).toList();
+  List<BookingModel> _applyFilter(
+    List<BookingModel> jobs,
+    String status,
+    String sortOption,
+  ) {
+    // ✅ Step 1: Apply status filter
+    List<BookingModel> filteredJobs = List.from(jobs);
+    if (status.toLowerCase() != 'all') {
+      filteredJobs = filteredJobs
+          .where((job) => job.status.toLowerCase() == status.toLowerCase())
+          .toList();
     }
 
-    int _parseAmount(String amount) =>
-        int.parse(amount.replaceAll('₹', '').replaceAll(',', ''));
-
+    // ✅ Step 2: Apply sorting logic
     filteredJobs.sort((a, b) {
       switch (sortOption) {
         case 'Oldest First':
-          return Helpers.parseDate(a['date']).compareTo(Helpers.parseDate(b['date']));
+          return a.date.compareTo(b.date);
+
         case 'Amount ↑':
-          return _parseAmount(a['amount']).compareTo(_parseAmount(b['amount']));
+          return a.amount.compareTo(b.amount);
+
         case 'Amount ↓':
-          return _parseAmount(b['amount']).compareTo(_parseAmount(a['amount']));
+          return b.amount.compareTo(a.amount);
+
         case 'Rating ↑':
-          return double.parse(a['rating']).compareTo(double.parse(b['rating']));
+          return a.workerRating.compareTo(b.workerRating);
+
         case 'Rating ↓':
-          return double.parse(b['rating']).compareTo(double.parse(a['rating']));
-        default: // Newest First
-          return Helpers.parseDate(b['date']).compareTo(Helpers.parseDate(a['date']));
+          return b.workerRating.compareTo(a.workerRating);
+
+        default: // 'Newest First'
+          return b.date.compareTo(a.date);
       }
     });
 
     return filteredJobs;
   }
 
-  Widget _buildLazyJobList(List<Map<String, dynamic>> jobs) {
-    if (_initialLoading) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
-    }
-
-    if (jobs.isEmpty) {
-      return const Center(child: Text("No jobs match the selected filters."));
-    }
-
-    final visibleJobs = jobs.take(_visibleCount).toList();
-
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.only(bottom: 16),
-      itemCount: visibleJobs.length + (_isLoadingMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == visibleJobs.length) {
-          return const Padding(
-            padding: EdgeInsets.all(12.0),
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          );
-        }
-        return JobCard(job: visibleJobs[index]);
-      },
-    );
+  Widget _buildLazyJobList(List<BookingModel> jobs) {
+  if (_initialLoading) {
+    return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
   }
+
+  if (jobs.isEmpty) {
+    return const Center(child: Text("No jobs match the selected filters."));
+  }
+
+  final visibleJobs = jobs.take(_visibleCount).toList();
+
+  return ListView.builder(
+    controller: _scrollController,
+    padding: const EdgeInsets.only(bottom: 16),
+    itemCount: visibleJobs.length + (_isLoadingMore ? 1 : 0),
+    itemBuilder: (context, index) {
+      if (index == visibleJobs.length) {
+        return const Padding(
+          padding: EdgeInsets.all(12.0),
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        );
+      }
+      return JobCard(job: visibleJobs[index]);
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -152,12 +162,20 @@ class _RequestPageState extends ConsumerState<RequestPage>
                       builder: (context, ref, _) {
                         final status = ref.watch(activeStatusProvider);
                         final sort = ref.watch(activeSortProvider);
-                        final filteredJobs = _applyFilter(activeJobs, status, sort);
+                        final filteredJobs = _applyFilter(
+                          activeJobs,
+                          status,
+                          sort,
+                        );
 
                         return Column(
                           children: [
                             DynamicJobFilterBar(
-                              statusOptions: ['All', 'Scheduled', 'In Progress'],
+                              statusOptions: [
+                                'All',
+                                'Scheduled',
+                                'In Progress',
+                              ],
                               sortOptions: [
                                 'Newest First',
                                 'Oldest First',
@@ -180,8 +198,11 @@ class _RequestPageState extends ConsumerState<RequestPage>
                       builder: (context, ref, _) {
                         final status = ref.watch(completedStatusProvider);
                         final sort = ref.watch(completedSortProvider);
-                        final filteredJobs =
-                            _applyFilter(completedJobs, status, sort);
+                        final filteredJobs = _applyFilter(
+                          completedJobs,
+                          status,
+                          sort,
+                        );
 
                         return Column(
                           children: [
