@@ -1,16 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:voicesewa_client/core/constants/app_constants.dart';
-
-class NavTabNotifier extends StateNotifier<NavTab> {
-  NavTabNotifier() : super(NavTab.home);
-  void setTab(NavTab tab) => state = tab;
-}
-
-final navTabProvider = StateNotifierProvider<NavTabNotifier, NavTab>(
-  (ref) => NavTabNotifier(),
-);
+import 'package:voicesewa_client/core/providers/navbar_page_provider.dart';
 
 class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key});
