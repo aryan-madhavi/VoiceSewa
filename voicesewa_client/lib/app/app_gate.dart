@@ -1,41 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/widgets/layout/root_scaffold.dart';
-import 'package:voicesewa_client/features/auth/presentation/login_screen.dart'; 
-import 'package:voicesewa_client/features/auth/data/db_login.dart';
+import 'package:voicesewa_client/features/auth/presentation/login_screen.dart';
+import 'package:voicesewa_client/core/providers/session_provider.dart';
 
-class AppGate extends StatefulWidget {
+class AppGate extends ConsumerWidget {
   const AppGate({super.key});
 
   @override
-  State<AppGate> createState() => _AppGateState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sessionStatus = ref.watch(sessionNotifierProvider);
 
-class _AppGateState extends State<AppGate> {
-  late Future<bool> _check;
-
-  @override
-  void initState() {
-    super.initState();
-    _check = DbLogin().isSessionValid();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: _check,
-      builder: (context, snap) {
-        if (!snap.hasData) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        final valid = snap.data == true;
-        if (valid) {
-          return RootScaffold(); 
-        } else {
-          return const LoginScreen(); 
-        }
-      },
-    );
+    switch (sessionStatus) {
+      case SessionStatus.loading:
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      case SessionStatus.loggedIn:
+        return const RootScaffold();
+      case SessionStatus.loggedOut:
+        return const LoginScreen();
+    }
   }
 }

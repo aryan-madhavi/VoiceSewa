@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_client/app/app.dart';
-import 'package:voicesewa_client/features/auth/data/db_login.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/core/providers/session_provider.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
@@ -26,22 +26,23 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
+
     try {
-      // In a real app, verify credentials with server here, then persist
-      await DbLogin().setLoggedInUser(
-        username: _usernameCtrl.text.trim(),
-        password: _passwordCtrl.text, // store hash in production
+      // Get the session notifier
+      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
+
+      // Attempt login — this updates the session state automatically
+      await sessionNotifier.login(
+        _usernameCtrl.text.trim(),
+        _passwordCtrl.text,
       );
 
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const App()),
-      );
+      // No Navigator.pushReplacement needed: AppGate reacts to state change
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -67,8 +68,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       labelText: 'Username',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Enter username' : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Enter username'
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
