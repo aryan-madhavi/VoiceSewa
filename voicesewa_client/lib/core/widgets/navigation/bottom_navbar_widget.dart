@@ -1,0 +1,40 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:voicesewa_client/core/constants/app_constants.dart';
+
+class NavTabNotifier extends StateNotifier<NavTab> {
+  NavTabNotifier() : super(NavTab.home);
+  void setTab(NavTab tab) => state = tab;
+}
+
+final navTabProvider = StateNotifierProvider<NavTabNotifier, NavTab>(
+  (ref) => NavTabNotifier(),
+);
+
+class BottomNavBar extends ConsumerWidget {
+  const BottomNavBar({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentTab = ref.watch(navTabProvider);
+    final tabNotifier = ref.read(navTabProvider.notifier);
+
+    return NavigationBar(
+      selectedIndex: currentTab.index,
+      onDestinationSelected: (index) =>
+          tabNotifier.setTab(NavTab.values[index]),
+      destinations: AppConstants.pages.entries.map((entry) {
+        final icon = entry.value[0] as Widget;
+        final label = entry.value[1] as String;
+        return label.isNotEmpty
+            ? NavigationDestination(icon: icon, label: label)
+            : FloatingActionButton(
+                onPressed: () {},
+                tooltip: 'Speak',
+                child: const Icon(Icons.mic),
+              );
+      }).toList(),
+    );
+  }
+}
