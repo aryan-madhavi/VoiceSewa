@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:voicesewa_client/features/home/data/actions.dart';
+import 'package:voicesewa_client/features/home/data/actions_data.dart';
+import 'package:voicesewa_client/features/home/providers/quick_actions_provider.dart';
 
-class QuickActionsGrid extends StatelessWidget {
+class QuickActionsGrid extends ConsumerWidget {
   const QuickActionsGrid({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final actions = ActionData.quickActions.entries.toList();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final quickActions = ref.watch(quickActionsProvider);
 
     return GridView.builder(
-      itemCount: actions.length,
+      itemCount: quickActions.length,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -20,14 +22,14 @@ class QuickActionsGrid extends StatelessWidget {
         childAspectRatio: 1.5,
       ),
       itemBuilder: (context, index) {
-        final entry = actions[index];
-        final List<dynamic> data = entry.value;
-    
+        final action = quickActions[index];
+        final data = ActionsData.actions[action]!;
+
         final Color color = data[0] as Color;
         final IconData icon = data[1] as IconData;
         final String label = data[2] as String;
         final String route = data[3] as String;
-    
+
         return _QuickActionCard(
           color: color,
           icon: icon,

@@ -13,13 +13,7 @@ enum Services {
   handymanMasonryWork,
 }
 
-class ServiceData {
-  static final List<Services> quickServices = [
-    Services.electrician,
-    Services.plumber,
-    Services.carpenter,
-    Services.painter,
-  ];
+class ServicesData {
   static final Map<Services, List<dynamic>> services = {
     Services.electrician: [
       Colors.amber,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_client/features/home/data/services.dart';
+import 'package:voicesewa_client/features/home/data/services_data.dart';
 
 class BookingModel {
   final Services service; // Now typed, not just a String
@@ -49,10 +49,10 @@ class BookingModel {
     }
   }
 
-  /// ✅ Service details from ServiceData
-  Color get serviceColor => ServiceData.services[service]![0] as Color;
-  IconData get serviceIcon => ServiceData.services[service]![1] as IconData;
-  String get serviceName => ServiceData.services[service]![2] as String;
+  /// ✅ Service details from ServicesData
+  Color get serviceColor => ServicesData.services[service]![0] as Color;
+  IconData get serviceIcon => ServicesData.services[service]![1] as IconData;
+  String get serviceName => ServicesData.services[service]![2] as String;
 
   /// ✅ Converts to Map for Firebase / local storage
   Map<String, dynamic> toMap() {

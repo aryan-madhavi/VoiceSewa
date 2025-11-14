@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:voicesewa_client/features/home/data/services.dart';
+import 'package:voicesewa_client/features/home/data/services_data.dart';
+import 'package:voicesewa_client/features/home/providers/quick_book_services_provider.dart';
 import 'package:voicesewa_client/core/routes/navigation_routes.dart';
 
 class QuickBookCard extends StatelessWidget {
@@ -17,7 +19,7 @@ class QuickBookCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: EdgeInsetsGeometry.only(top: 12, bottom: 16),
+              padding: const EdgeInsets.only(top: 12, bottom: 16),
               child: Text(
                 'Quick Book Services',
                 style: theme.textTheme.titleLarge?.copyWith(
@@ -26,7 +28,7 @@ class QuickBookCard extends StatelessWidget {
                 ),
               ),
             ),
-            QuickBookGrid(),
+            const QuickBookGrid(),
           ],
         ),
       ),
@@ -34,12 +36,15 @@ class QuickBookCard extends StatelessWidget {
   }
 }
 
-class QuickBookGrid extends StatelessWidget {
+class QuickBookGrid extends ConsumerWidget {
   const QuickBookGrid({super.key});
+
   @override
-  Widget build(BuildContext context) {
-    final quickServices = ServiceData.quickServices;
-    final routeName = '/book';
+  Widget build(BuildContext context, WidgetRef ref) {
+    final quickServices = ref.watch(quickBookServicesProvider);
+
+    const String routeName = RoutePaths.book;
+
     return GridView.builder(
       itemCount: quickServices.length,
       shrinkWrap: true,
@@ -52,7 +57,7 @@ class QuickBookGrid extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         final service = quickServices[index];
-        final List<dynamic> data = ServiceData.services[service]!;
+        final data = ServicesData.services[service]!;
 
         final Color color = data[0] as Color;
         final IconData icon = data[1] as IconData;
@@ -65,7 +70,7 @@ class QuickBookGrid extends StatelessWidget {
           onTap: () => context.pushNamedTransition(
             routeName: AppRoutes.routes.containsKey(routeName)
                 ? routeName
-                : '/comingSoonPage',
+                : RoutePaths.comingSoon,
             type: PageTransitionType.rightToLeft,
           ),
         );
