@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_client/features/home/data/services.dart';
+import 'package:voicesewa_client/features/home/data/services_data.dart';
 
 class WorkerModel {
   final String name;
@@ -30,10 +30,10 @@ class WorkerModel {
     this.available,
   });
 
-  /// ✅ Service-related data helpers from ServiceData
-  Color get serviceColor => ServiceData.services[service]![0] as Color;
-  IconData get serviceIcon => ServiceData.services[service]![1] as IconData;
-  String get serviceName => ServiceData.services[service]![2] as String;
+  /// ✅ Service-related data helpers from ServicesData
+  Color get serviceColor => ServicesData.services[service]![0] as Color;
+  IconData get serviceIcon => ServicesData.services[service]![1] as IconData;
+  String get serviceName => ServicesData.services[service]![2] as String;
 
   /// ✅ Verification badge color
   Color get verifiedColor => verified ? Colors.green : Colors.grey;
