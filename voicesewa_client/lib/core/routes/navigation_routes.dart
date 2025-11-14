@@ -12,7 +12,9 @@ class RoutePaths {
   static const String speak = '/speak';
   static const String history = '/history';
   static const String book = '/book';
+  static const String track = 'track';
   static const String settings = '/settings';
+  static const String support = '/support';
   static const String login = '/loginPage';
   static const String signup = '/signupPage';
   static const String comingSoon = '/comingSoonPage';
@@ -23,11 +25,8 @@ class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
     RoutePaths.home: (context) => const HomePage(),
     RoutePaths.search: (context) => const SuggestedWorkersPage(),
-    RoutePaths.speak: (context) => const ComingSoonPage(), 
     RoutePaths.history: (context) => const RequestPage(),
     RoutePaths.settings: (context) => const SettingsPage(),
-    RoutePaths.login: (context) => const Placeholder(),
-    RoutePaths.signup: (context) => const Placeholder(),
     RoutePaths.comingSoon: (context) => const ComingSoonPage(),
   };
 }

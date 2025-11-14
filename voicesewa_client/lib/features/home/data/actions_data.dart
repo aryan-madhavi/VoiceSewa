@@ -27,7 +27,7 @@ class ActionsData {
       Colors.blueGrey,
       Icons.support_agent,
       'Help & Support',
-      RoutePaths.comingSoon,
+      RoutePaths.support,
     ],
   };
 }

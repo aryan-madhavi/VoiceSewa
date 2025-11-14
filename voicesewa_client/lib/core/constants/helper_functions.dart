@@ -4,7 +4,7 @@ import 'package:voicesewa_client/core/routes/navigation_routes.dart';
 class Helpers {
   static String getValidRoute(
     String routeName, {
-    String fallback = '/comingSoonPage',
+    String fallback = RoutePaths.comingSoon,
   }) {
     return AppRoutes.routes.containsKey(routeName) ? routeName : fallback;
   }
