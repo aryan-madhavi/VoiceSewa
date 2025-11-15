@@ -23,6 +23,7 @@ migrate_working_dir/
 # is commented out by default.
 .vscode/
 devtools_options.yaml
+analysis_options.yaml
 
 # Firebase related
 firebase.json
