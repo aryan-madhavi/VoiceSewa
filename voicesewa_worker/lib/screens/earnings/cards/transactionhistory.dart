@@ -10,6 +10,23 @@ class TransactionHistory extends StatefulWidget {
 class _TransactionHistoryState extends State<TransactionHistory> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return const Card(
+      child: Column(
+        children:[
+          Row(
+            children:[
+              Text("Task Name - Client Name / Bonus / Transfer to Bank"),
+              Text("+/- Rs XXXX"),
+            ],
+          ),
+          Row(
+            children:[
+              Text("Day,Time, Date"),
+              Text("Job Completed / Bonus Earned / Withdraw Processed"),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
