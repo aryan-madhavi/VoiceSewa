@@ -15,14 +15,31 @@ class _TransactionHistoryState extends State<TransactionHistory> {
         children:[
           Row(
             children:[
-              Text("Task Name - Client Name / Bonus / Transfer to Bank"),
-              Text("+/- Rs XXXX"),
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: <Widget>[
+                    Text("Task Name - Client Name / Bonus / Transfer to Bank"), 
+                    Text("+/- Rs XXXX"),
+                  ],
+                ),
+              ),
+             
             ],
           ),
           Row(
             children:[
-              Text("Day,Time, Date"),
-              Text("Job Completed / Bonus Earned / Withdraw Processed"),
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4.0,
+                  children: <Widget>[
+                    Text("Day,Time, Date"),
+                    Text("Job Completed / Bonus Earned / Withdraw Processed"),
+                  ],
+                ),
+              ),
             ],
           ),
         ],

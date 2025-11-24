@@ -8,6 +8,7 @@ class MonthlyGoal extends StatefulWidget {
 }
 
 class _MonthlyGoalState extends State<MonthlyGoal> {
+  double _progress = 0.2;
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -16,13 +17,16 @@ class _MonthlyGoalState extends State<MonthlyGoal> {
           Row(
             children: [
               Text("Monthly Goal"),
-              Container(child: Text("XX%")),
+              Container(
+                child: Text("${(_progress * 100).toInt()}%"),
+                ),
             ],
           ),
-          Slider(
-            value: 20,
-            onChanged: (){},
-            ),
+          LinearProgressIndicator(
+            value: _progress,
+            backgroundColor: Colors.grey,
+            color: Colors.blue,
+          ),
           Row(children: [Text("Rs XXXX"), Text("Rs XXXX")]),
           Text("Keep it up I believe in you"),
           TextButton.icon(

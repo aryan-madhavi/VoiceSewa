@@ -25,7 +25,10 @@ class _HomePageState extends State<HomePage> {
             children: <Widget>[
               SizedBox(height: 50),
 
-              Dashboard(),
+              SizedBox(
+                height: 300,
+                child: Dashboard(),
+                ),
 
               SizedBox(height: 50),
 
@@ -65,7 +68,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ],
                         ),
-                        if (_showdata) FindWork(),
+                        if (_showdata) SizedBox(height: 200,child: FindWork()),
                       ],
                     ),
                   ),
