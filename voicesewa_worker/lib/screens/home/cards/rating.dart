@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:voicesewa_worker/constants/core/app_constants.dart';
 
 class Rating extends StatefulWidget {
   const Rating({super.key});
@@ -8,46 +9,107 @@ class Rating extends StatefulWidget {
 }
 
 class _RatingState extends State<Rating> {
-  double rating = 4.2;
-  int starCount = 5;
+  final double rating = 4.2;
+  final int starCount = 5;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(10),
-      child: Card(
-      margin: EdgeInsets.all(10),
+    return Card(
+      elevation: 3,
+      shadowColor: Colors.black12,
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // SizedBox(height: 20),
-            Text("Your Current Rating"),
-
-            // SizedBox(height: 20),
-            Center(
-              child: Row(
-                  children: List.generate(starCount, (index) => buildStar(context, index)),
-                ),
+            const Text(
+              "Your Current Rating",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppConstants.kTextGrey,
+                letterSpacing: 0.5,
+              ),
             ),
-            // SizedBox(height: 20),
-              Text("$rating"),
-            // SizedBox(height: 20),
+
+            const SizedBox(height: 16),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  "$rating",
+                  style: const TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: AppConstants.kPrimaryBlue,
+                    height: 1.0,
+                  ),
+                ),
+
+                const SizedBox(width: 16),
+
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: List.generate(
+                          starCount,
+                              (index) => buildStar(context, index)
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        "Excellent Job!",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
-Widget buildStar(BuildContext context, int index) {
-  Icon icon;
-  if (index >= rating) {
-    icon = Icon(Icons.star_border);
-  } else if (index > rating - 1 && index < rating) {
-    icon = Icon(Icons.star_half);
-  } else {
-    icon = Icon(Icons.star);
-  }
-  return icon;
-}
-}
 
+  Widget buildStar(BuildContext context, int index) {
+    Icon icon;
+
+    if (index >= rating) {
+      icon = const Icon(
+        Icons.star_rounded,
+        color: Colors.grey,
+        size: 24,
+      );
+    } else if (index > rating - 1 && index < rating) {
+      icon = const Icon(
+        Icons.star_half_rounded,
+        color: Colors.amber,
+        size: 24,
+      );
+    } else {
+      icon = const Icon(
+        Icons.star_rounded,
+        color: Colors.amber,
+        size: 24,
+      );
+    }
+    return icon;
+  }
+}

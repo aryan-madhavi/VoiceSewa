@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// import 'package:voicesewa_worker/constants/core/string_constants.dart';
+import 'package:voicesewa_worker/constants/core/app_constants.dart';
 import 'package:voicesewa_worker/screens/home/cards/dashboard.dart';
 import 'package:voicesewa_worker/screens/home/cards/find_work.dart';
 import 'package:voicesewa_worker/screens/home/cards/rating.dart';
@@ -12,72 +12,132 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool flag = false;
   bool _showdata = false;
   bool _iconarrowdirection = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              SizedBox(height: 50),
+      backgroundColor: const Color(0xFFF5F7FA),
 
-              SizedBox(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              const SizedBox(height: 20),
+
+              const SizedBox(
                 height: 300,
                 child: Dashboard(),
-                ),
+              ),
 
-              SizedBox(height: 50),
+              const SizedBox(height: 24),
 
               Padding(
-                padding: EdgeInsets.all(10),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Card(
-                  margin: EdgeInsets.all(8),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _showdata = !_showdata;
-                        _iconarrowdirection = !_iconarrowdirection;
-                      });
-                    },
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            Text("Find Works"),
+                  elevation: 2,
+                  shadowColor: Colors.black12,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Column(
+                    children: [
+                      GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () {
+                          setState(() {
+                            _showdata = !_showdata;
+                            _iconarrowdirection = !_iconarrowdirection;
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "Find Work",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppConstants.kTextDark,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 8, height: 8,
+                                          decoration: BoxDecoration(
+                                            color: AppConstants.flag ? Colors.green : Colors.grey,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          AppConstants.flag ? "Online & Visible" : "You are offline",
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppConstants.flag ? Colors.green[700] : Colors.grey,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
 
-                            SizedBox(width: 50),
-
-                            Switch(
-                              value: flag,
-                              activeThumbColor: Colors.green,
-                              onChanged: (bool value) {
-                                setState(() {
-                                  flag = value;
-                                });
-                              },
-                            ),
-                            Icon(
-                              _iconarrowdirection
-                                  ? Icons.keyboard_arrow_up
-                                  : Icons.keyboard_arrow_down,
-                            ),
-                          ],
+                              Row(
+                                children: [
+                                  Switch(
+                                    value: AppConstants.flag,
+                                    activeColor: Colors.white,
+                                    activeTrackColor: Colors.green,
+                                    onChanged: (bool value) {
+                                      setState(() {
+                                        AppConstants.flag = value;
+                                      });
+                                      if (value) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text("You are now receiving job notifications!"),
+                                            backgroundColor: AppConstants.kPrimaryBlue,
+                                            duration: Duration(seconds: 2),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    _iconarrowdirection
+                                        ? Icons.keyboard_arrow_up_rounded
+                                        : Icons.keyboard_arrow_down_rounded,
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                        if (_showdata) SizedBox(height: 200,child: FindWork()),
-                      ],
-                    ),
+                      ),
+
+                      if (_showdata)
+                        const FindWork(),
+                    ],
                   ),
                 ),
               ),
 
-              SizedBox(height: 50),
+              const SizedBox(height: 24),
+              const Rating(),
 
-              Rating(),
+              const SizedBox(height: 20),
             ],
           ),
         ),
