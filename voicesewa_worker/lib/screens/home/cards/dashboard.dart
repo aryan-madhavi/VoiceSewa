@@ -3,6 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
+import '../../../constants/core/static_data.dart';
+import '../../../constants/core/string_constants.dart';
+
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
@@ -11,14 +14,6 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-
-  final List<ChartData> chartData = [
-    ChartData("2021", 12000),
-    ChartData("2022", 18500),
-    ChartData("2023", 24000),
-    ChartData("2024", 22000),
-    ChartData("2025", 35000, isCurrent: true),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -107,9 +102,3 @@ class _DashboardState extends State<Dashboard> {
   }
 }
 
-class ChartData {
-  final String year;
-  final double amount;
-  final bool isCurrent;
-  ChartData(this.year, this.amount, {this.isCurrent = false});
-}

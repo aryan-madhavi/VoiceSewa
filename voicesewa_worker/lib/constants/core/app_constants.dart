@@ -37,13 +37,4 @@ class AppConstants {
       ProfilePage(),
     ],
   };
-
-  static bool flag = false;
-
-  static const Color kPrimaryBlue = Color(0xFF0056D2);
-  static const Color kTextDark = Color(0xFF2D3436);
-  static const Color kTextGrey = Color(0xFF757575);
-  static const Color kUrgentRed = Color(0xFFE74C3C);
-  static const Color kNewBlue = Color(0xFF3498DB);
 }
-

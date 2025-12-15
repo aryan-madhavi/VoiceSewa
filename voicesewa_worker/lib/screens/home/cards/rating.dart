@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_worker/constants/core/app_constants.dart';
 
+import '../../../constants/core/color_constants.dart';
+import '../../../constants/core/static_data.dart';
+import '../../../constants/core/string_constants.dart';
+
 class Rating extends StatefulWidget {
   const Rating({super.key});
 
@@ -9,8 +13,6 @@ class Rating extends StatefulWidget {
 }
 
 class _RatingState extends State<Rating> {
-  final double rating = 4.2;
-  final int starCount = 5;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +32,7 @@ class _RatingState extends State<Rating> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppConstants.kTextGrey,
+                color: ColorConstants.textGrey,
                 letterSpacing: 0.5,
               ),
             ),
@@ -46,7 +48,7 @@ class _RatingState extends State<Rating> {
                   style: const TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.bold,
-                    color: AppConstants.kPrimaryBlue,
+                    color: ColorConstants.primaryBlue,
                     height: 1.0,
                   ),
                 ),

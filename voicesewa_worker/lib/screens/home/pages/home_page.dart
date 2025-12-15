@@ -4,6 +4,10 @@ import 'package:voicesewa_worker/screens/home/cards/dashboard.dart';
 import 'package:voicesewa_worker/screens/home/cards/find_work.dart';
 import 'package:voicesewa_worker/screens/home/cards/rating.dart';
 
+import '../../../constants/core/color_constants.dart';
+import '../../../constants/core/static_data.dart';
+import '../../../constants/core/string_constants.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -64,7 +68,7 @@ class _HomePageState extends State<HomePage> {
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: AppConstants.kTextDark,
+                                        color: ColorConstants.textDark,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -73,16 +77,16 @@ class _HomePageState extends State<HomePage> {
                                         Container(
                                           width: 8, height: 8,
                                           decoration: BoxDecoration(
-                                            color: AppConstants.flag ? Colors.green : Colors.grey,
+                                            color: flag ? Colors.green : Colors.grey,
                                             shape: BoxShape.circle,
                                           ),
                                         ),
                                         const SizedBox(width: 6),
                                         Text(
-                                          AppConstants.flag ? "Online & Visible" : "You are offline",
+                                          flag ? "Online & Visible" : "You are offline",
                                           style: TextStyle(
                                             fontSize: 12,
-                                            color: AppConstants.flag ? Colors.green[700] : Colors.grey,
+                                            color: flag ? Colors.green[700] : Colors.grey,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -95,18 +99,18 @@ class _HomePageState extends State<HomePage> {
                               Row(
                                 children: [
                                   Switch(
-                                    value: AppConstants.flag,
+                                    value: flag,
                                     activeColor: Colors.white,
                                     activeTrackColor: Colors.green,
                                     onChanged: (bool value) {
                                       setState(() {
-                                        AppConstants.flag = value;
+                                        flag = value;
                                       });
                                       if (value) {
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           const SnackBar(
                                             content: Text("You are now receiving job notifications!"),
-                                            backgroundColor: AppConstants.kPrimaryBlue,
+                                            backgroundColor: ColorConstants.primaryBlue,
                                             duration: Duration(seconds: 2),
                                           ),
                                         );

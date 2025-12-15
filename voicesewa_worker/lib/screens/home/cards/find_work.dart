@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_worker/constants/core/app_constants.dart';
+import 'package:voicesewa_worker/constants/core/string_constants.dart';
+
+import '../../../constants/core/color_constants.dart';
+import '../../../constants/core/static_data.dart';
 
 class FindWork extends StatefulWidget {
   const FindWork({super.key});
@@ -10,46 +14,10 @@ class FindWork extends StatefulWidget {
 
 class _FindWorkState extends State<FindWork> {
 
-  final List<JobPostData> _joblist = [
-    JobPostData(
-      title: "Electrical Wiring Repair",
-      description: "Kitchen electrical outlet repair needed urgently. Sparks visible.",
-      priceRange: "₹800-1200",
-      tags: ["Urgent", "New"],
-      clientName: "Mehta Family",
-      rating: 4.8,
-      location: "Kothrud, Pune",
-      distance: "0.8 km away",
-      timePosted: "30 minutes ago",
-    ),
-    JobPostData(
-      title: "Bathroom Plumbing",
-      description: "Leaking tap and shower head installation in master bathroom.",
-      priceRange: "₹600-900",
-      tags: ["New"],
-      clientName: "Sharma Residence",
-      rating: 4.5,
-      location: "Aundh, Pune",
-      distance: "1.5 km away",
-      timePosted: "1 hour ago",
-    ),
-    JobPostData(
-      title: "Full House Deep Cleaning",
-      description: "3 BHK deep cleaning required before festival. Includes sofa shampooing.",
-      priceRange: "₹2500-3000",
-      tags: [],
-      clientName: "Vikram Singh",
-      rating: 4.9,
-      location: "Viman Nagar, Pune",
-      distance: "3.2 km away",
-      timePosted: "3 hours ago",
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: _joblist.map((job) {
+      children: workList.map((job) {
         return FindWorkCard(
           job: job,
           onApplyTap: () => print("Applied to ${job.title}"),
@@ -60,32 +28,8 @@ class _FindWorkState extends State<FindWork> {
   }
 }
 
-class JobPostData {
-  final String title;
-  final String description;
-  final String priceRange;
-  final List<String> tags;
-  final String clientName;
-  final double rating;
-  final String location;
-  final String distance;
-  final String timePosted;
-
-  JobPostData({
-    required this.title,
-    required this.description,
-    required this.priceRange,
-    required this.tags,
-    required this.clientName,
-    required this.rating,
-    required this.location,
-    required this.distance,
-    required this.timePosted,
-  });
-}
-
 class FindWorkCard extends StatelessWidget {
-  final JobPostData job;
+  final WorkPostData job;
   final VoidCallback onApplyTap;
   final VoidCallback onViewDetailsTap;
 
@@ -122,7 +66,7 @@ class FindWorkCard extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppConstants.kTextDark,
+                            color: ColorConstants.textDark,
                           ),
                         ),
                       ),
@@ -132,7 +76,7 @@ class FindWorkCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: AppConstants.kPrimaryBlue,
+                          color: ColorConstants.primaryBlue,
                         ),
                       ),
                     ],
@@ -143,7 +87,7 @@ class FindWorkCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: AppConstants.kTextGrey,
+                      color: ColorConstants.textGrey,
                       fontSize: 13,
                     ),
                   ),
@@ -165,7 +109,7 @@ class FindWorkCard extends StatelessWidget {
                         job.clientName,
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: AppConstants.kTextDark,
+                          color: ColorConstants.textDark,
                         ),
                       ),
                       Row(
@@ -177,7 +121,7 @@ class FindWorkCard extends StatelessWidget {
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
-                              color: AppConstants.kTextDark,
+                              color: ColorConstants.textDark,
                             ),
                           ),
                         ],
@@ -203,7 +147,7 @@ class FindWorkCard extends StatelessWidget {
                         child: ElevatedButton(
                           onPressed: onApplyTap,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppConstants.kPrimaryBlue,
+                            backgroundColor: ColorConstants.primaryBlue,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -217,7 +161,7 @@ class FindWorkCard extends StatelessWidget {
                         child: OutlinedButton(
                           onPressed: onViewDetailsTap,
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppConstants.kTextDark,
+                            foregroundColor: ColorConstants.textDark,
                             side: BorderSide(color: Colors.grey.shade300),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -236,7 +180,7 @@ class FindWorkCard extends StatelessWidget {
               bottom: 0,
               width: 6,
               child: Container(
-                color: AppConstants.kPrimaryBlue,
+                color: ColorConstants.primaryBlue,
               ),
             ),
           ],
@@ -249,12 +193,12 @@ class FindWorkCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppConstants.kTextGrey),
+        Icon(icon, size: 14, color: ColorConstants.textGrey),
         const SizedBox(width: 6),
         Flexible(
           child: Text(
             text,
-            style: const TextStyle(color: AppConstants.kTextGrey, fontSize: 12),
+            style: const TextStyle(color: ColorConstants.textGrey, fontSize: 12),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -264,13 +208,13 @@ class FindWorkCard extends StatelessWidget {
 
   Widget _buildTag(String tag) {
     Color bgColor = Colors.grey.shade100;
-    Color textColor = AppConstants.kTextGrey;
+    Color textColor = ColorConstants.textGrey;
     if (tag == 'Urgent') {
-      bgColor = AppConstants.kUrgentRed.withOpacity(0.1);
-      textColor = AppConstants.kUrgentRed;
+      bgColor = ColorConstants.urgentRed.withOpacity(0.1);
+      textColor = ColorConstants.urgentRed;
     } else if (tag == 'New') {
-      bgColor = AppConstants.kNewBlue.withOpacity(0.1);
-      textColor = AppConstants.kNewBlue;
+      bgColor = ColorConstants.newBlue.withOpacity(0.1);
+      textColor = ColorConstants.newBlue;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
