@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_worker/screens/my_jobs/cards/Active/ongoing.dart';
-import 'package:voicesewa_worker/screens/my_jobs/cards/Active/pending.dart';
-import 'package:voicesewa_worker/screens/my_jobs/cards/Recent/completed.dart';
+import 'package:voicesewa_worker/constants/core/color_constants.dart';
+import 'package:voicesewa_worker/constants/core/static_data.dart';
+import 'package:voicesewa_worker/screens/my_jobs/cards/my_job_card.dart';
 
 class MyJobsPage extends StatefulWidget {
   const MyJobsPage({super.key});
@@ -13,24 +13,50 @@ class MyJobsPage extends StatefulWidget {
 class _MyJobsPageState extends State<MyJobsPage> {
   @override
   Widget build(BuildContext context) {
+
+    final activeJobs = myJobsData.where((j) => j.status != JobStatus.completed).toList();
+    final completedJobs = myJobsData.where((j) => j.status == JobStatus.completed).toList();
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SingleChildScrollView(
+        padding: EdgeInsets.only(bottom: 20),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            SizedBox(height: 15,),
-            Text ("Active"),
-            
-            SizedBox(height: 15,),
-            Ongoing(),
-            Pending(),
-      
-            SizedBox(height: 15,),
-            Text("Recent"),
-      
-            SizedBox(height: 15,),
-      
-            Completed(),
-            SizedBox(height: 15,),
+            SizedBox(height: 20,),
+            if (activeJobs.isNotEmpty) ...[
+              const Padding(
+                  padding: EdgeInsetsGeometry.symmetric(horizontal: 20, vertical: 10),
+                child: Text(
+                  "Active Jobs",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: ColorConstants.textDark,
+                  ),
+                ),
+              ),
+              ...activeJobs.map((job) => MyJobCard(job: job)).toList(),
+            ],
+
+            const SizedBox(height: 10,),
+
+            if (completedJobs.isNotEmpty) ...[
+              const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+                child: Text(
+                  "Recent History",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: ColorConstants.textDark,
+                  ),
+                ),
+              ),
+              ...completedJobs.map((job) => MyJobCard(job: job)).toList(),
+            ],
+
           ],
         ),
       ),
