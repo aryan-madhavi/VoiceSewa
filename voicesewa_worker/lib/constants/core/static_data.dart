@@ -143,5 +143,38 @@ final List<Job> myJobsData = [
 ];
 
 // Earnings Page
+// Monthly Goal
+double  currentEarnings = 1200;
+double goalAmount = 2000;
+double progress = (currentEarnings/ goalAmount).clamp(0.0, 1.0);
+// Withdraw
+double withdrawalAmount = 4500;
+double pendingAmount = 1200;
+double totalAmountEarned = 4500;
+
+// Transaction History
+class Transaction {
+  final String id;
+  final String title;
+  final String date;
+  final String amount;
+  final bool isCredit;
+  final String status;
+
+  Transaction({
+    required this.id,
+    required this.title,
+    required this.date,
+    required this.amount,
+    required this.isCredit,
+    required this.status,
+  });
+}
+final List<Transaction> staticTransactions = [
+  Transaction(id: '1', title: 'Task: AC Repair', date: 'Today, 2:30 PM', amount: '₹1,500', isCredit: true, status: 'Completed'),
+  Transaction(id: '2', title: 'Weekly Bonus', date: 'Yesterday, 9:00 AM', amount: '₹500', isCredit: true, status: 'Bonus Earned'),
+  Transaction(id: '3', title: 'Bank Transfer', date: '12 Dec, 10:00 AM', amount: '₹4,000', isCredit: false, status: 'Withdrawal Processed'),
+  Transaction(id: '4', title: 'Task: Cleaning', date: '11 Dec, 6:30 PM', amount: '₹2,200', isCredit: true, status: 'Completed'),
+];
 
 // Profile Page

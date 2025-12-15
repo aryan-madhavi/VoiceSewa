@@ -18,7 +18,7 @@ class _MyJobsPageState extends State<MyJobsPage> {
     final completedJobs = myJobsData.where((j) => j.status == JobStatus.completed).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: ColorConstants.backgroundColor,
       body: SingleChildScrollView(
         padding: EdgeInsets.only(bottom: 20),
         child: Column(

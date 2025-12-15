@@ -32,4 +32,6 @@ class StringConstants {
   static const feedbackPrompt = "We value your feedback!";
   static const updateAvailable = "A new update is available.";
   static const noInternetConnection = "No internet connection.";
+
+  static const rupee = "₹";
 }

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:voicesewa_worker/constants/core/static_data.dart';
+import 'package:voicesewa_worker/constants/core/string_constants.dart';
+
+import '../../../constants/core/color_constants.dart';
 
 class MonthlyGoal extends StatefulWidget {
   const MonthlyGoal({super.key});
@@ -8,33 +12,92 @@ class MonthlyGoal extends StatefulWidget {
 }
 
 class _MonthlyGoalState extends State<MonthlyGoal> {
-  double _progress = 0.2;
   @override
   Widget build(BuildContext context) {
+
     return Card(
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Text("Monthly Goal"),
-              Container(
-                child: Text("${(_progress * 100).toInt()}%"),
+      elevation: 2,
+      shadowColor: Colors.black12,
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+          padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Monthly Goal",
+                  style: TextStyle(
+                    color: ColorConstants.textDark,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-            ],
-          ),
-          LinearProgressIndicator(
-            value: _progress,
-            backgroundColor: Colors.grey,
-            color: Colors.blue,
-          ),
-          Row(children: [Text("Rs XXXX"), Text("Rs XXXX")]),
-          Text("Keep it up I believe in you"),
-          TextButton.icon(
-            icon: Icon(Icons.edit),
-            label: Text("Edit"),
-            onPressed: () {},
-          ),
-        ],
+                GestureDetector(
+                  onTap: () {},
+                  child: const Icon(
+                    Icons.edit,
+                    size: 18,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16,),
+
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 12,
+                backgroundColor: Colors.grey[200],
+                color: ColorConstants.primaryBlue,
+              ),
+            ),
+
+            const SizedBox(height: 12,),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "${StringConstants.rupee}${currentEarnings.toInt()}",
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12,),
+
+            Row(
+              children: [
+                const Icon(
+                  Icons.bolt,
+                  color: Colors.amber,
+                  size: 18,
+                ),
+
+                const SizedBox(width: 4,),
+
+                Text(
+                  "You're ${(progress * 100).toInt()}% there! Keep it up!",
+                  style: TextStyle(
+                    color: ColorConstants.textDark,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

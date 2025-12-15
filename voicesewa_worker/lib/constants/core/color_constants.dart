@@ -12,5 +12,6 @@ class ColorConstants {
   static const Color textGrey = Color(0xFF757575);
   static const Color urgentRed = Color(0xFFE74C3C);
   static const Color newBlue = Color(0xFF3498DB);
+  static const Color backgroundColor = Color(0xFFF5F7FA);
 
 }
