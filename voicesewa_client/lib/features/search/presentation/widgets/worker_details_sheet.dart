@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
-import 'package:voicesewa_client/features/search/model/worker_model.dart';
+import 'package:voicesewa_client/shared/models/worker_model.dart';
 
 class WorkerDetailsSheet extends StatelessWidget {
   final WorkerModel worker;

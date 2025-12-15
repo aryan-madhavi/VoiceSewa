@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:voicesewa_client/features/home/data/services_data.dart';
-import 'package:voicesewa_client/features/search/model/worker_model.dart';
+import 'package:voicesewa_client/shared/data/services_data.dart';
+import 'package:voicesewa_client/shared/models/worker_model.dart';
 
 final workerListProvider = FutureProvider<List<WorkerModel>>((ref) async {
   // Simulate network delay

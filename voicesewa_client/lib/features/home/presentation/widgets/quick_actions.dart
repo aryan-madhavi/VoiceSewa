@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:voicesewa_client/features/home/data/actions_data.dart';
+import 'package:voicesewa_client/shared/data/actions_data.dart';
 import 'package:voicesewa_client/features/home/providers/quick_actions_provider.dart';
 
 class QuickActionsGrid extends ConsumerWidget {

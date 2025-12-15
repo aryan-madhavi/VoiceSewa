@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:voicesewa_client/features/home/data/services_data.dart';
+import 'package:voicesewa_client/shared/data/services_data.dart';
 import 'package:voicesewa_client/features/home/providers/quick_book_services_provider.dart';
 import 'package:voicesewa_client/core/routes/navigation_routes.dart';
 

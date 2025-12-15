@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_client/features/history/model/booking_model.dart';
+import 'package:voicesewa_client/shared/models/booking_model.dart';
 
 class JobDetailsSheet extends StatelessWidget {
   final BookingModel job;

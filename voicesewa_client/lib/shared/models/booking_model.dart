@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_client/features/home/data/services_data.dart';
+import 'package:voicesewa_client/shared/data/services_data.dart';
 
 class BookingModel {
   final Services service; // Now typed, not just a String

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/features/home/data/services_data.dart';
-import 'package:voicesewa_client/features/history/model/booking_model.dart';
+import 'package:voicesewa_client/shared/data/services_data.dart';
+import 'package:voicesewa_client/shared/models/booking_model.dart';
 
 /// --- Active Jobs Data ---
 final activeJobsProvider = Provider<List<BookingModel>>(

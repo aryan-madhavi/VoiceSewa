@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/features/history/providers/booking_data_provider.dart';
 import 'package:voicesewa_client/features/history/providers/booking_filter_provider.dart';
-import 'package:voicesewa_client/features/history/model/booking_model.dart';
+import 'package:voicesewa_client/shared/models/booking_model.dart';
 import 'package:voicesewa_client/features/history/presentation/widgets/dynamic_job_filter.dart';
 import 'package:voicesewa_client/features/history/presentation/widgets/job_card.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
-import 'package:voicesewa_client/features/history/model/booking_model.dart';
+import 'package:voicesewa_client/shared/models/booking_model.dart';
 import 'package:voicesewa_client/features/history/presentation/widgets/status_badge.dart';
 import 'package:voicesewa_client/features/history/presentation/widgets/job_details_sheet.dart';
 
