@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/core/providers/speech_to_text_provider.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_section.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_switches.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_tile.dart';
@@ -12,7 +13,7 @@ class SettingsPage extends ConsumerWidget {
     return Scaffold(
       body: ListView(
         padding: const EdgeInsets.all(12),
-        children: const [
+        children: [
           // --- User Preferences ---
           SettingsSection(
             title: "User Preferences",
@@ -88,11 +89,41 @@ class SettingsPage extends ConsumerWidget {
   }
 
   // Dummy Handlers (replace with actual logic/navigation)
-  static void _openLanguageSelector(BuildContext context) {}
-  static void _manageAddresses(BuildContext context) {}
-  static void _openDataUsageSettings(BuildContext context) {}
-  static void _openPrivacyPolicy(BuildContext context) {}
-  static void _openTerms(BuildContext context) {}
-  static void _logout(BuildContext context) {}
-  static void _deleteAccount(BuildContext context) {}
+  void _openLanguageSelector(BuildContext context, WidgetRef ref) {
+    final speechNotifier = ref.read(speechProvider.notifier);
+    final availableLocales = speechNotifier.getAvailableLocales();
+    final currentLocale = ref.read(speechProvider).localeId;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => ListView(
+        children: availableLocales.map((loc) {
+          return RadioListTile<String>(
+            title: Text(loc.name),
+            value: loc.localeId,
+            groupValue: currentLocale,
+            onChanged: (value) {
+              if (value != null) {
+                speechNotifier.setLocale(value);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Language changed to ${loc.name}'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  static void _manageAddresses(BuildContext context, WidgetRef ref) {}
+  static void _openDataUsageSettings(BuildContext context, WidgetRef ref) {}
+  static void _openPrivacyPolicy(BuildContext context, WidgetRef ref) {}
+  static void _openTerms(BuildContext context, WidgetRef ref) {}
+  static void _logout(BuildContext context, WidgetRef ref) {}
+  static void _deleteAccount(BuildContext context, WidgetRef ref) {}
 }

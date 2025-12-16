@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SettingsTile extends StatelessWidget {
+class SettingsTile extends ConsumerWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
   final Widget? trailing;
-  final void Function(BuildContext context)? onTap;
+  final void Function(BuildContext context, WidgetRef ref)? onTap;
   final Color? iconColor;
 
   const SettingsTile({
@@ -19,7 +20,7 @@ class SettingsTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
       leading: Icon(icon, color: iconColor ?? Colors.black87),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -27,7 +28,7 @@ class SettingsTile extends StatelessWidget {
           ? Text(subtitle!, style: const TextStyle(fontSize: 13))
           : null,
       trailing: trailing ?? const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-      onTap: onTap != null ? () => onTap!(context) : null,
+      onTap: onTap != null ? () => onTap!(context, ref) : null,
     );
   }
 }

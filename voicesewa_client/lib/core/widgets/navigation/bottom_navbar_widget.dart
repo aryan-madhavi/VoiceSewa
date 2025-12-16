@@ -23,42 +23,29 @@ class BottomNavBar extends ConsumerWidget {
         final label = entry.value[1] as String;
         return label.isNotEmpty
             ? NavigationDestination(icon: icon, label: label)
-            : NavigationDestination(
-                icon: GestureDetector(
-                  onLongPress: () async {
-                    // Start listening on long press
-                    print('Long press detected - starting listening');
-                    await speechNotifier.startListening();
-                  },
-                  onLongPressEnd: (_) async {
-                    // Stop listening when long press ends
-                    print('Long press ended - stopping listening');
-                    await speechNotifier.stopListening();
-                  },
-                  child: Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: speechState.isListening 
-                          ? Colors.red 
-                          : Theme.of(context).primaryColor,
-                      shape: BoxShape.circle,
-                      boxShadow: speechState.isListening ? [
-                        BoxShadow(
-                          color: Colors.red.withOpacity(0.4),
-                          blurRadius: 8,
-                          spreadRadius: 2,
+            : FloatingActionButton(
+                tooltip: 'Speak',
+                backgroundColor: speechState.isListening
+                    ? Colors.red
+                    : Theme.of(context).colorScheme.primaryContainer,
+                onPressed: () async {
+                  if (!speechState.isInitialized) {
+                    // Show snackbar if speech is not initialized
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Speech recognition is not initialized yet.',
                         ),
-                      ] : null,
-                    ),
-                    child: Icon(
-                      speechState.isListening ? Icons.mic : Icons.mic_outlined,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+                  await speechNotifier.startListening();
+                },
+                child: Icon(
+                  speechState.isListening ? Icons.mic : Icons.mic_outlined,
                 ),
-                label: '',
               );
       }).toList(),
     );

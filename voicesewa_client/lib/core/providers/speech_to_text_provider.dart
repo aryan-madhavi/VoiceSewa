@@ -1,19 +1,23 @@
-import 'package:speech_to_text/speech_to_text.dart';
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 
-// Speech State Model
 class SpeechState {
   final bool isListening;
   final String recognizedText;
   final bool isInitialized;
   final String? error;
+  final String localeId; // current listening locale
+  final List<LocaleName> availableLocales;
 
-  SpeechState({
+  const SpeechState({
     this.isListening = false,
     this.recognizedText = '',
     this.isInitialized = false,
     this.error,
+    this.localeId = 'en_US',
+    this.availableLocales = const [],
   });
 
   SpeechState copyWith({
@@ -21,27 +25,39 @@ class SpeechState {
     String? recognizedText,
     bool? isInitialized,
     String? error,
+    String? localeId,
+    List<LocaleName>? availableLocales,
   }) {
     return SpeechState(
       isListening: isListening ?? this.isListening,
       recognizedText: recognizedText ?? this.recognizedText,
       isInitialized: isInitialized ?? this.isInitialized,
       error: error,
+      localeId: localeId ?? this.localeId,
+      availableLocales: availableLocales ?? this.availableLocales,
     );
   }
 }
 
-// Speech Notifier using modern Riverpod Notifier
 class SpeechNotifier extends Notifier<SpeechState> {
-  late SpeechToText _speechToText;
+  late final SpeechToText _speechToText;
+  Timer? _silenceTimer;
 
   @override
   SpeechState build() {
     _speechToText = SpeechToText();
     _initSpeech();
-    return SpeechState();
+
+    // Cleanup on dispose
+    ref.onDispose(() {
+      _silenceTimer?.cancel();
+      if (_speechToText.isListening) _speechToText.stop();
+    });
+
+    return const SpeechState();
   }
 
+  /// Initialize speech recognition and fetch available locales
   Future<void> _initSpeech() async {
     try {
       bool available = await _speechToText.initialize(
@@ -51,77 +67,105 @@ class SpeechNotifier extends Notifier<SpeechState> {
           }
         },
         onError: (error) {
-          state = state.copyWith(
-            error: error.errorMsg,
-            isListening: false,
-          );
+          state = state.copyWith(error: error.errorMsg, isListening: false);
         },
       );
-      state = state.copyWith(isInitialized: available);
+
+      if (!available) {
+        state = state.copyWith(
+          isInitialized: false,
+          error: 'Speech recognition not available',
+        );
+        return;
+      }
+
+      // Get all available locales
+      List<LocaleName> locales = await _speechToText.locales();
+
+      // Detect system default
+      LocaleName? systemLocale = await _speechToText.systemLocale();
+      String defaultLocale = systemLocale?.localeId ?? 'en_US';
+
+      state = state.copyWith(
+        isInitialized: true,
+        localeId: defaultLocale,
+        availableLocales: locales,
+      );
     } catch (e) {
       state = state.copyWith(
-        error: 'Failed to initialize speech recognition',
         isInitialized: false,
+        error: 'Failed to initialize speech recognition',
       );
     }
   }
 
-  Future<void> startListening({String localeId = 'en_US'}) async {
-    print('startListening called');
-    
+  /// Start listening with optional locale selection
+  Future<void> startListening({String? localeId}) async {
     if (!state.isInitialized) {
-      print('Not initialized, initializing...');
       await _initSpeech();
+      if (!state.isInitialized) return;
     }
 
-    if (!_speechToText.isAvailable) {
-      print('Speech recognition not available');
-      state = state.copyWith(error: 'Speech recognition not available');
-      return;
-    }
+    // Use selected locale or fallback to current state
+    final lang = localeId ?? state.localeId;
 
-    // Clear previous text
     state = state.copyWith(
       recognizedText: '',
-      error: null,
       isListening: true,
+      error: null,
+      localeId: lang,
     );
 
-    print('Starting to listen...');
     await _speechToText.listen(
       onResult: _onSpeechResult,
-      localeId: localeId,
+      localeId: lang,
       listenMode: ListenMode.confirmation,
-      pauseFor: Duration(seconds: 5),
       partialResults: true,
+      listenFor: const Duration(seconds: 30),
+      pauseFor: const Duration(seconds: 5),
       cancelOnError: true,
-      listenFor: Duration(seconds: 30),
     );
 
-    print('Listen started successfully');
+    _startSilenceTimer();
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
-    print('Speech result: ${result.recognizedWords}');
-    state = state.copyWith(
-      recognizedText: result.recognizedWords,
-    );
+    print('Speech result (${state.localeId}): ${result.recognizedWords}');
+    _resetSilenceTimer();
+    state = state.copyWith(recognizedText: result.recognizedWords);
+    if (result.finalResult) stopListening();
+  }
+
+  void _startSilenceTimer() {
+    _silenceTimer?.cancel();
+    _silenceTimer = Timer(const Duration(seconds: 5), () => stopListening());
+  }
+
+  void _resetSilenceTimer() {
+    _silenceTimer?.cancel();
+    _startSilenceTimer();
   }
 
   Future<void> stopListening() async {
-    await _speechToText.stop();
+    _silenceTimer?.cancel();
+    if (_speechToText.isListening) await _speechToText.stop();
     state = state.copyWith(isListening: false);
   }
 
   void clearText() {
-    state = state.copyWith(
-      recognizedText: '',
-      error: null,
-    );
+    state = state.copyWith(recognizedText: '', error: null);
   }
+
+  /// Change the current language dynamically
+  void setLocale(String newLocaleId) {
+    state = state.copyWith(localeId: newLocaleId);
+  }
+
+  /// Get all available locales
+  List<LocaleName> getAvailableLocales() => state.availableLocales;
 }
 
-// Provider using modern NotifierProvider
-final speechProvider = NotifierProvider<SpeechNotifier, SpeechState>(() {
-  return SpeechNotifier();
-});
+/// Riverpod Provider
+final speechProvider = NotifierProvider<SpeechNotifier, SpeechState>(
+  () => SpeechNotifier(),
+);
