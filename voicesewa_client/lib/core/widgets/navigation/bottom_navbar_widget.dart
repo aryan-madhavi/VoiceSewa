@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/constants/app_constants.dart';
 import 'package:voicesewa_client/core/providers/navbar_page_provider.dart';
 import 'package:voicesewa_client/core/providers/speech_to_text_provider.dart';
+import 'package:voicesewa_client/core/widgets/feedback/speech_overlay.dart';
 
 class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key});
@@ -42,12 +43,36 @@ class BottomNavBar extends ConsumerWidget {
                     return;
                   }
                   await speechNotifier.startListening();
+                  showSpeechOverlay(context);
                 },
                 child: Icon(
                   speechState.isListening ? Icons.mic : Icons.mic_outlined,
                 ),
               );
       }).toList(),
+    );
+  }
+
+  void showSpeechOverlay(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: 'Speech Overlay',
+      barrierColor: Colors.black.withOpacity(0.2),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (_, __, ___) => const SpeechOverlayModal(),
+      transitionBuilder: (_, animation, __, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, -0.1),
+              end: Offset.zero,
+            ).animate(animation),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }
