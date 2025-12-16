@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_client/core/routes/navigation_routes.dart';
+import 'package:voicesewa_client/app/routes.dart';
 
 enum Actions { again, myRequests, offers, help }
 

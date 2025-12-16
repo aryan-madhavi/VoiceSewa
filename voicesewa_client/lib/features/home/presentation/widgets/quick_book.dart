@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:voicesewa_client/shared/data/services_data.dart';
 import 'package:voicesewa_client/features/home/providers/quick_book_services_provider.dart';
-import 'package:voicesewa_client/core/routes/navigation_routes.dart';
+import 'package:voicesewa_client/app/routes.dart';
 
 class QuickBookCard extends StatelessWidget {
   const QuickBookCard({super.key});

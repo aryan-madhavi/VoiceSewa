@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/constants/app_constants.dart';
 import 'package:voicesewa_client/core/constants/string_constants.dart';
-import 'package:voicesewa_client/core/routes/navigation_routes.dart';
+import 'package:voicesewa_client/app/routes.dart';
 import 'package:voicesewa_client/core/widgets/navigation/bottom_navbar_widget.dart';
 import 'package:voicesewa_client/core/widgets/layout/appbar_widget.dart';
 import 'package:voicesewa_client/core/providers/navbar_page_provider.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:voicesewa_client/core/constants/helper_functions.dart';
-import 'package:voicesewa_client/core/routes/navigation_routes.dart';
+import 'package:voicesewa_client/app/routes.dart';
 import 'package:voicesewa_client/features/history/presentation/widgets/status_badge.dart';
 
 class RecentRequestCard extends StatelessWidget {
