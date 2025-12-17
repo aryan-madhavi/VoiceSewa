@@ -16,10 +16,10 @@ class AppConstants {
       StringConstants.searchTitle,
       RoutePaths.search,
     ],
-    NavTab.speak: [
+    NavTab.voicebot: [
       SizedBox.shrink(), 
-      '', 
-      SizedBox.shrink()
+      StringConstants.voiceBotTitle, 
+      RoutePaths.voicebot,
     ],
     NavTab.history: [
       Icon(Icons.history),

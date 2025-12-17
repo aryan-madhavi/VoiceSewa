@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/constants/app_constants.dart';
+import 'package:voicesewa_client/core/constants/string_constants.dart';
 import 'package:voicesewa_client/core/providers/navbar_page_provider.dart';
-import 'package:voicesewa_client/features/voicebot/providers/speech_to_text_provider.dart';
 import 'package:voicesewa_client/features/voicebot/presentation/widgets/speech_overlay.dart';
+import 'package:voicesewa_client/features/voicebot/providers/speech_to_text_provider.dart';
 
 class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key});
@@ -22,7 +23,7 @@ class BottomNavBar extends ConsumerWidget {
       destinations: AppConstants.pages.entries.map((entry) {
         final icon = entry.value[0] as Widget;
         final label = entry.value[1] as String;
-        return label.isNotEmpty
+        return label != StringConstants.voiceBotTitle
             ? NavigationDestination(icon: icon, label: label)
             : FloatingActionButton(
                 tooltip: 'Speak',
@@ -42,8 +43,15 @@ class BottomNavBar extends ConsumerWidget {
                     );
                     return;
                   }
+
+                  // Navigate to VoicebotPage first
+                  tabNotifier.setTab(NavTab.voicebot);
+                  
+                  // Start listening
                   await speechNotifier.startListening();
-                  showSpeechOverlay(context);
+                  
+                  // Show overlay in the new context
+                  showSpeechOverlay(context); 
                 },
                 child: Icon(
                   speechState.isListening ? Icons.mic : Icons.mic_outlined,

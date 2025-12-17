@@ -6,13 +6,13 @@ class SpeechOverlayModal extends ConsumerStatefulWidget {
   const SpeechOverlayModal({super.key});
 
   @override
-  ConsumerState<SpeechOverlayModal> createState() =>
-      _SpeechOverlayModalState();
+  ConsumerState<SpeechOverlayModal> createState() => _SpeechOverlayModalState();
 }
 
 class _SpeechOverlayModalState extends ConsumerState<SpeechOverlayModal>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _pulseController;
+  late AnimationController _closeCountdownController;
 
   @override
   void initState() {
@@ -24,11 +24,25 @@ class _SpeechOverlayModalState extends ConsumerState<SpeechOverlayModal>
       lowerBound: 0.8,
       upperBound: 1.2,
     );
+
+    _closeCountdownController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+      value: 1.0,
+    );
+
+    _closeCountdownController.addStatusListener((status) {
+      if (status == AnimationStatus.dismissed) {
+        ref.read(speechProvider.notifier).clearText();
+        if (mounted) Navigator.of(context).pop();
+      }
+    });
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
+    _closeCountdownController.dispose();
     super.dispose();
   }
 
@@ -39,9 +53,20 @@ class _SpeechOverlayModalState extends ConsumerState<SpeechOverlayModal>
     // Start / stop mic pulse
     if (speechState.isListening) {
       _pulseController.repeat(reverse: true);
+      _closeCountdownController.stop();
+      _closeCountdownController.value = 1.0;
     } else {
       _pulseController.stop();
       _pulseController.value = 1.0;
+    }
+
+    // Start countdown when done
+    if (!speechState.isListening &&
+        (speechState.recognizedText.isNotEmpty || speechState.error != null)) {
+      if (!_closeCountdownController.isAnimating &&
+          _closeCountdownController.value == 1.0) {
+        _closeCountdownController.reverse();
+      }
     }
 
     return SafeArea(
@@ -64,15 +89,14 @@ class _SpeechOverlayModalState extends ConsumerState<SpeechOverlayModal>
                 BoxShadow(
                   blurRadius: 15,
                   offset: const Offset(0, 4),
-                  color: (speechState.isListening
-                          ? Colors.red
-                          : Colors.blue)
+                  color: (speechState.isListening ? Colors.red : Colors.blue)
                       .withOpacity(0.4),
                 ),
               ],
             ),
             child: _OverlayContent(
               pulseController: _pulseController,
+              countdownController: _closeCountdownController,
             ),
           ),
         ),
@@ -83,9 +107,11 @@ class _SpeechOverlayModalState extends ConsumerState<SpeechOverlayModal>
 
 class _OverlayContent extends ConsumerWidget {
   final AnimationController pulseController;
+  final AnimationController countdownController;
 
   const _OverlayContent({
     required this.pulseController,
+    required this.countdownController,
   });
 
   @override
@@ -99,22 +125,8 @@ class _OverlayContent extends ConsumerWidget {
         /// Header
         Row(
           children: [
-            /// Pulsing mic
-            ScaleTransition(
-              scale: pulseController,
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.mic,
-                  color: Colors.white,
-                  size: 26,
-                ),
-              ),
-            ),
+            /// Pulsing mic or Countdown
+            _buildLeadingIcon(speechState),
             const SizedBox(width: 12),
 
             /// Title
@@ -123,9 +135,7 @@ class _OverlayContent extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    speechState.isListening
-                        ? 'Listening'
-                        : 'Voice Recognition',
+                    speechState.isListening ? 'Listening' : 'Voice Recognition',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -135,10 +145,7 @@ class _OverlayContent extends ConsumerWidget {
                   if (speechState.isListening)
                     const Text(
                       'Speak now - Release to stop',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                 ],
               ),
@@ -146,10 +153,10 @@ class _OverlayContent extends ConsumerWidget {
 
             /// Close
             if (!speechState.isListening &&
-                speechState.recognizedText.isNotEmpty)
+                (speechState.recognizedText.isNotEmpty ||
+                    speechState.error != null))
               IconButton(
-                icon: const Icon(Icons.close,
-                    color: Colors.white, size: 20),
+                icon: const Icon(Icons.close, color: Colors.white, size: 20),
                 onPressed: () {
                   ref.read(speechProvider.notifier).clearText();
                   Navigator.of(context).pop();
@@ -173,8 +180,8 @@ class _OverlayContent extends ConsumerWidget {
             child: Text(
               speechState.recognizedText.isEmpty
                   ? (speechState.isListening
-                      ? 'Start speaking...'
-                      : 'No text recognized')
+                        ? 'Start speaking...'
+                        : 'No text recognized')
                   : speechState.recognizedText,
               key: ValueKey(speechState.recognizedText),
               style: TextStyle(
@@ -189,17 +196,75 @@ class _OverlayContent extends ConsumerWidget {
         ),
 
         /// Error
-        if (speechState.error != null) ...[
+        /* if (speechState.error != null) ...[
           const SizedBox(height: 8),
           Text(
             speechState.error!,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: Colors.white, fontSize: 12),
           ),
-        ],
+        ], */
       ],
     );
+  }
+
+  Widget _buildLeadingIcon(SpeechState speechState) {
+    // While listening
+    if (speechState.isListening) {
+      return ScaleTransition(
+        scale: pulseController,
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.25),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.mic, color: Colors.white, size: 26),
+        ),
+      );
+    }
+
+    // Countdown ring after result / error
+    if (speechState.recognizedText.isNotEmpty || speechState.error != null) {
+      return SizedBox(
+        width: 48,
+        height: 48,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Circular progress ring
+            AnimatedBuilder(
+              animation: countdownController,
+              builder: (_, __) {
+                return CircularProgressIndicator(
+                  value: countdownController.value,
+                  strokeWidth: 4,
+                  backgroundColor: Colors.white24,
+                  valueColor: const AlwaysStoppedAnimation(Colors.white),
+                );
+              },
+            ),
+
+            // Countdown number
+            AnimatedBuilder(
+              animation: countdownController,
+              builder: (_, __) {
+                final secondsLeft = (countdownController.value * 5).ceil();
+                return Text(
+                  '$secondsLeft',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Fallback (should rarely happen)
+    return const SizedBox(width: 48, height: 48);
   }
 }

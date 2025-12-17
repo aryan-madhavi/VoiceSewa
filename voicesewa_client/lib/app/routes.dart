@@ -5,12 +5,13 @@ import 'package:voicesewa_client/features/home/presentation/home_page.dart';
 import 'package:voicesewa_client/features/search/presentation/workers_page.dart';
 import 'package:voicesewa_client/features/settings/presentation/settings_page.dart';
 import 'package:voicesewa_client/features/settings/presentation/support_page.dart';
+import 'package:voicesewa_client/features/voicebot/presentation/voicebot_page.dart';
 
 /// Centralized route names for the entire app
 class RoutePaths {
   static const String home = '/home';
   static const String search = '/search';
-  static const String speak = '/speak';
+  static const String voicebot = '/voicebot';
   static const String history = '/history';
   static const String book = '/book';
   static const String track = 'track';
@@ -29,6 +30,7 @@ class AppRoutes {
     RoutePaths.history: (context) => const RequestPage(),
     RoutePaths.settings: (context) => const SettingsPage(),
     RoutePaths.support: (context) => const SupportPage(),
+    RoutePaths.voicebot: (context) => const VoicebotPage(),
     RoutePaths.comingSoon: (context) => const ComingSoonPage(),
   };
 }

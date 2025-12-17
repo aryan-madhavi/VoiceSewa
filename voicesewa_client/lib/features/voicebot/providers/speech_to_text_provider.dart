@@ -119,11 +119,13 @@ class SpeechNotifier extends Notifier<SpeechState> {
     await _speechToText.listen(
       onResult: _onSpeechResult,
       localeId: lang,
-      listenMode: ListenMode.confirmation,
-      partialResults: true,
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 5),
-      cancelOnError: true,
+      listenOptions: SpeechListenOptions(
+        listenMode: ListenMode.dictation,
+        cancelOnError: true,
+        partialResults: true,
+      ),
     );
 
     _startSilenceTimer();

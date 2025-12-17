@@ -15,6 +15,7 @@ class StringConstants {
   static const authTitle = "Login / Sign Up";
   static const homeTitle = "Home";
   static const searchTitle = "Search";
+  static const voiceBotTitle = "VoiceBot";
   static const historyTitle = "History";
   static const profileTitle = "Profile";
   

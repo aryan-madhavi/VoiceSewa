@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/legacy.dart';
 
 /// Define the tabs
-enum NavTab { home, search, speak, history, settings }
+enum NavTab { home, search, voicebot, history, settings }
 
 /// StateNotifier for managing the currently selected bottom nav tab
 class NavTabNotifier extends StateNotifier<NavTab> {
