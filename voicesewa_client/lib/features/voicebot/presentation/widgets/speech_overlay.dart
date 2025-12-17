@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:voicesewa_client/core/providers/speech_to_text_provider.dart';
+import 'package:voicesewa_client/features/voicebot/providers/speech_to_text_provider.dart';
 
 class SpeechOverlayModal extends ConsumerStatefulWidget {
   const SpeechOverlayModal({super.key});

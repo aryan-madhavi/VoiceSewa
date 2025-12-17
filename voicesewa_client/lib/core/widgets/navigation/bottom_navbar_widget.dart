@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/constants/app_constants.dart';
 import 'package:voicesewa_client/core/providers/navbar_page_provider.dart';
-import 'package:voicesewa_client/core/providers/speech_to_text_provider.dart';
-import 'package:voicesewa_client/core/widgets/feedback/speech_overlay.dart';
+import 'package:voicesewa_client/features/voicebot/providers/speech_to_text_provider.dart';
+import 'package:voicesewa_client/features/voicebot/presentation/widgets/speech_overlay.dart';
 
 class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key});
