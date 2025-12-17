@@ -43,9 +43,6 @@ class BottomNavBar extends ConsumerWidget {
                     );
                     return;
                   }
-
-                  // Navigate to VoicebotPage first
-                  tabNotifier.setTab(NavTab.voicebot);
                   
                   // Start listening
                   await speechNotifier.startListening();

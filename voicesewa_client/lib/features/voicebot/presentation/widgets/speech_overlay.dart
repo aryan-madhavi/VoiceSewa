@@ -144,7 +144,7 @@ class _OverlayContent extends ConsumerWidget {
                   ),
                   if (speechState.isListening)
                     const Text(
-                      'Speak now - Release to stop',
+                      'Speak now',
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                 ],
