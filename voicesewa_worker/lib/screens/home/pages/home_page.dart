@@ -7,6 +7,7 @@ import 'package:voicesewa_worker/screens/home/cards/rating.dart';
 import '../../../constants/core/color_constants.dart';
 import '../../../constants/core/static_data.dart';
 import '../../../constants/core/string_constants.dart';
+import '../../../extensions/context_extensions.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -63,9 +64,9 @@ class _HomePageState extends State<HomePage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
-                                      "Find Work",
-                                      style: TextStyle(
+                                    Text(
+                                      context.loc.findWorkTitle,
+                                      style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                         color: ColorConstants.textDark,
@@ -83,7 +84,7 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         const SizedBox(width: 6),
                                         Text(
-                                          flag ? "Online & Visible" : "You are offline",
+                                          flag ? context.loc.onlineAndVisible : context.loc.youAreOffline,
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: flag ? Colors.green[700] : Colors.grey,
@@ -108,10 +109,10 @@ class _HomePageState extends State<HomePage> {
                                       });
                                       if (value) {
                                         ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text("You are now receiving job notifications!"),
+                                          SnackBar(
+                                            content: Text(context.loc.youAreNowReceivingJobNotifications),
                                             backgroundColor: ColorConstants.primaryBlue,
-                                            duration: Duration(seconds: 2),
+                                            duration: const Duration(seconds: 2),
                                           ),
                                         );
                                       }

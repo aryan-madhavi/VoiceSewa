@@ -1,0 +1,34 @@
+{
+  "appName": "VoiceSewa Partner",
+  "welcomeMessage": "Welcome to VoiceSewa Partner!",
+
+  "loginPrompt": "Please log in to continue.",
+  "signUpPrompt": "Don't have an account? Sign up now.",
+  "errorMessage": "An error has occurred. Please try again.",
+  "loadingMessage": "Loading, please wait...",
+  "logoutConfirmation": "Are you sure you want to log out?",
+
+  "authTitle": "Login / Sign Up",
+  "homeTitle": "Home",
+  "jobsTitle": "My Jobs",
+  "earningsTitle": "Earnings",
+  "profileTitle": "Profile",
+
+  "helpCTA": "Get Help",
+
+  "chatTitle": "Chat",
+  "settingsTitle": "Settings",
+
+  "termsAndConditions": "Terms and Conditions",
+  "privacyPolicy": "Privacy Policy",
+  "contactUs": "Contact Us",
+  "feedbackPrompt": "We value your feedback!",
+  "updateAvailable": "A new update is available.",
+  "noInternetConnection": "No internet connection.",
+
+  "findWorkTitle" : "Find Work",
+  "onlineAndVisible" : "Online & Visible",
+  "youAreOffline" : "You are offline",
+  "youAreNowReceivingJobNotifications": "You are now receiving job notifications!"
+
+}

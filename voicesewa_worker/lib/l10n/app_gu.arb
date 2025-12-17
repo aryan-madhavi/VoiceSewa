@@ -1,0 +1,33 @@
+{
+  "appName": "વોઈસ સેવા પાર્ટનર",
+  "welcomeMessage": "વોઈસ સેવા પાર્ટનરમાં આપનું સ્વાગત છે!",
+
+  "loginPrompt": "કૃપા કરીને આગળ વધવા માટે લોગ ઇન કરો.",
+  "signUpPrompt": "ખાતું નથી? અત્યારે સાઇન અપ કરો.",
+  "errorMessage": "એક ભૂલ આવી છે. કૃપા કરીને ફરી પ્રયાસ કરો.",
+  "loadingMessage": "લોડ થઈ રહ્યું છે, કૃપા કરીને રાહ જુઓ...",
+  "logoutConfirmation": "શું તમે ખરેખર લોગ આઉટ કરવા માંગો છો?",
+
+  "authTitle": "લોગ ઇન / સાઇન અપ",
+  "homeTitle": "હોમ",
+  "jobsTitle": "મારી નોકરીઓ",
+  "earningsTitle": "કમાણી",
+  "profileTitle": "પ્રોફાઇલ",
+
+  "helpCTA": "મદદ મેળવો",
+
+  "chatTitle": "ચેટ",
+  "settingsTitle": "સેટિંગ્સ",
+
+  "termsAndConditions": "નિયમો અને શરતો",
+  "privacyPolicy": "ગોપનીયતા નીતિ",
+  "contactUs": "અમારો સંપર્ક કરો",
+  "feedbackPrompt": "અમને તમારા પ્રતિસાદની કદર છે!",
+  "updateAvailable": "એક નવું અપડેટ ઉપલબ્ધ છે.",
+  "noInternetConnection": "ઇન્ટરનેટ કનેક્શન નથી.",
+
+  "findWorkTitle": "કામ શોધો",
+  "onlineAndVisible": "ઓનલાઇન અને દૃશ્યમાન",
+  "youAreOffline": "તમે ઓફલાઇન છો",
+  "youAreNowReceivingJobNotifications": "તમે હવે નોકરીની સૂચનાઓ પ્રાપ્ત કરી રહ્યા છો!"
+}

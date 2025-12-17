@@ -16,7 +16,7 @@ class BottomNavBar extends ConsumerWidget {
       onDestinationSelected: (index) {
         tabNotifier.setTab(NavTab.values[index]);
       },
-      destinations: AppConstants.pages.entries.map((entry) {
+      destinations: AppConstants.getPages(context).entries.map((entry) {
         final icon = entry.value[0] as Widget;
         final label = entry.value[1] as String;
         return (label != '')

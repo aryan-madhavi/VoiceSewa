@@ -1,0 +1,33 @@
+{
+  "appName": "वॉयस सेवा पार्टनर",
+  "welcomeMessage": "वॉयस सेवा पार्टनर में आपका स्वागत है!",
+
+  "loginPrompt": "कृपया जारी रखने के लिए लॉग इन करें।",
+  "signUpPrompt": "क्या आपके पास खाता नहीं है? अभी साइन अप करें।",
+  "errorMessage": "एक त्रुटि हुई है। कृपया पुनः प्रयास करें।",
+  "loadingMessage": "लोड हो रहा है, कृपया प्रतीक्षा करें...",
+  "logoutConfirmation": "क्या आप वाकई लॉग आउट करना चाहते हैं?",
+
+  "authTitle": "लॉगिन / साइन अप",
+  "homeTitle": "होम",
+  "jobsTitle": "मेरी नौकरियां",
+  "earningsTitle": "कमाई",
+  "profileTitle": "प्रोफ़ाइल",
+
+  "helpCTA": "मदद प्राप्त करें",
+
+  "chatTitle": "चैट",
+  "settingsTitle": "सेटिंग्स",
+
+  "termsAndConditions": "नियम और शर्तें",
+  "privacyPolicy": "गोपनीयता नीति",
+  "contactUs": "हमसे संपर्क करें",
+  "feedbackPrompt": "हम आपकी प्रतिक्रिया का महत्व देते हैं!",
+  "updateAvailable": "एक नया अपडेट उपलब्ध है।",
+  "noInternetConnection": "कोई इंटरनेट कनेक्शन नहीं है।",
+
+  "findWorkTitle": "काम खोजें",
+  "onlineAndVisible": "ऑनलाइन और दृश्यमान",
+  "youAreOffline": "आप ऑफ़लाइन हैं",
+  "youAreNowReceivingJobNotifications": "अब आप नौकरी की सूचनाएं प्राप्त कर रहे हैं!"
+}
