@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../extensions/context_extensions.dart';
+
 class ComingSoon extends StatelessWidget {
   const ComingSoon({super.key});
 
@@ -12,7 +14,7 @@ class ComingSoon extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              "Coming Soon ......", 
+              "${context.loc.comingSoon} ......",// "Coming Soon ......",
               style: TextStyle(fontSize: 20)
             ),
           ],

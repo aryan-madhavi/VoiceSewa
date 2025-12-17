@@ -4,6 +4,8 @@ import 'package:voicesewa_worker/screens/earnings/cards/monthly_goal.dart';
 import 'package:voicesewa_worker/screens/earnings/cards/transactionhistory.dart';
 import 'package:voicesewa_worker/screens/earnings/cards/withdraw.dart';
 
+import '../../../extensions/context_extensions.dart';
+
 class EarningsPage extends StatefulWidget {
   const EarningsPage({super.key});
 
@@ -34,8 +36,8 @@ class _EarningsPageState extends State<EarningsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  const Text(
-                    "Recent Transactions",
+                  Text(
+                    context.loc.recentTransactions, // "Recent Transactions",
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -45,7 +47,7 @@ class _EarningsPageState extends State<EarningsPage> {
                   TextButton(
                       onPressed: (){},
                       child: Text(
-                          "See All"
+                        context.loc.seeAll, // "See All"
                       ),
                   ),
                 ],

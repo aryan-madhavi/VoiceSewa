@@ -5,6 +5,7 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 
 import '../../../constants/core/static_data.dart';
 import '../../../constants/core/string_constants.dart';
+import '../../../extensions/context_extensions.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -28,8 +29,8 @@ class _DashboardState extends State<Dashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-                "Yearly Earnings",
+            Text(
+              context.loc.yearlyEarnings, // "Yearly Earnings",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -38,7 +39,7 @@ class _DashboardState extends State<Dashboard> {
             ),
             const SizedBox(height: 24,),
             Text(
-              "Growth over the last 5 years",
+              context.loc.growthOverTheLastFiveYears, // "Growth over the last 5 years",
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],

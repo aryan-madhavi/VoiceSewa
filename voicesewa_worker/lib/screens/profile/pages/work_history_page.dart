@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../extensions/context_extensions.dart';
 
 class WorkHistoryPage extends StatelessWidget {
   const WorkHistoryPage({super.key});
@@ -8,8 +9,8 @@ class WorkHistoryPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-            "Work History",
+        title: Text(
+            context.loc.workHistory, // "Work History",
             style: TextStyle(color: Colors.black)
         ),
         backgroundColor: Colors.transparent,

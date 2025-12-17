@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:voicesewa_worker/constants/core/color_constants.dart';
 import 'package:voicesewa_worker/constants/core/static_data.dart';
 
+import '../../../extensions/context_extensions.dart';
+
 class MyJobCard extends StatelessWidget {
   final Job job;
 
@@ -14,13 +16,13 @@ class MyJobCard extends StatelessWidget {
     switch (job.status){
       case JobStatus.ongoing:
         statusColor = ColorConstants.primaryBlue;
-        statusText = "Ongoing";
+        statusText = context.loc.ongoing;  //"Ongoing";
       case JobStatus.pending:
         statusColor = Colors.orange;
-        statusText = "Pending";
+        statusText = context.loc.pending;//"Pending";
       case JobStatus.completed:
         statusColor = Colors.green;
-        statusText = "Completed";
+        statusText = context.loc.completed; //"Completed";
       break;
     }
 
@@ -70,7 +72,7 @@ class MyJobCard extends StatelessWidget {
                 const SizedBox(height: 4,),
 
                 Text(
-                  "Client: ${job.clientName}",
+                  "${context.loc.client}: ${job.clientName}",
                   style: const TextStyle(
                     color: ColorConstants.textGrey,
                     fontSize: 13,
@@ -99,7 +101,9 @@ class MyJobCard extends StatelessWidget {
                     width: double.infinity,
                     child: OutlinedButton(
                         onPressed: (){},
-                        child: const Text("View Receipt"),
+                        child: Text(
+                          context.loc.viewReceipt, // "View Receipt"
+                        ),
                     ),
                   )
                 else ...[
@@ -109,7 +113,9 @@ class MyJobCard extends StatelessWidget {
                           child: OutlinedButton.icon(
                             icon: const Icon(Icons.call, size: 18,),
                             onPressed: (){},
-                            label: const Text("Call"),
+                            label: Text(
+                              context.loc.call, // "Call"
+                            ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: ColorConstants.textDark,
                               padding: const EdgeInsets.symmetric(vertical: 12,),
@@ -133,8 +139,8 @@ class MyJobCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: const Text(
-                              "Mark As Completed",
+                          child: Text(
+                            context.loc.markAsCompleted, // "Mark As Completed",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),

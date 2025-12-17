@@ -5,6 +5,8 @@ import 'package:voicesewa_worker/screens/profile/pages/settings_page.dart';
 import 'package:voicesewa_worker/screens/profile/pages/support_and_help_page.dart';
 import 'package:voicesewa_worker/screens/profile/pages/work_history_page.dart';
 
+import '../../../extensions/context_extensions.dart';
+
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -24,7 +26,7 @@ class _ProfileState extends State<ProfilePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          "My Profile",
+          context.loc.myProfile, // "My Profile",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -44,11 +46,11 @@ class _ProfileState extends State<ProfilePage> {
             const SizedBox(height: 30),
             _buildStatsRow(),
             const SizedBox(height: 30),
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                "General",
-                style: TextStyle(
+                context.loc.general, // "General",
+                style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.grey
@@ -59,8 +61,8 @@ class _ProfileState extends State<ProfilePage> {
 
             _buildMenuCard(
               icon: Icons.settings,
-              title: "Settings",
-              subtitle: "Privacy, notifications, language",
+              title: context.loc.settings,  //"Settings",
+              subtitle: context.loc.privacyNotificationsLanguage, //"Privacy, notifications, language",
               onTap: (){
                 Navigator.push(
                     context,
@@ -70,8 +72,8 @@ class _ProfileState extends State<ProfilePage> {
             ),
             _buildMenuCard(
               icon: Icons.history,
-              title: "Work History",
-              subtitle: "View past jobs and earnings",
+              title: context.loc.workHistory,  //"Work History",
+              subtitle: context.loc.viewPastJobsAndEarnings, //"View past jobs and earnings",
               onTap: (){
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => const WorkHistoryPage())
@@ -80,8 +82,8 @@ class _ProfileState extends State<ProfilePage> {
             ),
             _buildMenuCard(
               icon: Icons.account_balance_wallet,
-              title: "Bank Details",
-              subtitle: "Manage payouts and accounts",
+              title: context.loc.bankDetails,  //"Bank Details",
+              subtitle: context.loc.managePayoutsAndAccounts, //"Manage payouts and accounts",
               onTap:  (){
                 Navigator.push(
                     context,
@@ -91,8 +93,8 @@ class _ProfileState extends State<ProfilePage> {
             ),
             _buildMenuCard(
               icon: Icons.help_outline,
-              title: "Support & Help",
-              subtitle: "FAQs, Contact us",
+              title: context.loc.helpAndSupport,  //"Support & Help",
+              subtitle: context.loc.fAQsContactUs, //"FAQs, Contact us",
               onTap: (){
                 Navigator.push(
                     context,
@@ -117,7 +119,7 @@ class _ProfileState extends State<ProfilePage> {
                   ),
                 ),
                 child: Text(
-                  "Log Out",
+                  context.loc.logOut, // "Log Out",
                   style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                 ),
               ),

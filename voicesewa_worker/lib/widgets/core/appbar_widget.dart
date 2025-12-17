@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_worker/providers/language_provider.dart';
 
+import '../../extensions/context_extensions.dart';
+
 class AppBarWidget extends ConsumerWidget implements PreferredSizeWidget {
   final String title;
   const AppBarWidget({super.key, required this.title});
@@ -14,14 +16,16 @@ class AppBarWidget extends ConsumerWidget implements PreferredSizeWidget {
       actions: [
         PopupMenuButton<String>(
           icon: const Icon(Icons.translate),
-          tooltip: 'Select Language',
+          tooltip: context.loc.selectLanguage,  //'Select Language',
           onSelected: (String languageCode) {
             ref.read(localeProvider.notifier).changeLanguage(languageCode);
           },
           itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'en',
-                child: Text("🇺🇸 English"),
+                child: Text(
+                    "🇺🇸 ${context.loc.english}" //"🇺🇸 English"
+                ),
             ),
             const PopupMenuItem<String>(
               value: 'hi',  

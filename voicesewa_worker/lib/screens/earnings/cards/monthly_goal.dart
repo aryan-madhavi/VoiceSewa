@@ -3,6 +3,7 @@ import 'package:voicesewa_worker/constants/core/static_data.dart';
 import 'package:voicesewa_worker/constants/core/string_constants.dart';
 
 import '../../../constants/core/color_constants.dart';
+import '../../../extensions/context_extensions.dart';
 
 class MonthlyGoal extends StatefulWidget {
   const MonthlyGoal({super.key});
@@ -28,8 +29,8 @@ class _MonthlyGoalState extends State<MonthlyGoal> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Monthly Goal",
+                Text(
+                  context.loc.monthlyGoal, // "Monthly Goal",
                   style: TextStyle(
                     color: ColorConstants.textDark,
                     fontSize: 16,
@@ -87,7 +88,7 @@ class _MonthlyGoalState extends State<MonthlyGoal> {
                 const SizedBox(width: 4,),
 
                 Text(
-                  "You're ${(progress * 100).toInt()}% there! Keep it up!",
+                  "${context.loc.youRe} ${(progress * 100).toInt()}% ${context.loc.thereKeepItUp}",
                   style: TextStyle(
                     color: ColorConstants.textDark,
                     fontSize: 12,

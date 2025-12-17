@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../extensions/context_extensions.dart';
+
 class BankDetailsPage extends StatelessWidget {
   const BankDetailsPage({super.key});
 
@@ -40,9 +42,9 @@ class BankDetailsPage extends StatelessWidget {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
-                      "Primary Account",
+                      context.loc.primaryAccount,// "Primary Account",
                       style: TextStyle(
                           color: Colors.white70,
                           fontSize: 12
@@ -85,7 +87,7 @@ class BankDetailsPage extends StatelessWidget {
                 onPressed: () {},
                 icon: const Icon(Icons.add),
                 label: Text(
-                    "Add New Bank Account"
+                  context.loc.addNewBankAccount,// "Add New Bank Account"
                 ),
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

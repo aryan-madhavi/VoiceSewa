@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../extensions/context_extensions.dart';
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -17,7 +19,7 @@ class _SettingsPageState extends State<SettingsPage> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(
-            "Settings",
+            context.loc.settings, // "Settings",
             style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -27,40 +29,40 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(20),
         children: [
           Text(
-              "Preferences",
+              context.loc.preferences, // "Preferences",
               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
           const SizedBox(height: 10),
           _buildSwitchTile(
-              "Push Notifications",
-              "Receive job alerts",
+              context.loc.pushNotifications, // "Push Notifications",
+              context.loc.receiveJobAlerts, // "Receive job alerts",
               _notificationsEnabled, (val) {
             setState(() => _notificationsEnabled = val);
           }),
           _buildSwitchTile(
-              "Dark Mode",
-              "Reduce eye strain",
+              context.loc.darkMode, // "Dark Mode",
+              context.loc.reduceEyeStrain, // "Reduce eye strain",
               _darkMode, (val) {
             setState(() => _darkMode = val);
           }),
 
           const SizedBox(height: 30),
           Text(
-              "Account",
+              context.loc.account, // "Account",
               style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
           const SizedBox(height: 10),
           _buildActionTile(
-              "Change Password",
+              context.loc.changePassword, // "Change Password",
               Icons.lock_outline, () {}),
           _buildActionTile(
-              "Language",
+              context.loc.language, // "Language",
               Icons.language, () {}),
           _buildActionTile(
-              "Privacy Policy",
+              context.loc.privacyPolicy, // "Privacy Policy",
               Icons.privacy_tip_outlined, () {}),
 
           const SizedBox(height: 30),
           _buildActionTile(
-              "Delete Account",
+              context.loc.deleteAccount, // "Delete Account",
               Icons.delete_outline, () {}, isDestructive: true),
         ],
       ),

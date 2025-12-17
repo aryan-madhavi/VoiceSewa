@@ -4,6 +4,7 @@ import 'package:voicesewa_worker/constants/core/app_constants.dart';
 import '../../../constants/core/color_constants.dart';
 import '../../../constants/core/static_data.dart';
 import '../../../constants/core/string_constants.dart';
+import '../../../extensions/context_extensions.dart';
 
 class Rating extends StatefulWidget {
   const Rating({super.key});
@@ -27,8 +28,8 @@ class _RatingState extends State<Rating> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Text(
-              "Your Current Rating",
+            Text(
+              context.loc.yourCurrentRating,// "Your Current Rating",
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -71,8 +72,8 @@ class _RatingState extends State<Rating> {
                         color: Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: const Text(
-                        "Excellent Job!",
+                      child: Text(
+                        context.loc.excellentJob, // "Excellent Job!",
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,

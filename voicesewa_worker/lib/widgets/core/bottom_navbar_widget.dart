@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_worker/constants/core/app_constants.dart';
 import 'package:voicesewa_worker/providers/navbar_page_provider.dart';
 
+import '../../extensions/context_extensions.dart';
+
 class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key});
 
@@ -23,7 +25,7 @@ class BottomNavBar extends ConsumerWidget {
             ? NavigationDestination(icon: icon, label: label)
             : FloatingActionButton(
                 onPressed: () {},
-                tooltip: 'Speak',
+                tooltip: context.loc.speak, //'Speak',
                 child: const Icon(Icons.mic),
               );
       }).toList(),

@@ -3,6 +3,8 @@ import 'package:voicesewa_worker/constants/core/color_constants.dart';
 import 'package:voicesewa_worker/constants/core/static_data.dart';
 import 'package:voicesewa_worker/constants/core/string_constants.dart';
 
+import '../../../extensions/context_extensions.dart';
+
 class Withdraw extends StatefulWidget {
   const Withdraw({super.key});
 
@@ -38,7 +40,7 @@ class _WithdrawState extends State<Withdraw> {
             child: Column(
               children: [
                 Text(
-                  "Available for Withdrawal",
+                  context.loc.availableForWithdrawal, // "Available for Withdrawal",
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
@@ -70,8 +72,8 @@ class _WithdrawState extends State<Withdraw> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 12,),
                     ),
-                      child: const Text(
-                        "Withdraw Money",
+                      child: Text(
+                        context.loc.withdrawMoney, // "Withdraw Money",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                         ),
@@ -82,12 +84,12 @@ class _WithdrawState extends State<Withdraw> {
                 Row(
                   children: [
                     _buildStatCard(
-                        "Pending",
+                        context.loc.pending, // "Pending",
                         "${StringConstants.rupee}${(pendingAmount).toInt()}",
                         Colors.orange),
                     const SizedBox(width: 12,),
                     _buildStatCard(
-                        "Total Earned",
+                        context.loc.totalEarned, // "Total Earned",
                         "${StringConstants.rupee}${(totalAmountEarned).toInt()}",
                         Colors.green)
                   ],

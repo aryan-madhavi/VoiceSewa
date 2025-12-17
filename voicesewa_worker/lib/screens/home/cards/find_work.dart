@@ -4,6 +4,7 @@ import 'package:voicesewa_worker/constants/core/string_constants.dart';
 
 import '../../../constants/core/color_constants.dart';
 import '../../../constants/core/static_data.dart';
+import '../../../extensions/context_extensions.dart';
 
 class FindWork extends StatefulWidget {
   const FindWork({super.key});
@@ -154,7 +155,7 @@ class FindWorkCard extends StatelessWidget {
                             elevation: 0,
                           ),
                           child: Text(
-                              "Apply Now",
+                              context.loc.applyNow,// "Apply Now",
                               style: TextStyle(
                                   fontWeight: FontWeight.bold
                               )
@@ -172,7 +173,7 @@ class FindWorkCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           child: Text(
-                              "View Details"
+                              context.loc.viewDetails,  // "View Details"
                           ),
                         ),
                       ),
