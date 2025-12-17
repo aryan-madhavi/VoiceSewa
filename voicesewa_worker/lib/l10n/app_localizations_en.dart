@@ -83,4 +83,163 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get youAreNowReceivingJobNotifications =>
       'You are now receiving job notifications!';
+
+  @override
+  String get yearlyEarnings => 'Yearly Earnings';
+
+  @override
+  String get growthOverTheLastFiveYears => 'Growth over the last 5 years';
+
+  @override
+  String get applyNow => 'Apply Now';
+
+  @override
+  String get viewDetails => 'View Details';
+
+  @override
+  String get yourCurrentRating => 'Your Current Rating';
+
+  @override
+  String get excellentJob => 'Excellent Job!';
+
+  @override
+  String get activeJobs => 'Active Jobs';
+
+  @override
+  String get recentHistory => 'Recent History';
+
+  @override
+  String get ongoing => 'Ongoing';
+
+  @override
+  String get pending => 'Pending';
+
+  @override
+  String get completed => 'Completed';
+
+  @override
+  String get client => 'Client';
+
+  @override
+  String get viewReceipt => 'View Receipt';
+
+  @override
+  String get call => 'Call';
+
+  @override
+  String get markAsCompleted => 'Mark As Completed';
+
+  @override
+  String get recentTransactions => 'Recent Transactions';
+
+  @override
+  String get seeAll => 'See All';
+
+  @override
+  String get monthlyGoal => 'Monthly Goal';
+
+  @override
+  String get youRe => 'You\'re';
+
+  @override
+  String get thereKeepItUp => 'there! Keep it up!';
+
+  @override
+  String get availableForWithdrawal => 'Available for Withdrawal';
+
+  @override
+  String get withdrawMoney => 'Withdraw Money';
+
+  @override
+  String get totalEarned => 'Total Earned';
+
+  @override
+  String get workHistory => 'Work History';
+
+  @override
+  String get helpAndSupport => 'Help & Support';
+
+  @override
+  String get frequentlyAskedQuestions => 'Frequently Asked Questions';
+
+  @override
+  String get callSupport => 'Call Support';
+
+  @override
+  String get emailSupport => 'Email Support';
+
+  @override
+  String get helpADRATEVoicesewaDOTCom => 'help@voicesewa.com';
+
+  @override
+  String get settings => 'Settings';
+
+  @override
+  String get preferences => 'Preferences';
+
+  @override
+  String get account => 'Account';
+
+  @override
+  String get pushNotifications => 'Push Notifications';
+
+  @override
+  String get receiveJobAlerts => 'Receive job alerts';
+
+  @override
+  String get darkMode => 'Dark Mode';
+
+  @override
+  String get reduceEyeStrain => 'Reduce eye strain';
+
+  @override
+  String get changePassword => 'Change Password';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get myProfile => 'My Profile';
+
+  @override
+  String get general => 'General';
+
+  @override
+  String get privacyNotificationsLanguage => 'Privacy, notifications, language';
+
+  @override
+  String get viewPastJobsAndEarnings => 'View past jobs and earnings';
+
+  @override
+  String get bankDetails => 'Bank Details';
+
+  @override
+  String get managePayoutsAndAccounts => 'Manage payouts and accounts';
+
+  @override
+  String get fAQsContactUs => 'FAQs, Contact us';
+
+  @override
+  String get logOut => 'Log Out';
+
+  @override
+  String get primaryAccount => 'Primary Account';
+
+  @override
+  String get addNewBankAccount => 'Add New Bank Account';
+
+  @override
+  String get selectLanguage => 'Select Language';
+
+  @override
+  String get english => 'English';
+
+  @override
+  String get speak => 'Speak';
+
+  @override
+  String get comingSoon => 'Coming Soon';
 }

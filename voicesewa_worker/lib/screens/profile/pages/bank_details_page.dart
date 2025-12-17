@@ -84,7 +84,9 @@ class BankDetailsPage extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () {},
                 icon: const Icon(Icons.add),
-                label: const Text("Add New Bank Account"),
+                label: Text(
+                    "Add New Bank Account"
+                ),
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),

@@ -153,7 +153,12 @@ class FindWorkCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             elevation: 0,
                           ),
-                          child: const Text("Apply Now", style: TextStyle(fontWeight: FontWeight.bold)),
+                          child: Text(
+                              "Apply Now",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold
+                              )
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -166,7 +171,9 @@ class FindWorkCard extends StatelessWidget {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
-                          child: const Text("View Details"),
+                          child: Text(
+                              "View Details"
+                          ),
                         ),
                       ),
                     ],

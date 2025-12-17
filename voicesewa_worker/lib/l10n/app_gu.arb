@@ -29,5 +29,72 @@
   "findWorkTitle": "કામ શોધો",
   "onlineAndVisible": "ઓનલાઇન અને દૃશ્યમાન",
   "youAreOffline": "તમે ઓફલાઇન છો",
-  "youAreNowReceivingJobNotifications": "તમે હવે નોકરીની સૂચનાઓ પ્રાપ્ત કરી રહ્યા છો!"
+  "youAreNowReceivingJobNotifications": "તમે હવે નોકરીની સૂચનાઓ પ્રાપ્ત કરી રહ્યા છો!",
+
+  "yearlyEarnings": "વાર્ષિક કમાણી",
+  "growthOverTheLastFiveYears": "છેલ્લા 5 વર્ષમાં વૃદ્ધિ",
+
+  "applyNow": "હમણાં અરજી કરો",
+  "viewDetails": "વિગતો જુઓ",
+
+  "yourCurrentRating": "તમારું વર્તમાન રેટિંગ",
+  "excellentJob": "ઉત્તમ કામ!",
+
+  "activeJobs": "સક્રિય નોકરીઓ",
+  "recentHistory": "તાજેતરનો ઇતિહાસ",
+
+  "ongoing": "ચાલુ છે",
+  "pending": "બાકી",
+  "completed": "પૂર્ણ",
+  "client": "ગ્રાહક",
+  "viewReceipt": "રસીદ જુઓ",
+  "call": "કૉલ કરો",
+  "markAsCompleted": "પૂર્ણ તરીકે ચિહ્નિત કરો",
+
+  "recentTransactions": "તાજેતરના વ્યવહારો",
+  "seeAll": "બધું જુઓ",
+
+  "monthlyGoal": "માસિક લક્ષ્ય",
+  "youRe": "તમે",
+  "thereKeepItUp": "ત્યાં પહોંચી ગયા! ચાલુ રાખો!",
+
+  "availableForWithdrawal": "ઉપાડ માટે ઉપલબ્ધ",
+  "withdrawMoney": "પૈસા ઉપાડો",
+  "totalEarned": "કુલ કમાણી",
+
+  "workHistory": "કાર્ય ઇતિહાસ",
+  "helpAndSupport": "મદદ અને આધાર",
+  "frequentlyAskedQuestions": "વારંવાર પૂછાતા પ્રશ્નો",
+  "callSupport": "કૉલ સપોર્ટ",
+  "emailSupport": "ઇમેઇલ સપોર્ટ",
+  "helpADRATEVoicesewaDOTCom": "help@voicesewa.com",
+
+  "settings": "સેટિંગ્સ",
+  "preferences": "પસંદગીઓ",
+  "account": "ખાતું",
+  "pushNotifications": "પુશ સૂચનાઓ",
+  "receiveJobAlerts": "નોકરીની ચેતવણીઓ મેળવો",
+  "darkMode": "ડાર્ક મોડ",
+  "reduceEyeStrain": "આંખનો થાક ઓછો કરો",
+  "changePassword": "પાસવર્ડ બદલો",
+  "language": "ભાષા",
+  "deleteAccount": "ખાતું કાઢી નાખો",
+
+  "myProfile": "મારી પ્રોફાઇલ",
+  "general": "સામાન્ય",
+  "privacyNotificationsLanguage": "ગોપનીયતા, સૂચનાઓ, ભાષા",
+  "viewPastJobsAndEarnings": "ભૂતકાળની નોકરીઓ અને કમાણી જુઓ",
+  "bankDetails": "બેંક વિગતો",
+  "managePayoutsAndAccounts": "ચુકવણીઓ અને ખાતાઓનું સંચાલન કરો",
+  "fAQsContactUs": "વારંવાર પૂછાતા પ્રશ્નો, અમારો સંપર્ક કરો",
+  "logOut": "લોગ આઉટ",
+
+  "primaryAccount": "પ્રાથમિક ખાતું",
+  "addNewBankAccount": "નવું બેંક ખાતું ઉમેરો",
+
+  "selectLanguage": "ભાષા પસંદ કરો",
+  "english": "અંગ્રેજી",
+
+  "speak": "બોલો",
+  "comingSoon": "ટૂંક સમયમાં આવી રહ્યું છે"
 }

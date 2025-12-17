@@ -29,6 +29,74 @@
   "findWorkTitle" : "Find Work",
   "onlineAndVisible" : "Online & Visible",
   "youAreOffline" : "You are offline",
-  "youAreNowReceivingJobNotifications": "You are now receiving job notifications!"
+  "youAreNowReceivingJobNotifications": "You are now receiving job notifications!",
+
+  "yearlyEarnings": "Yearly Earnings",
+  "growthOverTheLastFiveYears": "Growth over the last 5 years",
+
+  "applyNow": "Apply Now",
+  "viewDetails": "View Details",
+
+  "yourCurrentRating": "Your Current Rating",
+  "excellentJob": "Excellent Job!",
+
+  "activeJobs": "Active Jobs",
+  "recentHistory": "Recent History",
+
+  "ongoing": "Ongoing",
+  "pending": "Pending",
+  "completed": "Completed",
+  "client": "Client",
+  "viewReceipt": "View Receipt",
+  "call": "Call",
+  "markAsCompleted": "Mark As Completed",
+
+  "recentTransactions": "Recent Transactions",
+  "seeAll": "See All",
+
+  "monthlyGoal": "Monthly Goal",
+  "youRe": "You're",
+  "thereKeepItUp": "there! Keep it up!",
+
+  "availableForWithdrawal": "Available for Withdrawal",
+  "withdrawMoney": "Withdraw Money",
+  "totalEarned": "Total Earned",
+
+  "workHistory": "Work History",
+  "helpAndSupport": "Help & Support",
+  "frequentlyAskedQuestions": "Frequently Asked Questions",
+  "callSupport": "Call Support",
+  "emailSupport": "Email Support",
+  "helpADRATEVoicesewaDOTCom": "help@voicesewa.com",
+
+  "settings": "Settings",
+  "preferences": "Preferences",
+  "account": "Account",
+  "pushNotifications": "Push Notifications",
+  "receiveJobAlerts": "Receive job alerts",
+  "darkMode": "Dark Mode",
+  "reduceEyeStrain": "Reduce eye strain",
+  "changePassword": "Change Password",
+  "language": "Language",
+  "deleteAccount": "Delete Account",
+
+  "myProfile": "My Profile",
+  "general": "General",
+  "privacyNotificationsLanguage": "Privacy, notifications, language",
+  "viewPastJobsAndEarnings": "View past jobs and earnings",
+  "bankDetails": "Bank Details",
+  "managePayoutsAndAccounts": "Manage payouts and accounts",
+  "fAQsContactUs": "FAQs, Contact us",
+  "logOut": "Log Out",
+
+  "primaryAccount": "Primary Account",
+  "addNewBankAccount": "Add New Bank Account",
+
+  "selectLanguage": "Select Language",
+  "english": "English",
+
+  "speak": "Speak",
+
+  "comingSoon" : "Coming Soon"
 
 }

@@ -69,15 +69,19 @@ class WorkHistoryPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
-                child: const Text("Completed", style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
+                child: Text(
+                    "Completed",
+                    style: TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
           const Divider(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text("Earned", style: TextStyle(color: Colors.grey)),
+            children: [
+              Text(
+                  "Earned",
+                  style: TextStyle(color: Colors.grey)),
               Text("₹ 450.00", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ],
           ),

@@ -44,7 +44,9 @@ class _EarningsPageState extends State<EarningsPage> {
                   ),
                   TextButton(
                       onPressed: (){},
-                      child: const Text("See All"),
+                      child: Text(
+                          "See All"
+                      ),
                   ),
                 ],
               ),

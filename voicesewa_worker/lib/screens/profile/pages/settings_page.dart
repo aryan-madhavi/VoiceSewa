@@ -16,7 +16,9 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text("Settings", style: TextStyle(color: Colors.black)),
+        title: Text(
+            "Settings",
+            style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -24,24 +26,42 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text("Preferences", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+          Text(
+              "Preferences",
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
           const SizedBox(height: 10),
-          _buildSwitchTile("Push Notifications", "Receive job alerts", _notificationsEnabled, (val) {
+          _buildSwitchTile(
+              "Push Notifications",
+              "Receive job alerts",
+              _notificationsEnabled, (val) {
             setState(() => _notificationsEnabled = val);
           }),
-          _buildSwitchTile("Dark Mode", "Reduce eye strain", _darkMode, (val) {
+          _buildSwitchTile(
+              "Dark Mode",
+              "Reduce eye strain",
+              _darkMode, (val) {
             setState(() => _darkMode = val);
           }),
 
           const SizedBox(height: 30),
-          const Text("Account", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+          Text(
+              "Account",
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
           const SizedBox(height: 10),
-          _buildActionTile("Change Password", Icons.lock_outline, () {}),
-          _buildActionTile("Language", Icons.language, () {}),
-          _buildActionTile("Privacy Policy", Icons.privacy_tip_outlined, () {}),
+          _buildActionTile(
+              "Change Password",
+              Icons.lock_outline, () {}),
+          _buildActionTile(
+              "Language",
+              Icons.language, () {}),
+          _buildActionTile(
+              "Privacy Policy",
+              Icons.privacy_tip_outlined, () {}),
 
           const SizedBox(height: 30),
-          _buildActionTile("Delete Account", Icons.delete_outline, () {}, isDestructive: true),
+          _buildActionTile(
+              "Delete Account",
+              Icons.delete_outline, () {}, isDestructive: true),
         ],
       ),
     );

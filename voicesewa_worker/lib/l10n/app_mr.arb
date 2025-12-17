@@ -29,5 +29,72 @@
   "findWorkTitle": "काम शोधा",
   "onlineAndVisible": "ऑनलाइन आणि दृश्यमान",
   "youAreOffline": "तुम्ही ऑफलाइन आहात",
-  "youAreNowReceivingJobNotifications": "तुम्हाला आता कामाच्या सूचना मिळत आहेत!"
+  "youAreNowReceivingJobNotifications": "तुम्हाला आता कामाच्या सूचना मिळत आहेत!",
+
+  "yearlyEarnings": "वार्षिक कमाई",
+  "growthOverTheLastFiveYears": "गेल्या ५ वर्षांतील वाढ",
+
+  "applyNow": "आता अर्ज करा",
+  "viewDetails": "तपशील पहा",
+
+  "yourCurrentRating": "तुमचे सध्याचे रेटिंग",
+  "excellentJob": "उत्तम काम!",
+
+  "activeJobs": "सक्रिय कामे",
+  "recentHistory": "अलीकडील इतिहास",
+
+  "ongoing": "सुरू आहे",
+  "pending": "प्रलंबित",
+  "completed": "पूर्ण झाले",
+  "client": "ग्राहक",
+  "viewReceipt": "पावती पहा",
+  "call": "कॉल करा",
+  "markAsCompleted": "पूर्ण झाले म्हणून चिन्हांकित करा",
+
+  "recentTransactions": "अलीकडील व्यवहार",
+  "seeAll": "सर्व पहा",
+
+  "monthlyGoal": "मासिक ध्येय",
+  "youRe": "तुम्ही",
+  "thereKeepItUp": "तिथे पोहोचलात! असंच चालू ठेवा!",
+
+  "availableForWithdrawal": "काढण्यासाठी उपलब्ध",
+  "withdrawMoney": "पैसे काढा",
+  "totalEarned": "एकूण कमाई",
+
+  "workHistory": "कामाचा इतिहास",
+  "helpAndSupport": "मदत आणि समर्थन",
+  "frequentlyAskedQuestions": "वारंवार विचारले जाणारे प्रश्न",
+  "callSupport": "कॉल सपोर्ट",
+  "emailSupport": "ईमेल सपोर्ट",
+  "helpADRATEVoicesewaDOTCom": "help@voicesewa.com",
+
+  "settings": "सेटिंग्ज",
+  "preferences": "प्राधान्ये",
+  "account": "खाते",
+  "pushNotifications": "पुश सूचना",
+  "receiveJobAlerts": "नोकरीच्या सूचना मिळवा",
+  "darkMode": "डार्क मोड",
+  "reduceEyeStrain": "डोळ्यांवरील ताण कमी करा",
+  "changePassword": "पासवर्ड बदला",
+  "language": "भाषा",
+  "deleteAccount": "खाते हटवा",
+
+  "myProfile": "माझी प्रोफाईल",
+  "general": "सामान्य",
+  "privacyNotificationsLanguage": "गोपनीयता, सूचना, भाषा",
+  "viewPastJobsAndEarnings": "मागील नोकऱ्या आणि कमाई पहा",
+  "bankDetails": "बँक तपशील",
+  "managePayoutsAndAccounts": "पेआउट आणि खाती व्यवस्थापित करा",
+  "fAQsContactUs": "वारंवार विचारले जाणारे प्रश्न, संपर्क साधा",
+  "logOut": "लॉग आउट",
+
+  "primaryAccount": "प्राथमिक खाते",
+  "addNewBankAccount": "नवीन बँक खाते जोडा",
+
+  "selectLanguage": "भाषा निवडा",
+  "english": "इंग्रजी",
+
+  "speak": "बोला",
+  "comingSoon": "लवकरच येत आहे"
 }

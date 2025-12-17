@@ -29,5 +29,72 @@
   "findWorkTitle": "काम खोजें",
   "onlineAndVisible": "ऑनलाइन और दृश्यमान",
   "youAreOffline": "आप ऑफ़लाइन हैं",
-  "youAreNowReceivingJobNotifications": "अब आप नौकरी की सूचनाएं प्राप्त कर रहे हैं!"
+  "youAreNowReceivingJobNotifications": "अब आप नौकरी की सूचनाएं प्राप्त कर रहे हैं!",
+
+  "yearlyEarnings": "वार्षिक कमाई",
+  "growthOverTheLastFiveYears": "पिछले 5 वर्षों में वृद्धि",
+
+  "applyNow": "अभी आवेदन करें",
+  "viewDetails": "विवरण देखें",
+
+  "yourCurrentRating": "आपकी वर्तमान रेटिंग",
+  "excellentJob": "बहुत बढ़िया काम!",
+
+  "activeJobs": "सक्रिय नौकरियां",
+  "recentHistory": "हालिया इतिहास",
+
+  "ongoing": "चल रहा है",
+  "pending": "लंबित",
+  "completed": "पूरा हुआ",
+  "client": "ग्राहक",
+  "viewReceipt": "रसीद देखें",
+  "call": "कॉल करें",
+  "markAsCompleted": "पूर्ण के रूप में चिह्नित करें",
+
+  "recentTransactions": "हालिया लेनदेन",
+  "seeAll": "सभी देखें",
+
+  "monthlyGoal": "मासिक लक्ष्य",
+  "youRe": "आप",
+  "thereKeepItUp": "वहाँ पहुँच गए! इसे जारी रखें!",
+
+  "availableForWithdrawal": "निकासी के लिए उपलब्ध",
+  "withdrawMoney": "पैसे निकालें",
+  "totalEarned": "कुल कमाई",
+
+  "workHistory": "कार्य इतिहास",
+  "helpAndSupport": "सहायता और समर्थन",
+  "frequentlyAskedQuestions": "अक्सर पूछे जाने वाले प्रश्न",
+  "callSupport": "कॉल सपोर्ट",
+  "emailSupport": "ईमेल सपोर्ट",
+  "helpADRATEVoicesewaDOTCom": "help@voicesewa.com",
+
+  "settings": "सेटिंग्स",
+  "preferences": "प्राथमिकताएँ",
+  "account": "खाता",
+  "pushNotifications": "पुश सूचनाएं",
+  "receiveJobAlerts": "नौकरी अलर्ट प्राप्त करें",
+  "darkMode": "डार्क मोड",
+  "reduceEyeStrain": "आंखों का तनाव कम करें",
+  "changePassword": "पासवर्ड बदलें",
+  "language": "भाषा",
+  "deleteAccount": "खाता हटाएं",
+
+  "myProfile": "मेरी प्रोफ़ाइल",
+  "general": "सामान्य",
+  "privacyNotificationsLanguage": "गोपनीयता, सूचनाएं, भाषा",
+  "viewPastJobsAndEarnings": "पिछली नौकरियां और कमाई देखें",
+  "bankDetails": "बैंक विवरण",
+  "managePayoutsAndAccounts": "भुगतान और खाते प्रबंधित करें",
+  "fAQsContactUs": "एफएक्यू, हमसे संपर्क करें",
+  "logOut": "लॉग आउट",
+
+  "primaryAccount": "प्राथमिक खाता",
+  "addNewBankAccount": "नया बैंक खाता जोड़ें",
+
+  "selectLanguage": "भाषा चुनें",
+  "english": "अंग्रेजी",
+
+  "speak": "बोलें",
+  "comingSoon": "जल्द आ रहा है"
 }

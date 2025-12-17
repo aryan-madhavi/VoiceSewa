@@ -37,7 +37,7 @@ class _WithdrawState extends State<Withdraw> {
             ),
             child: Column(
               children: [
-                const Text(
+                Text(
                   "Available for Withdrawal",
                   style: TextStyle(
                     color: Colors.white70,

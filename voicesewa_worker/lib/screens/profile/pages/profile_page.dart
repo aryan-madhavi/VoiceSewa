@@ -23,7 +23,7 @@ class _ProfileState extends State<ProfilePage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
+        title: Text(
           "My Profile",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
@@ -116,7 +116,7 @@ class _ProfileState extends State<ProfilePage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   "Log Out",
                   style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                 ),

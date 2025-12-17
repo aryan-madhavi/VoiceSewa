@@ -83,4 +83,163 @@ class AppLocalizationsGu extends AppLocalizations {
   @override
   String get youAreNowReceivingJobNotifications =>
       'તમે હવે નોકરીની સૂચનાઓ પ્રાપ્ત કરી રહ્યા છો!';
+
+  @override
+  String get yearlyEarnings => 'વાર્ષિક કમાણી';
+
+  @override
+  String get growthOverTheLastFiveYears => 'છેલ્લા 5 વર્ષમાં વૃદ્ધિ';
+
+  @override
+  String get applyNow => 'હમણાં અરજી કરો';
+
+  @override
+  String get viewDetails => 'વિગતો જુઓ';
+
+  @override
+  String get yourCurrentRating => 'તમારું વર્તમાન રેટિંગ';
+
+  @override
+  String get excellentJob => 'ઉત્તમ કામ!';
+
+  @override
+  String get activeJobs => 'સક્રિય નોકરીઓ';
+
+  @override
+  String get recentHistory => 'તાજેતરનો ઇતિહાસ';
+
+  @override
+  String get ongoing => 'ચાલુ છે';
+
+  @override
+  String get pending => 'બાકી';
+
+  @override
+  String get completed => 'પૂર્ણ';
+
+  @override
+  String get client => 'ગ્રાહક';
+
+  @override
+  String get viewReceipt => 'રસીદ જુઓ';
+
+  @override
+  String get call => 'કૉલ કરો';
+
+  @override
+  String get markAsCompleted => 'પૂર્ણ તરીકે ચિહ્નિત કરો';
+
+  @override
+  String get recentTransactions => 'તાજેતરના વ્યવહારો';
+
+  @override
+  String get seeAll => 'બધું જુઓ';
+
+  @override
+  String get monthlyGoal => 'માસિક લક્ષ્ય';
+
+  @override
+  String get youRe => 'તમે';
+
+  @override
+  String get thereKeepItUp => 'ત્યાં પહોંચી ગયા! ચાલુ રાખો!';
+
+  @override
+  String get availableForWithdrawal => 'ઉપાડ માટે ઉપલબ્ધ';
+
+  @override
+  String get withdrawMoney => 'પૈસા ઉપાડો';
+
+  @override
+  String get totalEarned => 'કુલ કમાણી';
+
+  @override
+  String get workHistory => 'કાર્ય ઇતિહાસ';
+
+  @override
+  String get helpAndSupport => 'મદદ અને આધાર';
+
+  @override
+  String get frequentlyAskedQuestions => 'વારંવાર પૂછાતા પ્રશ્નો';
+
+  @override
+  String get callSupport => 'કૉલ સપોર્ટ';
+
+  @override
+  String get emailSupport => 'ઇમેઇલ સપોર્ટ';
+
+  @override
+  String get helpADRATEVoicesewaDOTCom => 'help@voicesewa.com';
+
+  @override
+  String get settings => 'સેટિંગ્સ';
+
+  @override
+  String get preferences => 'પસંદગીઓ';
+
+  @override
+  String get account => 'ખાતું';
+
+  @override
+  String get pushNotifications => 'પુશ સૂચનાઓ';
+
+  @override
+  String get receiveJobAlerts => 'નોકરીની ચેતવણીઓ મેળવો';
+
+  @override
+  String get darkMode => 'ડાર્ક મોડ';
+
+  @override
+  String get reduceEyeStrain => 'આંખનો થાક ઓછો કરો';
+
+  @override
+  String get changePassword => 'પાસવર્ડ બદલો';
+
+  @override
+  String get language => 'ભાષા';
+
+  @override
+  String get deleteAccount => 'ખાતું કાઢી નાખો';
+
+  @override
+  String get myProfile => 'મારી પ્રોફાઇલ';
+
+  @override
+  String get general => 'સામાન્ય';
+
+  @override
+  String get privacyNotificationsLanguage => 'ગોપનીયતા, સૂચનાઓ, ભાષા';
+
+  @override
+  String get viewPastJobsAndEarnings => 'ભૂતકાળની નોકરીઓ અને કમાણી જુઓ';
+
+  @override
+  String get bankDetails => 'બેંક વિગતો';
+
+  @override
+  String get managePayoutsAndAccounts => 'ચુકવણીઓ અને ખાતાઓનું સંચાલન કરો';
+
+  @override
+  String get fAQsContactUs => 'વારંવાર પૂછાતા પ્રશ્નો, અમારો સંપર્ક કરો';
+
+  @override
+  String get logOut => 'લોગ આઉટ';
+
+  @override
+  String get primaryAccount => 'પ્રાથમિક ખાતું';
+
+  @override
+  String get addNewBankAccount => 'નવું બેંક ખાતું ઉમેરો';
+
+  @override
+  String get selectLanguage => 'ભાષા પસંદ કરો';
+
+  @override
+  String get english => 'અંગ્રેજી';
+
+  @override
+  String get speak => 'બોલો';
+
+  @override
+  String get comingSoon => 'ટૂંક સમયમાં આવી રહ્યું છે';
 }
