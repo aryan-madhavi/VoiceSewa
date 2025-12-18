@@ -18,7 +18,7 @@ class AppConstants {
     return {
       NavTab.home: [
         const Icon(Icons.home),
-        context.loc.homeTitle, // Dynamic String
+        context.loc.homeTitle,
         const HomePage(),
       ],
       NavTab.jobs: [

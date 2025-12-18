@@ -97,6 +97,9 @@
 
   "speak": "Speak",
 
-  "comingSoon" : "Coming Soon"
+  "comingSoon" : "Coming Soon",
 
+  "rating": "Rating",
+  "jobs": "Jobs",
+  "experience": "Experience"
 }

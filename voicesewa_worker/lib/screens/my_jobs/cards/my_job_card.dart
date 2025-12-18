@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:voicesewa_worker/constants/core/color_constants.dart';
 import 'package:voicesewa_worker/constants/core/static_data.dart';
 
+import '../../../constants/core/helper_function.dart';
 import '../../../extensions/context_extensions.dart';
 
 class MyJobCard extends StatelessWidget {
@@ -84,15 +85,15 @@ class MyJobCard extends StatelessWidget {
                   child: Divider(height: 1),
                 ),
 
-                _buildIconText(Icons.location_on_outlined, job.location),
+                myJobBuildIconText(Icons.location_on_outlined, job.location),
 
                 const SizedBox(height: 8,),
 
-                _buildIconText(Icons.access_time, job.time),
+                myJobBuildIconText(Icons.access_time, job.time),
 
                 const SizedBox(height: 8,),
 
-                _buildIconText(Icons.payment_outlined, job.price, isBold: true),
+                myJobBuildIconText(Icons.payment_outlined, job.price, isBold: true),
 
                 const SizedBox(height: 20,),
 
@@ -164,27 +165,4 @@ class MyJobCard extends StatelessWidget {
       ),
     );
   }
-}
-
-Widget _buildIconText(IconData icon, String text, {bool isBold = false} ){
-  return Row(
-    children: [
-      Icon(
-        icon,
-        size: 16,
-        color: ColorConstants.textGrey,
-      ),
-      const SizedBox(width: 8,),
-      Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              color: isBold ? ColorConstants.primaryBlue : ColorConstants.textGrey,
-              fontSize: 13,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-      ),
-    ],
-  );
 }

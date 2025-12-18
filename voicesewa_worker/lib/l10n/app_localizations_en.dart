@@ -242,4 +242,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get comingSoon => 'Coming Soon';
+
+  @override
+  String get rating => 'Rating';
+
+  @override
+  String get jobs => 'Jobs';
+
+  @override
+  String get experience => 'Experience';
 }

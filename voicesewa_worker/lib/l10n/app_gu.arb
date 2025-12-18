@@ -32,7 +32,7 @@
   "youAreNowReceivingJobNotifications": "તમે હવે નોકરીની સૂચનાઓ પ્રાપ્ત કરી રહ્યા છો!",
 
   "yearlyEarnings": "વાર્ષિક કમાણી",
-  "growthOverTheLastFiveYears": "છેલ્લા 5 વર્ષમાં વૃદ્ધિ",
+  "growthOverTheLastFiveYears": "છેલ્લા ૫ વર્ષમાં વૃદ્ધિ",
 
   "applyNow": "હમણાં અરજી કરો",
   "viewDetails": "વિગતો જુઓ",
@@ -96,5 +96,9 @@
   "english": "અંગ્રેજી",
 
   "speak": "બોલો",
-  "comingSoon": "ટૂંક સમયમાં આવી રહ્યું છે"
+  "comingSoon": "ટૂંક સમયમાં આવી રહ્યું છે",
+
+  "rating": "રેટિંગ",
+  "jobs": "નોકરીઓ",
+  "experience": "અનુભવ"
 }

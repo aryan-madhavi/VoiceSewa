@@ -54,7 +54,7 @@ class _TransactionHistoryState extends State<TransactionHistory> {
             ),
           ),
           trailing: Text(
-            "${txn.isCredit ? '+':'-'} ${txn.amount}}",
+            "${txn.isCredit ? '+':'-'} ${txn.amount}",
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 15,

@@ -3,6 +3,7 @@ import 'package:voicesewa_worker/constants/core/color_constants.dart';
 import 'package:voicesewa_worker/constants/core/static_data.dart';
 import 'package:voicesewa_worker/constants/core/string_constants.dart';
 
+import '../../../constants/core/helper_function.dart';
 import '../../../extensions/context_extensions.dart';
 
 class Withdraw extends StatefulWidget {
@@ -83,12 +84,12 @@ class _WithdrawState extends State<Withdraw> {
                 const SizedBox(height: 16,),
                 Row(
                   children: [
-                    _buildStatCard(
+                    withdrawBuildStatCard(
                         context.loc.pending, // "Pending",
                         "${StringConstants.rupee}${(pendingAmount).toInt()}",
                         Colors.orange),
                     const SizedBox(width: 12,),
-                    _buildStatCard(
+                    withdrawBuildStatCard(
                         context.loc.totalEarned, // "Total Earned",
                         "${StringConstants.rupee}${(totalAmountEarned).toInt()}",
                         Colors.green)
@@ -103,38 +104,3 @@ class _WithdrawState extends State<Withdraw> {
   }
 }
 
-Widget _buildStatCard (String title, String amount, Color color){
-  return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                color: ColorConstants.textGrey,
-                fontSize: 12,
-              ),
-            ),
-
-            SizedBox(height: 6,),
-
-            Text(
-              amount,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-  );
-}

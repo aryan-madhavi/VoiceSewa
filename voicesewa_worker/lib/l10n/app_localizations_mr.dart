@@ -242,4 +242,13 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get comingSoon => 'लवकरच येत आहे';
+
+  @override
+  String get rating => 'रेटिंग';
+
+  @override
+  String get jobs => 'कामे';
+
+  @override
+  String get experience => 'अनुभव';
 }

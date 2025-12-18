@@ -87,12 +87,14 @@ class _MonthlyGoalState extends State<MonthlyGoal> {
 
                 const SizedBox(width: 4,),
 
-                Text(
-                  "${context.loc.youRe} ${(progress * 100).toInt()}% ${context.loc.thereKeepItUp}",
-                  style: TextStyle(
-                    color: ColorConstants.textDark,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Text(
+                    "${context.loc.youRe} ${(progress * 100).toInt()}% ${context.loc.thereKeepItUp}",
+                    style: TextStyle(
+                      color: ColorConstants.textDark,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],

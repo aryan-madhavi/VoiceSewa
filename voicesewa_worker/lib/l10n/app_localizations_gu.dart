@@ -88,7 +88,7 @@ class AppLocalizationsGu extends AppLocalizations {
   String get yearlyEarnings => 'વાર્ષિક કમાણી';
 
   @override
-  String get growthOverTheLastFiveYears => 'છેલ્લા 5 વર્ષમાં વૃદ્ધિ';
+  String get growthOverTheLastFiveYears => 'છેલ્લા ૫ વર્ષમાં વૃદ્ધિ';
 
   @override
   String get applyNow => 'હમણાં અરજી કરો';
@@ -242,4 +242,13 @@ class AppLocalizationsGu extends AppLocalizations {
 
   @override
   String get comingSoon => 'ટૂંક સમયમાં આવી રહ્યું છે';
+
+  @override
+  String get rating => 'રેટિંગ';
+
+  @override
+  String get jobs => 'નોકરીઓ';
+
+  @override
+  String get experience => 'અનુભવ';
 }

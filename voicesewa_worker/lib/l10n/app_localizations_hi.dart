@@ -88,7 +88,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get yearlyEarnings => 'वार्षिक कमाई';
 
   @override
-  String get growthOverTheLastFiveYears => 'पिछले 5 वर्षों में वृद्धि';
+  String get growthOverTheLastFiveYears => 'पिछले ५ वर्षों में वृद्धि';
 
   @override
   String get applyNow => 'अभी आवेदन करें';
@@ -242,4 +242,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get comingSoon => 'जल्द आ रहा है';
+
+  @override
+  String get rating => 'रेटिंग';
+
+  @override
+  String get jobs => 'नौकरियां';
+
+  @override
+  String get experience => 'अनुभव';
 }

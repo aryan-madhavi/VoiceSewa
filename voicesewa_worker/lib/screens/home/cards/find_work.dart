@@ -3,6 +3,7 @@ import 'package:voicesewa_worker/constants/core/app_constants.dart';
 import 'package:voicesewa_worker/constants/core/string_constants.dart';
 
 import '../../../constants/core/color_constants.dart';
+import '../../../constants/core/helper_function.dart';
 import '../../../constants/core/static_data.dart';
 import '../../../extensions/context_extensions.dart';
 
@@ -97,7 +98,7 @@ class FindWorkCard extends StatelessWidget {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: job.tags.map((tag) => _buildTag(tag)).toList(),
+                      children: job.tags.map((tag) => findWorkBuildTag(tag)).toList(),
                     ),
                   ],
                   const SizedBox(height: 12),
@@ -133,12 +134,12 @@ class FindWorkCard extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildIconText(
+                        child: findWorkBuildIconText(
                           Icons.location_on_outlined,
                           "${job.location} • ${job.distance}",
                         ),
                       ),
-                      _buildIconText(Icons.access_time, job.timePosted),
+                      findWorkBuildIconText(Icons.access_time, job.timePosted),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -197,40 +198,5 @@ class FindWorkCard extends StatelessWidget {
     );
   }
 
-  Widget _buildIconText(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: ColorConstants.textGrey),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            text,
-            style: const TextStyle(color: ColorConstants.textGrey, fontSize: 12),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildTag(String tag) {
-    Color bgColor = Colors.grey.shade100;
-    Color textColor = ColorConstants.textGrey;
-    if (tag == 'Urgent') {
-      bgColor = ColorConstants.urgentRed.withOpacity(0.1);
-      textColor = ColorConstants.urgentRed;
-    } else if (tag == 'New') {
-      bgColor = ColorConstants.newBlue.withOpacity(0.1);
-      textColor = ColorConstants.newBlue;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(4)),
-      child: Text(
-        tag,
-        style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
 }
