@@ -2,46 +2,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
-
-class SpeechState {
-  final bool isListening;
-  final String recognizedText;
-  final bool isInitialized;
-  final String? error;
-  final String localeId; // current listening locale
-  final List<LocaleName> availableLocales;
-
-  const SpeechState({
-    this.isListening = false,
-    this.recognizedText = '',
-    this.isInitialized = false,
-    this.error,
-    this.localeId = 'en_US',
-    this.availableLocales = const [],
-  });
-
-  SpeechState copyWith({
-    bool? isListening,
-    String? recognizedText,
-    bool? isInitialized,
-    String? error,
-    String? localeId,
-    List<LocaleName>? availableLocales,
-  }) {
-    return SpeechState(
-      isListening: isListening ?? this.isListening,
-      recognizedText: recognizedText ?? this.recognizedText,
-      isInitialized: isInitialized ?? this.isInitialized,
-      error: error,
-      localeId: localeId ?? this.localeId,
-      availableLocales: availableLocales ?? this.availableLocales,
-    );
-  }
-}
+import 'package:voicesewa_client/features/voicebot/providers/speech_state.dart';
 
 class SpeechNotifier extends Notifier<SpeechState> {
   late final SpeechToText _speechToText;
-  Timer? _silenceTimer;
 
   @override
   SpeechState build() {
@@ -50,7 +14,6 @@ class SpeechNotifier extends Notifier<SpeechState> {
 
     // Cleanup on dispose
     ref.onDispose(() {
-      _silenceTimer?.cancel();
       if (_speechToText.isListening) _speechToText.stop();
     });
 
@@ -127,29 +90,15 @@ class SpeechNotifier extends Notifier<SpeechState> {
         partialResults: true,
       ),
     );
-
-    _startSilenceTimer();
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
     print('Speech result (${state.localeId}): ${result.recognizedWords}');
-    _resetSilenceTimer();
     state = state.copyWith(recognizedText: result.recognizedWords);
     if (result.finalResult) stopListening();
   }
 
-  void _startSilenceTimer() {
-    _silenceTimer?.cancel();
-    _silenceTimer = Timer(const Duration(seconds: 5), () => stopListening());
-  }
-
-  void _resetSilenceTimer() {
-    _silenceTimer?.cancel();
-    _startSilenceTimer();
-  }
-
   Future<void> stopListening() async {
-    _silenceTimer?.cancel();
     if (_speechToText.isListening) await _speechToText.stop();
     state = state.copyWith(isListening: false);
   }
@@ -166,8 +115,3 @@ class SpeechNotifier extends Notifier<SpeechState> {
   /// Get all available locales
   List<LocaleName> getAvailableLocales() => state.availableLocales;
 }
-
-/// Riverpod Provider
-final speechProvider = NotifierProvider<SpeechNotifier, SpeechState>(
-  () => SpeechNotifier(),
-);

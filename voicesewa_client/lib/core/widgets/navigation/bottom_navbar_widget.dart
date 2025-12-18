@@ -4,7 +4,7 @@ import 'package:voicesewa_client/core/constants/app_constants.dart';
 import 'package:voicesewa_client/core/constants/string_constants.dart';
 import 'package:voicesewa_client/core/providers/navbar_page_provider.dart';
 import 'package:voicesewa_client/features/voicebot/presentation/widgets/speech_overlay.dart';
-import 'package:voicesewa_client/features/voicebot/providers/speech_to_text_provider.dart';
+import 'package:voicesewa_client/features/voicebot/providers/speech_provider.dart';
 
 class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key});
