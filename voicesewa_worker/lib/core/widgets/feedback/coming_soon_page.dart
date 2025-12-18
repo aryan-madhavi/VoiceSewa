@@ -1,0 +1,17 @@
+import 'package:flutter/material.dart';
+import 'package:voicesewa_worker/core/widgets/layout/appbar_widget.dart';
+import 'package:voicesewa_worker/core/widgets/feedback/coming_soon_widget.dart';
+import '../../extensions/context_extensions.dart';
+
+class ComingSoonPage extends StatelessWidget {
+  
+  const ComingSoonPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBarWidget(title: context.loc.comingSoon),
+      body: ComingSoon()
+    );
+  }
+}
