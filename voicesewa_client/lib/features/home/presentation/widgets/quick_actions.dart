@@ -19,11 +19,11 @@ class QuickActionsGrid extends ConsumerWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 2,
         mainAxisSpacing: 2,
-        childAspectRatio: 1.5,
+        childAspectRatio: 1.3, //1.5, //overflow error while changing to different language
       ),
       itemBuilder: (context, index) {
         final action = quickActions[index];
-        final data = ActionsData.actions[action]!;
+        final data = ActionsData.actions(context)[action]!;
 
         final Color color = data[0] as Color;
         final IconData icon = data[1] as IconData;

@@ -1,0 +1,45 @@
+{
+  "appName": "व्हॉइस सेवा",
+  "welcomeMessage": "व्हॉइस सेवा मध्ये आपले स्वागत आहे!",
+
+  "loginPrompt": "कृपया पुढे जाण्यासाठी लॉग इन करा.",
+  "signUpPrompt": "खाते नाही? आता साइन अप करा.",
+  "errorMessage": "एक त्रुटी आली आहे. कृपया पुन्हा प्रयत्न करा.",
+  "loadingMessage": "लोड होत आहे, कृपया प्रतीक्षा करा...",
+  "logoutConfirmation": "तुम्ही नक्की लॉग आउट करू इच्छिता?",
+
+  "authTitle": "लॉग इन / साइन अप",
+  "homeTitle": "होम",
+  "searchTitle": "शोधा",
+  "voiceBotTitle": "व्हॉइसबॉट",
+  "historyTitle": "इतिहास",
+  "profileTitle": "प्रोफाइल",
+
+  "bookCTA": "सेवा बुक करा",
+  "activeBookingsCTA": "सक्रिय बुकिंग",
+  "offersCTA": "ऑफर्स तपासा",
+  "helpCTA": "मदत मिळवा",
+
+  "chatTitle": "चॅट",
+  "settingsTitle": "सेटिंग्ज",
+
+  "termsAndConditions": "अटी आणि शर्ती",
+  "privacyPolicy": "गोपनीयता धोरण",
+  "contactUs": "संपर्क साधा",
+  "feedbackPrompt": "आम्ही तुमच्या अभिप्रायची कदर करतो!",
+  "updateAvailable": "नवीन अपडेट उपलब्ध आहे.",
+  "noInternetConnection": "इंटरनेट कनेक्शन नाही.",
+
+  "selectLanguage": "भाषा निवडा",
+
+  "trackRecentRequests": "अलीकडील विनंत्या ट्रॅक करा",
+  "worker": "वर्कर",
+  "eTA": "अंदाजे वेळ",
+
+  "quickBookServices": "त्वरित सेवा बुक करा",
+
+  "bookAgain": "पुन्हा बुक करा",
+  "myRequests": "माझ्या विनंत्या",
+  "offers": "ऑफर्स",
+  "helpAndSupport": "मदत आणि समर्थन"
+}

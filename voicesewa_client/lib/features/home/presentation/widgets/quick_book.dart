@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/data/services_data.dart';
 import 'package:voicesewa_client/features/home/providers/quick_book_services_provider.dart';
 import 'package:voicesewa_client/app/routes.dart';
@@ -21,7 +22,7 @@ class QuickBookCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 12, bottom: 16),
               child: Text(
-                'Quick Book Services',
+                context.loc.quickBookServices, // 'Quick Book Services',
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,

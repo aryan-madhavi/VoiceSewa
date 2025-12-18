@@ -158,16 +158,20 @@ class WorkerCard extends StatelessWidget {
 
                     // Experience + Availability
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '${worker.experience} yrs experience',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.black54,
+                        Expanded(
+                          child: Text(
+                            '${worker.experience} yrs experience',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.black54,
+                            ),
                           ),
                         ),
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               worker.available!
@@ -176,7 +180,7 @@ class WorkerCard extends StatelessWidget {
                               color: worker.available!
                                   ? Colors.green
                                   : Colors.red,
-                              size: 10,
+                              size: 12,
                             ),
                             const SizedBox(width: 4),
                             Text(

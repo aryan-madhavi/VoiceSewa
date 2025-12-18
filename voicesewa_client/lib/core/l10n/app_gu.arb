@@ -1,0 +1,45 @@
+{
+  "appName": "વોઇસ સેવા",
+  "welcomeMessage": "વોઇસ સેવામાં આપનું સ્વાગત છે!",
+
+  "loginPrompt": "ચાલુ રાખવા માટે કૃપા કરીને લોગ ઇન કરો.",
+  "signUpPrompt": "ખાતું નથી? અત્યારે જ સાઇન અપ કરો.",
+  "errorMessage": "એક ભૂલ આવી છે. કૃપા કરીને ફરી પ્રયાસ કરો.",
+  "loadingMessage": "લોડ થઈ રહ્યું છે, કૃપા કરીને રાહ જુઓ...",
+  "logoutConfirmation": "શું તમે ખરેખર લોગ આઉટ કરવા માંગો છો?",
+
+  "authTitle": "લોગ ઇન / સાઇન અપ",
+  "homeTitle": "હોમ",
+  "searchTitle": "શોધો",
+  "voiceBotTitle": "વોઇસબોટ",
+  "historyTitle": "ઇતિહાસ",
+  "profileTitle": "પ્રોફાઇલ",
+
+  "bookCTA": "સેવા બુક કરો",
+  "activeBookingsCTA": "સક્રિય બુકિંગ",
+  "offersCTA": "ઑફર્સ તપાસો",
+  "helpCTA": "મદદ મેળવો",
+
+  "chatTitle": "ચેટ",
+  "settingsTitle": "સેટિંગ્સ",
+
+  "termsAndConditions": "નિયમો અને શરતો",
+  "privacyPolicy": "ગોપનીયતા નીતિ",
+  "contactUs": "અમારો સંપર્ક કરો",
+  "feedbackPrompt": "અમે તમારા પ્રતિસાદની કદર કરીએ છીએ!",
+  "updateAvailable": "નવું અપડેટ ઉપલબ્ધ છે.",
+  "noInternetConnection": "ઇન્ટરનેટ કનેક્શન નથી.",
+
+  "selectLanguage": "ભાષા પસંદ કરો",
+
+  "trackRecentRequests": "તાજેતરની વિનંતીઓ ટ્રૅક કરો",
+  "worker": "વર્કર",
+  "eTA": "અંદાજિત સમય",
+
+  "quickBookServices": "ઝડપી સેવા બુક કરો",
+
+  "bookAgain": "ફરીથી બુક કરો",
+  "myRequests": "મારી વિનંતીઓ",
+  "offers": "ઑફર્સ",
+  "helpAndSupport": "મદદ અને આધાર"
+}

@@ -24,12 +24,12 @@ class JobCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(job.serviceIcon, color: job.serviceColor, size: 20),
+                    Icon(job.serviceIcon, color: job.serviceColor, size: 16),
                     const SizedBox(width: 8),
                     Text(
                       job.serviceName,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -115,12 +115,18 @@ class JobCard extends StatelessWidget {
 
             // --- Buttons Row ---
             Row(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 TextButton.icon(
                   onPressed: () {},
                   icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text("Book Again"),
+                  label: const Text(
+                    "Book Again",
+                  style: TextStyle(
+                    fontSize: 13,
+                  ),
+                  ),
                   style: TextButton.styleFrom(
                     foregroundColor: ColorConstants.seed,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -129,7 +135,10 @@ class JobCard extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () {},
                   icon: const Icon(Icons.download, size: 16),
-                  label: const Text("Invoice"),
+                  label: const Text("Invoice",
+                    style: TextStyle(
+                      fontSize: 13,
+                    ),),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.black87,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -149,7 +158,10 @@ class JobCard extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-                  label: const Text("Details"),
+                  label: const Text("Details",
+                    style: TextStyle(
+                      fontSize: 13,
+                    ),),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.black87,
                     padding: const EdgeInsets.symmetric(horizontal: 8),

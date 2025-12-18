@@ -1,0 +1,45 @@
+{
+  "appName": "वॉयस सेवा",
+  "welcomeMessage": "वॉयस सेवा में आपका स्वागत है!",
+
+  "loginPrompt": "कृपया जारी रखने के लिए लॉग इन करें।",
+  "signUpPrompt": "खाता नहीं है? अभी साइन अप करें।",
+  "errorMessage": "एक त्रुटि हुई है। कृपया पुनः प्रयास करें।",
+  "loadingMessage": "लोड हो रहा है, कृपया प्रतीक्षा करें...",
+  "logoutConfirmation": "क्या आप निश्चित रूप से लॉग आउट करना चाहते हैं?",
+
+  "authTitle": "लॉग इन / साइन अप",
+  "homeTitle": "होम",
+  "searchTitle": "खोजें",
+  "voiceBotTitle": "वॉयसबॉट",
+  "historyTitle": "इतिहास",
+  "profileTitle": "प्रोफ़ाइल",
+
+  "bookCTA": "सेवा बुक करें",
+  "activeBookingsCTA": "सक्रिय बुकिंग",
+  "offersCTA": "ऑफ़र देखें",
+  "helpCTA": "मदद प्राप्त करें",
+
+  "chatTitle": "चैट",
+  "settingsTitle": "सेटिंग्स",
+
+  "termsAndConditions": "नियम और शर्तें",
+  "privacyPolicy": "गोपनीयता नीति",
+  "contactUs": "संपर्क करें",
+  "feedbackPrompt": "हम आपकी प्रतिक्रिया का महत्व देते हैं!",
+  "updateAvailable": "एक नया अपडेट उपलब्ध है।",
+  "noInternetConnection": "कोई इंटरनेट कनेक्शन नहीं है।",
+
+  "selectLanguage": "भाषा चुनें",
+
+  "trackRecentRequests": "हाल के अनुरोध ट्रैक करें",
+  "worker": "वर्कर",
+  "eTA": "अनुमानित समय",
+
+  "quickBookServices": "तुरंत सेवा बुक करें",
+
+  "bookAgain": "फिर से बुक करें",
+  "myRequests": "मेरे अनुरोध",
+  "offers": "ऑफ़र",
+  "helpAndSupport": "सहायता और समर्थन"
+}
