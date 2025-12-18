@@ -45,7 +45,7 @@ class _ProfileState extends State<ProfilePage> {
             const SizedBox(height: 10),
             profilePageBuildProfileHeader(),
             const SizedBox(height: 30),
-            profilePageBuildStatsRow(context),
+            profilePageBuildStatsRow(context.loc),
             const SizedBox(height: 30),
             Align(
               alignment: Alignment.centerLeft,

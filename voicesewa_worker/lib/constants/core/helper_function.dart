@@ -2,7 +2,7 @@
 
 // import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
+// import '../../extensions/context_extensions.dart';
 import 'color_constants.dart';
 
 // Withdraw
@@ -104,25 +104,25 @@ Widget myJobBuildIconText(IconData icon, String text, {bool isBold = false} ){
 }
 
 // profile_page
-Widget profilePageBuildStatsRow(context) {
+Widget profilePageBuildStatsRow(cl) {
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
     children: [
       profilePageBuildStatItem(
           "4.8",
-          context.loc.rating,
+          cl.rating,
           // "Rating",
           Icons.star, Colors.orange),
       Container(width: 1, height: 40, color: Colors.grey.shade300),
       profilePageBuildStatItem(
           "125",
-          context.loc.jobs,
+          cl.jobs,
           // "Jobs",
           Icons.work, Colors.blue),
       Container(width: 1, height: 40, color: Colors.grey.shade300),
       profilePageBuildStatItem(
           "2 yrs",
-          context.loc.experience, // "Experience",
+          cl.experience, // "Experience",
           Icons.timeline, Colors.green),
     ],
   );
