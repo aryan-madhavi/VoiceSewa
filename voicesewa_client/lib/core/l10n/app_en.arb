@@ -54,6 +54,7 @@
   "playVoiceIntro": "Play voice intro",
 
   "oldestFirst": "Oldest First",
+  "newestFirst": "Newest First",
   "amount": "Amount",
   "noJobsMatchTheSelectedFilters": "No jobs match the selected filters.",
   "activeJobs": "Active Jobs",
@@ -85,8 +86,10 @@
   "darkMode": "Dark Mode",
   "logout": "Logout",
   "deleteAccount": "Delete Account",
+  "account": "Account",
 
   "supportAndHelp": "Support & Help",
+  "speakWhatIsTheProblem": "Tell me, what is the problem?",
   "quickAssistance": "Quick Assistance",
   "paymentIssue": "Payment issue",
   "workerNotArrived": "Worker not arrived",
@@ -94,6 +97,7 @@
   "chatWithSupport": "Chat with Support",
   "chatFunctionalityComingSoon": "Chat functionality coming soon!",
   "oK": "OK",
+  "cancelJob": "Cancel Job",
 
   "listening": "Listening",
   "voiceRecognition": "Voice Recognition",

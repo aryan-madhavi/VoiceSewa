@@ -54,6 +54,7 @@
   "playVoiceIntro": "व्हॉइस इंट्रो प्ले करा",
 
   "oldestFirst": "सर्वात जुने प्रथम",
+  "newestFirst": "सर्वात नवीन प्रथम",
   "amount": "रक्कम",
   "noJobsMatchTheSelectedFilters": "निवडलेल्या फिल्टरशी जुळणारे कोणतेही जॉब नाहीत.",
   "activeJobs": "सक्रिय जॉब्स",
@@ -85,8 +86,10 @@
   "darkMode": "डार्क मोड",
   "logout": "लॉग आउट",
   "deleteAccount": "खाते हटवा",
+  "account": "खाते",
 
   "supportAndHelp": "समर्थन आणि मदत",
+  "speakWhatIsTheProblem": "बोला, काय समस्या आहे?",
   "quickAssistance": "त्वरित सहाय्य",
   "paymentIssue": "पेमेंट समस्या",
   "workerNotArrived": "कामगार पोहोचला नाही",
@@ -94,6 +97,7 @@
   "chatWithSupport": "सपोर्टशी चॅट करा",
   "chatFunctionalityComingSoon": "चॅट कार्यक्षमता लवकरच येत आहे!",
   "oK": "ठीक आहे",
+  "cancelJob": "जॉब रद्द करा",
 
   "listening": "ऐकत आहे...",
   "voiceRecognition": "आवाज ओळख",

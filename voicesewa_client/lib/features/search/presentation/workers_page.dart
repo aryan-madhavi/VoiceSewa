@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/search/providers/worker_provider.dart';
 import 'package:voicesewa_client/features/search/presentation/widgets/worker_card.dart';
 
@@ -28,9 +29,15 @@ class _SuggestedWorkersPageState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildFilterChip(context, WorkerFilter.distance, 'Distance'),
-                _buildFilterChip(context, WorkerFilter.price, 'Price'),
-                _buildFilterChip(context, WorkerFilter.rating, 'Rating'),
+                _buildFilterChip(
+                context, WorkerFilter.distance, context.loc.distance //'Distance'
+              ),
+                _buildFilterChip(
+                  context, WorkerFilter.price, context.loc.price  //'Price'
+                ),
+                _buildFilterChip(
+                  context, WorkerFilter.rating, context.loc.rating //'Rating'
+                ),
               ],
             ),
           ),
@@ -49,7 +56,7 @@ class _SuggestedWorkersPageState
                       worker: worker,
                       onPlayVoice: () {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Playing intro: ${worker.voiceText}'),
+                          content: Text('${context.loc.playVoiceIntro}: ${worker.voiceText}'),
                         ));
                       },
                     );

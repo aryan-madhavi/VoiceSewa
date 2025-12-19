@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/worker_model.dart';
 import 'package:voicesewa_client/features/search/presentation/widgets/worker_details_sheet.dart';
 
@@ -163,7 +164,7 @@ class WorkerCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '${worker.experience} yrs experience',
+                            '${worker.experience} ${context.loc.yrsExperience}',
                             style: const TextStyle(
                               fontSize: 10,
                               color: Colors.black54,
@@ -184,7 +185,9 @@ class WorkerCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              worker.available! ? 'Available' : 'Unavailable',
+                              worker.available! ?
+                              context.loc.available // 'Available'
+                                  : context.loc.unavailable, //'Unavailable',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: worker.available!
@@ -203,7 +206,7 @@ class WorkerCard extends StatelessWidget {
               // --- Voice Button ---
               IconButton(
                 onPressed: onPlayVoice,
-                tooltip: "Play voice intro",
+                tooltip: context.loc.playVoiceIntro,  //"Play voice intro",
                 icon: const Icon(
                   Icons.play_circle_fill,
                   color: ColorConstants.seed,

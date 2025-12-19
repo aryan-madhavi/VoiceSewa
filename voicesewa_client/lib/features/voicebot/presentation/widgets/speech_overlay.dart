@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/voicebot/providers/speech_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/speech_state.dart';
 
@@ -136,7 +137,9 @@ class _OverlayContent extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    speechState.isListening ? 'Listening' : 'Voice Recognition',
+                    speechState.isListening ?
+                    context.loc.listening //'Listening'
+                        : context.loc.voiceRecognition, //'Voice Recognition',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -144,8 +147,8 @@ class _OverlayContent extends ConsumerWidget {
                     ),
                   ),
                   if (speechState.isListening)
-                    const Text(
-                      'Speak now',
+                     Text(
+                       context.loc.speakNow, //'Speak now',
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                 ],
@@ -181,8 +184,9 @@ class _OverlayContent extends ConsumerWidget {
             child: Text(
               speechState.recognizedText.isEmpty
                   ? (speechState.isListening
-                        ? 'Start speaking...'
-                        : 'No text recognized')
+                        ? '${context.loc.startSpeaking}...'//'Start speaking...'
+                        : context.loc.noTextRecognized//'No text recognized'
+              )
                   : speechState.recognizedText,
               key: ValueKey(speechState.recognizedText),
               style: TextStyle(

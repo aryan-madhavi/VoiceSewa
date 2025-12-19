@@ -366,6 +366,12 @@ abstract class AppLocalizations {
   /// **'Oldest First'**
   String get oldestFirst;
 
+  /// No description provided for @newestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest First'**
+  String get newestFirst;
+
   /// No description provided for @amount.
   ///
   /// In en, this message translates to:
@@ -534,11 +540,23 @@ abstract class AppLocalizations {
   /// **'Delete Account'**
   String get deleteAccount;
 
+  /// No description provided for @account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get account;
+
   /// No description provided for @supportAndHelp.
   ///
   /// In en, this message translates to:
   /// **'Support & Help'**
   String get supportAndHelp;
+
+  /// No description provided for @speakWhatIsTheProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell me, what is the problem?'**
+  String get speakWhatIsTheProblem;
 
   /// No description provided for @quickAssistance.
   ///
@@ -581,6 +599,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'OK'**
   String get oK;
+
+  /// No description provided for @cancelJob.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Job'**
+  String get cancelJob;
 
   /// No description provided for @listening.
   ///

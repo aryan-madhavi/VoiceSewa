@@ -19,65 +19,65 @@ class SettingsPage extends ConsumerWidget {
         padding: const EdgeInsets.all(12),
         children: [
           SettingsSection(
-            title: "User Preferences",
+            title: context.loc.userPreferences,  //"User Preferences",
             tiles: [
               SettingsTile(
                 icon: Icons.language,
-                title: "Language",
-                subtitle: "Select your preferred language",
+                title: context.loc.language,  //"Language",
+                subtitle: context.loc.selectYourPreferredLanguage, //"Select your preferred language",
                 onTap: (context, ref) => openLanguageSelector(context, ref),
               ),
               SettingsTile(
                 icon: Icons.notifications_outlined,
-                title: "Notifications",
+                title: context.loc.notifications,  //"Notifications",
                 trailing: const NotificationSwitch(),
               ),
               SettingsTile(
                 icon: Icons.location_on_outlined,
-                title: "Manage Saved Addresses",
+                title: context.loc.manageSavedAddresses,  //"Manage Saved Addresses",
                 onTap: manageAddresses,
               ),
               SettingsTile(
                 icon: Icons.data_usage_outlined,
-                title: "Data Usage & Offline Cache",
-                subtitle: "Configure download and cache limits",
+                title: context.loc.dataUsageAndOfflineCache,  //"Data Usage & Offline Cache",
+                subtitle: context.loc.configureDownloadAndCacheLimits, //"Configure download and cache limits",
                 onTap: openDataUsageSettings,
               ),
             ],
           ),
           SettingsSection(
-            title: "App Settings",
+            title: context.loc.appSettings,  //"App Settings",
             tiles: [
               SettingsTile(
                 icon: Icons.dark_mode_outlined,
-                title: "Dark Mode",
+                title: context.loc.darkMode,  //"Dark Mode",
                 trailing: const ThemeSwitch(),
               ),
               SettingsTile(
                 icon: Icons.privacy_tip_outlined,
-                title: "Privacy Policy",
+                title: context.loc.privacyPolicy,  //"Privacy Policy",
                 onTap: openPrivacyPolicy,
               ),
               SettingsTile(
                 icon: Icons.description_outlined,
-                title: "Terms & Conditions",
+                title: context.loc.termsAndConditions,  //"Terms & Conditions",
                 onTap: openTerms,
               ),
             ],
           ),
 
           SettingsSection(
-            title: "Account",
+            title: context.loc.account,  //"Account",
             tiles: [
               SettingsTile(
                 icon: Icons.logout,
-                title: "Logout",
+                title: context.loc.logout,  //"Logout",
                 iconColor: Colors.redAccent,
                 onTap: logout,
               ),
               SettingsTile(
                 icon: Icons.delete_forever_outlined,
-                title: "Delete Account",
+                title: context.loc.deleteAccount,  //"Delete Account",
                 iconColor: Colors.redAccent,
                 onTap: deleteAccount,
               ),

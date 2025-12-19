@@ -54,6 +54,7 @@
   "playVoiceIntro": "वॉइस इंट्रो चलाएं",
 
   "oldestFirst": "सबसे पुराने पहले",
+  "newestFirst": "सबसे नए पहले",
   "amount": "राशि",
   "noJobsMatchTheSelectedFilters": "चयनित फिल्टर से कोई जॉब मेल नहीं खाता।",
   "activeJobs": "सक्रिय जॉब्स",
@@ -85,8 +86,10 @@
   "darkMode": "डार्क मोड",
   "logout": "लॉग आउट",
   "deleteAccount": "खाता हटाएं",
+  "account": "खाता",
 
   "supportAndHelp": "समर्थन और मदद",
+  "speakWhatIsTheProblem": "बोलिए, क्या समस्या है?",
   "quickAssistance": "त्वरित सहायता",
   "paymentIssue": "भुगतान समस्या",
   "workerNotArrived": "वर्कर नहीं आया",
@@ -94,6 +97,7 @@
   "chatWithSupport": "समर्थन टीम से चैट करें",
   "chatFunctionalityComingSoon": "चैट सुविधा जल्द आ रही है!",
   "oK": "ठीक है",
+  "cancelJob": "जॉब रद्द करें",
 
   "listening": "सुन रहा है...",
   "voiceRecognition": "आवाज़ पहचान",

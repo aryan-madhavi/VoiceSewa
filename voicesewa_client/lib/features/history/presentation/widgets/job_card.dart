@@ -4,6 +4,8 @@ import 'package:voicesewa_client/shared/models/booking_model.dart';
 import 'package:voicesewa_client/features/history/presentation/widgets/status_badge.dart';
 import 'package:voicesewa_client/features/history/presentation/widgets/job_details_sheet.dart';
 
+import '../../../../core/extensions/context_extensions.dart';
+
 class JobCard extends StatelessWidget {
   final BookingModel job;
   const JobCard({super.key, required this.job});
@@ -18,62 +20,74 @@ class JobCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Title Row ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Icon(job.serviceIcon, color: job.serviceColor, size: 16),
-                    const SizedBox(width: 8),
-                    Text(
-                      job.serviceName,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(job.serviceIcon, color: job.serviceColor, size: 16),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          job.serviceName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 StatusBadge(status: job.status, color: color),
               ],
             ),
 
             const SizedBox(height: 10),
 
-            // --- Worker Name + Date ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.person_outline,
-                      size: 18,
-                      color: Colors.black87,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      job.workerName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.person_outline,
+                        size: 18,
                         color: Colors.black87,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.star, size: 16, color: Colors.amber),
-                    const SizedBox(width: 3),
-                    Text(
-                      job.workerRating.toStringAsFixed(1),
-                      style: const TextStyle(
-                        color: Colors.amber,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          job.workerName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      const Icon(Icons.star, size: 16, color: Colors.amber),
+                      const SizedBox(width: 3),
+                      Text(
+                        job.workerRating.toStringAsFixed(1),
+                        style: const TextStyle(
+                          color: Colors.amber,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   job.formattedDate,
                   style: const TextStyle(color: Colors.grey, fontSize: 13),
@@ -82,8 +96,6 @@ class JobCard extends StatelessWidget {
             ),
 
             const SizedBox(height: 10),
-
-            // --- User Rating + Amount ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -92,7 +104,7 @@ class JobCard extends StatelessWidget {
                     const Icon(Icons.star, size: 16, color: Colors.amber),
                     const SizedBox(width: 4),
                     Text(
-                      "Your Rating: ${job.userRating?.toStringAsFixed(1) ?? '–'}",
+                      "${context.loc.yourRating}: ${job.userRating?.toStringAsFixed(1) ?? '–'}",
                       style: const TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 13,
@@ -112,62 +124,67 @@ class JobCard extends StatelessWidget {
             ),
 
             const Divider(height: 20, color: Colors.grey),
-
-            // --- Buttons Row ---
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text(
-                    "Book Again",
-                  style: TextStyle(
-                    fontSize: 13,
+            Center(
+              child: Wrap(
+                alignment: WrapAlignment.spaceAround,
+                spacing: 8.0,
+                runSpacing: 0.0,
+                children: [
+                  TextButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: Text(
+                      context.loc.bookAgain,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: ColorConstants.seed,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      minimumSize: const Size(0, 36),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
+                  TextButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.download, size: 16),
+                    label: Text(
+                      context.loc.invoice,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.black87,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      minimumSize: const Size(0, 36),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: ColorConstants.seed,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.download, size: 16),
-                  label: const Text("Invoice",
-                    style: TextStyle(
-                      fontSize: 13,
-                    ),),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(16),
+                  TextButton.icon(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(16),
+                          ),
                         ),
-                      ),
-                      builder: (_) => JobDetailsSheet(job: job),
-                    );
-                  },
-                  icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-                  label: const Text("Details",
-                    style: TextStyle(
-                      fontSize: 13,
-                    ),),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                        builder: (_) => JobDetailsSheet(job: job),
+                      );
+                    },
+                    icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
+                    label: Text(
+                      context.loc.details,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.black87,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      minimumSize: const Size(0, 36),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),

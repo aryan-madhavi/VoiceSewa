@@ -9,259 +9,271 @@ class AppLocalizationsGu extends AppLocalizations {
   AppLocalizationsGu([String locale = 'gu']) : super(locale);
 
   @override
-  String get appName => 'वॉइससेवा';
+  String get appName => 'વોઇસસેવા';
 
   @override
-  String get welcomeMessage => 'वॉइससेवा मध्ये आपले स्वागत आहे!';
+  String get welcomeMessage => 'વોઇસસેવા માં સ્વાગત છે!';
 
   @override
-  String get loginPrompt => 'पुढे जाण्यासाठी कृपया लॉग इन करा.';
+  String get loginPrompt => 'ચાલુ રાખવા માટે કૃપા કરીને લોગ ઇન કરો.';
 
   @override
-  String get signUpPrompt => 'खाते नाही? आता साइन अप करा.';
+  String get signUpPrompt => 'ખાતું નથી? અત્યારે સાઇન અપ કરો.';
 
   @override
-  String get errorMessage => 'एक त्रुटी आली आहे. कृपया पुन्हा प्रयत्न करा.';
+  String get errorMessage => 'એક ભૂલ આવી છે. કૃપા કરીને ફરી પ્રયાસ કરો.';
 
   @override
-  String get loadingMessage => 'लोड होत आहे, कृपया प्रतीक्षा करा...';
+  String get loadingMessage => 'લોડ થઈ રહ્યું છે, કૃપા કરીને રાહ જુઓ...';
 
   @override
-  String get logoutConfirmation => 'तुम्हाला नक्की लॉग आउट करायचे आहे का?';
+  String get logoutConfirmation => 'શું તમે ખરેખર લોગ આઉટ કરવા માંગો છો?';
 
   @override
-  String get authTitle => 'लॉग इन / साइन अप';
+  String get authTitle => 'લોગ ઇન / સાઇન અપ';
 
   @override
-  String get homeTitle => 'होम';
+  String get homeTitle => 'હોમ';
 
   @override
-  String get searchTitle => 'शोधा';
+  String get searchTitle => 'શોધો';
 
   @override
-  String get voiceBotTitle => 'वॉइसबॉट';
+  String get voiceBotTitle => 'વોઇસબોટ';
 
   @override
-  String get historyTitle => 'इतिहास';
+  String get historyTitle => 'ઇતિહાસ';
 
   @override
-  String get profileTitle => 'प्रोफाइल';
+  String get profileTitle => 'પ્રોફાઇલ';
 
   @override
-  String get bookCTA => 'सेवा बुक करा';
+  String get bookCTA => 'સેવા બુક કરો';
 
   @override
-  String get activeBookingsCTA => 'सक्रिय बुकिंग';
+  String get activeBookingsCTA => 'સક્રિય બુકિંગ';
 
   @override
-  String get offersCTA => 'ऑफर तपासा';
+  String get offersCTA => 'ઓફર્સ તપાસો';
 
   @override
-  String get helpCTA => 'मदत मिळवा';
+  String get helpCTA => 'મદદ મેળવો';
 
   @override
-  String get chatTitle => 'चॅट';
+  String get chatTitle => 'ચેટ';
 
   @override
-  String get settingsTitle => 'सेटिंग्ज';
+  String get settingsTitle => 'સેટિંગ્સ';
 
   @override
-  String get termsAndConditions => 'नियम आणि अटी';
+  String get termsAndConditions => 'નિયમો અને શરતો';
 
   @override
-  String get privacyPolicy => 'गोपनीयता धोरण';
+  String get privacyPolicy => 'ગોપનીયતા નીતિ';
 
   @override
-  String get contactUs => 'आमच्याशी संपर्क साधा';
+  String get contactUs => 'અમારો સંપર્ક કરો';
 
   @override
-  String get feedbackPrompt => 'आम्हाला तुमच्या अभिप्रायची कदर आहे!';
+  String get feedbackPrompt => 'અમે તમારા પ્રતિસાદની કદર કરીએ છીએ!';
 
   @override
-  String get updateAvailable => 'नवीन अपडेट उपलब्ध आहे.';
+  String get updateAvailable => 'એક નવું અપડેટ ઉપલબ્ધ છે.';
 
   @override
-  String get noInternetConnection => 'इंटरनेट कनेक्शन नाही.';
+  String get noInternetConnection => 'કોઈ ઇન્ટરનેટ કનેક્શન નથી.';
 
   @override
-  String get selectLanguage => 'भाषा निवडा';
+  String get selectLanguage => 'ભાષા પસંદ કરો';
 
   @override
-  String get trackRecentRequests => 'अलीकडील विनंत्या ट्रॅक करा';
+  String get trackRecentRequests => 'તાજેતરની વિનંતીઓ ટ્રૅક કરો';
 
   @override
-  String get worker => 'कामगार';
+  String get worker => 'વર્કર';
 
   @override
-  String get eTA => 'येण्याची वेळ';
+  String get eTA => 'આગમન સમય';
 
   @override
-  String get quickBookServices => 'क्विक बुक सेवा';
+  String get quickBookServices => 'ક્વિક બુક સેવાઓ';
 
   @override
-  String get bookAgain => 'पुन्हा बुक करा';
+  String get bookAgain => 'ફરીથી બુક કરો';
 
   @override
-  String get myRequests => 'माझ्या विनंत्या';
+  String get myRequests => 'મારી વિનંતીઓ';
 
   @override
-  String get offers => 'ऑफर';
+  String get offers => 'ઓફર્સ';
 
   @override
-  String get helpAndSupport => 'मदत आणि समर्थन';
+  String get helpAndSupport => 'મદદ અને આધાર';
 
   @override
-  String get distance => 'अंतर';
+  String get distance => 'અંતર';
 
   @override
-  String get price => 'किंमत';
+  String get price => 'કિંમત';
 
   @override
-  String get rating => 'रेटिंग';
+  String get rating => 'રેટિંગ';
 
   @override
-  String get yrsExperience => 'वर्षांचा अनुभव';
+  String get yrsExperience => 'વર્ષનો અનુભવ';
 
   @override
-  String get available => 'उपलब्ध';
+  String get available => 'ઉપલબ્ધ';
 
   @override
-  String get unavailable => 'अनुपलब्ध';
+  String get unavailable => 'અનુપલબ્ધ';
 
   @override
-  String get skills => 'कौशल्ये';
+  String get skills => 'કૌશલ્ય';
 
   @override
-  String get bookNow => 'आत्ता बुक करा';
+  String get bookNow => 'હમણાં બુક કરો';
 
   @override
-  String get playVoiceIntro => 'व्हॉइस इंट्रो प्ले करा';
+  String get playVoiceIntro => 'વોઇસ ઇન્ટ્રો વગાડો';
 
   @override
-  String get oldestFirst => 'सर्वात जुने प्रथम';
+  String get oldestFirst => 'સૌથી જૂનું પહેલાં';
 
   @override
-  String get amount => 'रक्कम';
+  String get newestFirst => 'સૌથી નવા પહેલાં';
+
+  @override
+  String get amount => 'રકમ';
 
   @override
   String get noJobsMatchTheSelectedFilters =>
-      'निवडलेल्या फिल्टरशी जुळणारे कोणतेही जॉब नाहीत.';
+      'પસંદ કરેલ ફિલ્ટર્સ સાથે કોઈ જોબ મેચ થતી નથી.';
 
   @override
-  String get activeJobs => 'सक्रिय जॉब्स';
+  String get activeJobs => 'સક્રિય જોબ્સ';
 
   @override
-  String get completedJobs => 'पूर्ण झालेले जॉब्स';
+  String get completedJobs => 'પૂર્ણ થયેલ જોબ્સ';
 
   @override
-  String get all => 'सर्व';
+  String get all => 'બધા';
 
   @override
-  String get scheduled => 'शेड्यूल केलेले';
+  String get scheduled => 'નિયત કરેલ';
 
   @override
-  String get inProgress => 'प्रगतीपथावर';
+  String get inProgress => 'પ્રગતિમાં';
 
   @override
-  String get completed => 'पूर्ण झाले';
+  String get completed => 'પૂર્ણ';
 
   @override
-  String get cancelled => 'रद्द केले';
+  String get cancelled => 'રદ કરેલ';
 
   @override
-  String get filter => 'फिल्टर';
+  String get filter => 'ફિલ્ટર';
 
   @override
-  String get sort => 'सॉर्ट करा';
+  String get sort => 'સોર્ટ કરો';
 
   @override
-  String get yourRating => 'तुमचे रेटिंग';
+  String get yourRating => 'તમારું રેટિંગ';
 
   @override
-  String get invoice => 'इनव्हॉइस';
+  String get invoice => 'ઇન્વોઇસ';
 
   @override
-  String get details => 'तपशील';
+  String get details => 'વિગતો';
 
   @override
-  String get date => 'तारीख';
+  String get date => 'તારીખ';
 
   @override
-  String get status => 'स्थिती';
+  String get status => 'સ્થિતિ';
 
   @override
-  String get five => '५';
+  String get five => '૫';
 
   @override
-  String get userPreferences => 'वापरकर्ता प्राधान्ये';
+  String get userPreferences => 'વપરાશકર્તા પસંદગીઓ';
 
   @override
-  String get language => 'भाषा';
+  String get language => 'ભાષા';
 
   @override
-  String get selectYourPreferredLanguage => 'तुमची पसंतीची भाषा निवडा';
+  String get selectYourPreferredLanguage => 'તમારી પસંદની ભાષા પસંદ કરો';
 
   @override
-  String get notifications => 'सूचना';
+  String get notifications => 'સૂચનાઓ';
 
   @override
-  String get manageSavedAddresses => 'सेव्ह केलेले पत्ते व्यवस्थापित करा';
+  String get manageSavedAddresses => 'સાચવેલા સરનામાં મેનેજ કરો';
 
   @override
-  String get dataUsageAndOfflineCache => 'डेटा वापर आणि ऑफलाइन कॅशे';
+  String get dataUsageAndOfflineCache => 'ડેટા વપરાશ અને ઑફલાઇન કેશ';
 
   @override
   String get configureDownloadAndCacheLimits =>
-      'डाउनलोड आणि कॅशे मर्यादा कॉन्फिगर करा';
+      'ડાઉનલોડ અને કેશ મર્યાદા કન્ફિગર કરો';
 
   @override
-  String get appSettings => 'अॅप सेटिंग्ज';
+  String get appSettings => 'એપ્લિકેશન સેટિંગ્સ';
 
   @override
-  String get darkMode => 'डार्क मोड';
+  String get darkMode => 'ડાર્ક મોડ';
 
   @override
-  String get logout => 'लॉग आउट';
+  String get logout => 'લોગ આઉટ';
 
   @override
-  String get deleteAccount => 'खाते हटवा';
+  String get deleteAccount => 'ખાતું કાઢી નાખો';
 
   @override
-  String get supportAndHelp => 'समर्थन आणि मदत';
+  String get account => 'ખાતું';
 
   @override
-  String get quickAssistance => 'त्वरित सहाय्य';
+  String get supportAndHelp => 'સપોર્ટ અને મદદ';
 
   @override
-  String get paymentIssue => 'पेमेंट समस्या';
+  String get speakWhatIsTheProblem => 'બોલો, શું સમસ્યા છે?';
 
   @override
-  String get workerNotArrived => 'कामगार पोहोचला नाही';
+  String get quickAssistance => 'ઝડપી સહાયતા';
 
   @override
-  String get fAQs => 'सामान्य प्रश्न';
+  String get paymentIssue => 'ચુકવણી સમસ્યા';
 
   @override
-  String get chatWithSupport => 'सपोर्टशी चॅट करा';
+  String get workerNotArrived => 'વર્કર આવ્યા નથી';
 
   @override
-  String get chatFunctionalityComingSoon => 'चॅट कार्यक्षमता लवकरच येत आहे!';
+  String get fAQs => 'સામાન્ય પ્રશ્નો';
 
   @override
-  String get oK => 'ठीक आहे';
+  String get chatWithSupport => 'સપોર્ટ સાથે ચેટ કરો';
 
   @override
-  String get listening => 'ऐकत आहे...';
+  String get chatFunctionalityComingSoon => 'Chat functionality coming soon!';
 
   @override
-  String get voiceRecognition => 'आवाज ओळख';
+  String get oK => 'ઠીક છે';
 
   @override
-  String get speakNow => 'आता बोला';
+  String get cancelJob => 'જોબ રદ કરો';
 
   @override
-  String get startSpeaking => 'बोलणे सुरू करा';
+  String get listening => 'સાંભળી રહ્યું છે...';
 
   @override
-  String get noTextRecognized => 'क कोणताही मजकूर ओळखला गेला नाही';
+  String get voiceRecognition => 'વોઇસ ઓળખ';
+
+  @override
+  String get speakNow => 'હવે બોલો';
+
+  @override
+  String get startSpeaking => 'બોલવાનું શરૂ કરો';
+
+  @override
+  String get noTextRecognized => 'કોઈ લખાણ ઓળખાયું નથી';
 }

@@ -141,6 +141,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get oldestFirst => 'Oldest First';
 
   @override
+  String get newestFirst => 'Newest First';
+
+  @override
   String get amount => 'Amount';
 
   @override
@@ -227,7 +230,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteAccount => 'Delete Account';
 
   @override
+  String get account => 'Account';
+
+  @override
   String get supportAndHelp => 'Support & Help';
+
+  @override
+  String get speakWhatIsTheProblem => 'Tell me, what is the problem?';
 
   @override
   String get quickAssistance => 'Quick Assistance';
@@ -249,6 +258,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get oK => 'OK';
+
+  @override
+  String get cancelJob => 'Cancel Job';
 
   @override
   String get listening => 'Listening';

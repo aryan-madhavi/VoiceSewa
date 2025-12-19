@@ -142,6 +142,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get oldestFirst => 'सबसे पुराने पहले';
 
   @override
+  String get newestFirst => 'सबसे नए पहले';
+
+  @override
   String get amount => 'राशि';
 
   @override
@@ -228,7 +231,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get deleteAccount => 'खाता हटाएं';
 
   @override
+  String get account => 'खाता';
+
+  @override
   String get supportAndHelp => 'समर्थन और मदद';
+
+  @override
+  String get speakWhatIsTheProblem => 'बोलिए, क्या समस्या है?';
 
   @override
   String get quickAssistance => 'त्वरित सहायता';
@@ -250,6 +259,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get oK => 'ठीक है';
+
+  @override
+  String get cancelJob => 'जॉब रद्द करें';
 
   @override
   String get listening => 'सुन रहा है...';
