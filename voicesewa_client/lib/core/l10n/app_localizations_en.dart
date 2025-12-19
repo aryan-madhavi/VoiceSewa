@@ -109,4 +109,159 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helpAndSupport => 'Help & Support';
+
+  @override
+  String get distance => 'Distance';
+
+  @override
+  String get price => 'Price';
+
+  @override
+  String get rating => 'Rating';
+
+  @override
+  String get yrsExperience => 'yrs experience';
+
+  @override
+  String get available => 'Available';
+
+  @override
+  String get unavailable => 'Unavailable';
+
+  @override
+  String get skills => 'Skills';
+
+  @override
+  String get bookNow => 'Book Now';
+
+  @override
+  String get playVoiceIntro => 'Play voice intro';
+
+  @override
+  String get oldestFirst => 'Oldest First';
+
+  @override
+  String get amount => 'Amount';
+
+  @override
+  String get noJobsMatchTheSelectedFilters =>
+      'No jobs match the selected filters.';
+
+  @override
+  String get activeJobs => 'Active Jobs';
+
+  @override
+  String get completedJobs => 'Completed Jobs';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get scheduled => 'Scheduled';
+
+  @override
+  String get inProgress => 'In Progress';
+
+  @override
+  String get completed => 'Completed';
+
+  @override
+  String get cancelled => 'Cancelled';
+
+  @override
+  String get filter => 'Filter';
+
+  @override
+  String get sort => 'Sort';
+
+  @override
+  String get yourRating => 'Your Rating';
+
+  @override
+  String get invoice => 'Invoice';
+
+  @override
+  String get details => 'Details';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get status => 'Status';
+
+  @override
+  String get five => '5';
+
+  @override
+  String get userPreferences => 'User Preferences';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get selectYourPreferredLanguage => 'Select your preferred language';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get manageSavedAddresses => 'Manage Saved Addresses';
+
+  @override
+  String get dataUsageAndOfflineCache => 'Data Usage & Offline Cache';
+
+  @override
+  String get configureDownloadAndCacheLimits =>
+      'Configure download and cache limits';
+
+  @override
+  String get appSettings => 'App Settings';
+
+  @override
+  String get darkMode => 'Dark Mode';
+
+  @override
+  String get logout => 'Logout';
+
+  @override
+  String get deleteAccount => 'Delete Account';
+
+  @override
+  String get supportAndHelp => 'Support & Help';
+
+  @override
+  String get quickAssistance => 'Quick Assistance';
+
+  @override
+  String get paymentIssue => 'Payment issue';
+
+  @override
+  String get workerNotArrived => 'Worker not arrived';
+
+  @override
+  String get fAQs => 'FAQs';
+
+  @override
+  String get chatWithSupport => 'Chat with Support';
+
+  @override
+  String get chatFunctionalityComingSoon => 'Chat functionality coming soon!';
+
+  @override
+  String get oK => 'OK';
+
+  @override
+  String get listening => 'Listening';
+
+  @override
+  String get voiceRecognition => 'Voice Recognition';
+
+  @override
+  String get speakNow => 'Speak now';
+
+  @override
+  String get startSpeaking => 'Start speaking';
+
+  @override
+  String get noTextRecognized => 'No text recognized';
 }

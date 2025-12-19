@@ -305,6 +305,312 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Help & Support'**
   String get helpAndSupport;
+
+  /// No description provided for @distance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get distance;
+
+  /// No description provided for @price.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get price;
+
+  /// No description provided for @rating.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating'**
+  String get rating;
+
+  /// No description provided for @yrsExperience.
+  ///
+  /// In en, this message translates to:
+  /// **'yrs experience'**
+  String get yrsExperience;
+
+  /// No description provided for @available.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get available;
+
+  /// No description provided for @unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get unavailable;
+
+  /// No description provided for @skills.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get skills;
+
+  /// No description provided for @bookNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Book Now'**
+  String get bookNow;
+
+  /// No description provided for @playVoiceIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Play voice intro'**
+  String get playVoiceIntro;
+
+  /// No description provided for @oldestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest First'**
+  String get oldestFirst;
+
+  /// No description provided for @amount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get amount;
+
+  /// No description provided for @noJobsMatchTheSelectedFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'No jobs match the selected filters.'**
+  String get noJobsMatchTheSelectedFilters;
+
+  /// No description provided for @activeJobs.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Jobs'**
+  String get activeJobs;
+
+  /// No description provided for @completedJobs.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed Jobs'**
+  String get completedJobs;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @scheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get scheduled;
+
+  /// No description provided for @inProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get inProgress;
+
+  /// No description provided for @completed.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completed;
+
+  /// No description provided for @cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get cancelled;
+
+  /// No description provided for @filter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get filter;
+
+  /// No description provided for @sort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get sort;
+
+  /// No description provided for @yourRating.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Rating'**
+  String get yourRating;
+
+  /// No description provided for @invoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice'**
+  String get invoice;
+
+  /// No description provided for @details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get details;
+
+  /// No description provided for @date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get date;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
+
+  /// No description provided for @five.
+  ///
+  /// In en, this message translates to:
+  /// **'5'**
+  String get five;
+
+  /// No description provided for @userPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'User Preferences'**
+  String get userPreferences;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @selectYourPreferredLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Select your preferred language'**
+  String get selectYourPreferredLanguage;
+
+  /// No description provided for @notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notifications;
+
+  /// No description provided for @manageSavedAddresses.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Saved Addresses'**
+  String get manageSavedAddresses;
+
+  /// No description provided for @dataUsageAndOfflineCache.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Usage & Offline Cache'**
+  String get dataUsageAndOfflineCache;
+
+  /// No description provided for @configureDownloadAndCacheLimits.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure download and cache limits'**
+  String get configureDownloadAndCacheLimits;
+
+  /// No description provided for @appSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'App Settings'**
+  String get appSettings;
+
+  /// No description provided for @darkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark Mode'**
+  String get darkMode;
+
+  /// No description provided for @logout.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logout;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get deleteAccount;
+
+  /// No description provided for @supportAndHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Support & Help'**
+  String get supportAndHelp;
+
+  /// No description provided for @quickAssistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Assistance'**
+  String get quickAssistance;
+
+  /// No description provided for @paymentIssue.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment issue'**
+  String get paymentIssue;
+
+  /// No description provided for @workerNotArrived.
+  ///
+  /// In en, this message translates to:
+  /// **'Worker not arrived'**
+  String get workerNotArrived;
+
+  /// No description provided for @fAQs.
+  ///
+  /// In en, this message translates to:
+  /// **'FAQs'**
+  String get fAQs;
+
+  /// No description provided for @chatWithSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat with Support'**
+  String get chatWithSupport;
+
+  /// No description provided for @chatFunctionalityComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat functionality coming soon!'**
+  String get chatFunctionalityComingSoon;
+
+  /// No description provided for @oK.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get oK;
+
+  /// No description provided for @listening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get listening;
+
+  /// No description provided for @voiceRecognition.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Recognition'**
+  String get voiceRecognition;
+
+  /// No description provided for @speakNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Speak now'**
+  String get speakNow;
+
+  /// No description provided for @startSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Start speaking'**
+  String get startSpeaking;
+
+  /// No description provided for @noTextRecognized.
+  ///
+  /// In en, this message translates to:
+  /// **'No text recognized'**
+  String get noTextRecognized;
 }
 
 class _AppLocalizationsDelegate

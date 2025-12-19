@@ -52,23 +52,23 @@ class JobDetailsSheet extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.calendar_today_outlined),
-              title: const Text("Date"),
+              title: Text("Date"),
               subtitle: Text(job.formattedDate),
             ),
             if (job.eta != null)
               ListTile(
                 leading: const Icon(Icons.timer_outlined),
-                title: const Text("ETA"),
+                title: Text("ETA"),
                 subtitle: Text(job.eta!),
               ),
             ListTile(
               leading: const Icon(Icons.attach_money),
-              title: const Text("Amount"),
+              title: Text("Amount"),
               subtitle: Text("₹${job.amount.toStringAsFixed(0)}"),
             ),
             ListTile(
               leading: const Icon(Icons.assignment_turned_in_outlined),
-              title: const Text("Status"),
+              title: Text("Status"),
               subtitle: Text(
                 job.status,
                 style: TextStyle(

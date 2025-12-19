@@ -78,12 +78,12 @@ class SupportPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Chat with Support"),
-        content: const Text("Chat functionality coming soon!"),
+        title: Text("Chat with Support"),
+        content: Text("Chat functionality coming soon!"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
+            child: Text("OK"),
           ),
         ],
       ),
