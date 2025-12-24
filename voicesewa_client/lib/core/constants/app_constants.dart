@@ -19,7 +19,7 @@ class AppConstants {
     NavTab.voicebot: [
       SizedBox.shrink(), 
       StringConstants.voiceBotTitle, 
-      '',
+      RoutePaths.voicebot,
     ],
     NavTab.history: [
       Icon(Icons.history),

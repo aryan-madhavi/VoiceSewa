@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:voicesewa_client/features/voicebot/providers/speech_state.dart';
+import 'package:voicesewa_client/features/voicebot/models/speech_state.dart';
+import 'package:voicesewa_client/features/voicebot/providers/chat_provider.dart';
+import 'package:voicesewa_client/features/voicebot/providers/voicechat_provder.dart';
 
 class SpeechNotifier extends Notifier<SpeechState> {
   late final SpeechToText _speechToText;
@@ -95,7 +97,12 @@ class SpeechNotifier extends Notifier<SpeechState> {
   void _onSpeechResult(SpeechRecognitionResult result) {
     print('Speech result (${state.localeId}): ${result.recognizedWords}');
     state = state.copyWith(recognizedText: result.recognizedWords);
-    if (result.finalResult) stopListening();
+    if (result.finalResult) {
+      final text = result.recognizedWords.trim();
+      stopListening();
+      ref.read(chatControllerProvider.notifier).addUserMessage(text);
+      ref.read(voiceBotControllerProvider.notifier).processSpeech(text);
+    }
   }
 
   Future<void> stopListening() async {
