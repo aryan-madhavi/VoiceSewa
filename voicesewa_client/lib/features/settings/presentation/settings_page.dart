@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:voicesewa_client/features/auth/presentation/widgets/sync_button.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_section.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_switches.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_tile.dart';
 import 'package:voicesewa_client/features/voicebot/providers/speech_provider.dart';
+import 'package:voicesewa_client/features/auth/data/populate_services.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -64,6 +66,32 @@ class SettingsPage extends ConsumerWidget {
                 onTap: _openTerms,
               ),
             ],
+          ),
+
+          // --- Services Interaction ---
+          SettingsSection(
+            title: "User Services", 
+            tiles: [
+              SettingsTile(
+                icon: Icons.add_box,
+                title: "Populate Services",
+                iconColor: Colors.green,
+                onTap: insertTempServiceRequest,
+              ),
+              SettingsTile(
+                icon: Icons.bug_report_outlined,
+                title: "Open Debug",
+                iconColor: Colors.blue,
+                onTap: (BuildContext context, WidgetRef ref) => Navigator.pushNamed(context, '/sync-debug')
+              ),
+              SettingsTile(
+                icon: Icons.sync,
+                leadingWidget: SyncFAB(),
+                title: "Sync Pending Services",
+                iconColor: Colors.green,
+                onTap: null,
+              ),
+            ]
           ),
 
           // --- Account ---
