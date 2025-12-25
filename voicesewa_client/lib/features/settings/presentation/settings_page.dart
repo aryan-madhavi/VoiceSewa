@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-import 'package:voicesewa_client/features/auth/presentation/widgets/sync_button.dart';
+import 'package:voicesewa_client/core/widgets/feedback/sync_button.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_section.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_switches.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_tile.dart';
 import 'package:voicesewa_client/features/voicebot/providers/speech_provider.dart';
-import 'package:voicesewa_client/features/auth/data/populate_services.dart';
+import 'package:voicesewa_client/core/database/services/populate_services.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});

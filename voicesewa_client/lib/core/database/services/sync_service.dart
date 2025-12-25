@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:voicesewa_client/features/auth/data/tables/client_pending_sync_table.dart';
+import 'package:voicesewa_client/core/database/tables/client_pending_sync_table.dart';
 
 class SyncService {
   final Database local_db;

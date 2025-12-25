@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/widgets/layout/root_scaffold.dart';
 import 'package:voicesewa_client/features/auth/presentation/login_screen.dart';
 import 'package:voicesewa_client/core/providers/session_provider.dart';
-import 'package:voicesewa_client/features/auth/presentation/sync_initializer.dart';
+import 'package:voicesewa_client/core/database/services/sync_initializer.dart';
 
 class AppGate extends ConsumerWidget {
   const AppGate({super.key});

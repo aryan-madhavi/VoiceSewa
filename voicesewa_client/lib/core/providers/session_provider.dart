@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:voicesewa_client/features/auth/data/db_login.dart';
+import 'package:voicesewa_client/core/database/db_login.dart';
 
 enum SessionStatus { loading, loggedIn, loggedOut }
 

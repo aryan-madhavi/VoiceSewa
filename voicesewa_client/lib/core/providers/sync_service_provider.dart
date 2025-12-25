@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:voicesewa_client/features/auth/data/SyncService/sync_service.dart';
-import 'package:voicesewa_client/features/auth/data/user_app_database.dart';
+import 'package:voicesewa_client/core/database/services/sync_service.dart';
+import 'package:voicesewa_client/core/database/user_app_database.dart';
 
 // Provider for database instance
 final databaseProvider = FutureProvider<Database>((ref) async {

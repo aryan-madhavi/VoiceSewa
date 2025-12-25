@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:riverpod/legacy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/features/auth/data/tables/service_request_table.dart';
-import 'package:voicesewa_client/features/auth/data/user_app_database.dart';
+import 'package:voicesewa_client/core/database/tables/service_request_table.dart';
+import 'package:voicesewa_client/core/database/user_app_database.dart';
 
 final clientIdCounterProvider = StateProvider<int>((ref) => 1);
 

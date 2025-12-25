@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
-import 'package:voicesewa_client/features/auth/data/tables/client_pending_sync_table.dart';
+import 'package:voicesewa_client/core/database/tables/client_pending_sync_table.dart';
 
 enum ServiceStatus {
   pending,
