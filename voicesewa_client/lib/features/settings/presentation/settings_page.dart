@@ -5,6 +5,7 @@ import 'package:voicesewa_client/features/settings/presentation/widgets/settings
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_switches.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_tile.dart';
 import 'package:voicesewa_client/features/voicebot/providers/speech_provider.dart';
+import 'package:voicesewa_client/features/auth/data/populate_services.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -70,6 +71,12 @@ class SettingsPage extends ConsumerWidget {
           SettingsSection(
             title: "Account",
             tiles: [
+              SettingsTile(
+                icon: Icons.add_box,
+                title: "Populate Services",
+                iconColor: Colors.green,
+                onTap: insertTempServiceRequest,
+              ),
               SettingsTile(
                 icon: Icons.logout,
                 title: "Logout",
