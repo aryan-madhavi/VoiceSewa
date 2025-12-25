@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
+import 'package:voicesewa_client/database/tables/client_pending_sync_table.dart';
 
 enum ServiceStatus {
   pending,
@@ -21,7 +23,6 @@ class ServiceRequest  {
   final int? updatedAt;  
   final ServiceStatus status;
   
-
   ServiceRequest({
     required this.serviceRequestId,
     required this.clientId,
@@ -35,7 +36,6 @@ class ServiceRequest  {
     required this.updatedAt,
     required this.status,
   });
-
 
   Map<String, Object?> toMap() => {
     'service_request_id': serviceRequestId,
@@ -69,9 +69,7 @@ class ServiceRequest  {
       status: ServiceStatus.values[statusSafe],
     );
   }
-
 }
-
 
 class ServiceRequestTable {
   static const table = 'service_requests';
@@ -102,23 +100,63 @@ class ServiceRequestTable {
   final Database db;
   ServiceRequestTable(this.db);
 
+  // Helper to queue sync records
+  Future<void> _queueSync(String entityId, String action, ServiceRequest? s) async {
+    final syncTable = ClientPendingSyncTable(db);
+    
+    Map<String, dynamic> payload = {};
+    
+    if (action == 'DELETE') {
+      payload = {'serviceRequestId': entityId};
+    } else if (s != null) {
+      payload = {
+        'serviceRequestId': s.serviceRequestId,
+        'clientId': s.clientId,
+        'workerId': s.workerId ?? '',
+        'category': s.category,
+        'title': s.title,
+        'description': s.description ?? '',
+        'location': s.location ?? '',
+        'scheduledAt': s.scheduledAt ?? 0,
+        'createdAt': s.createdAt ?? 0,
+        'updatedAt': s.updatedAt ?? 0,
+        'status': s.status.index,
+      };
+    }
+
+    await syncTable.enqueue(
+      id: '$entityId-${DateTime.now().millisecondsSinceEpoch}',
+      entityType: 'service_requests',
+      entityId: entityId,
+      action: action,
+      payload: jsonEncode(payload),
+    );
+  }
+
   Future<int> upsert(ServiceRequest s) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     final map = s.toMap();
 
-    // If timestamps are null, supply defaults here; DB also has defaults.
     map['created_at'] ??= now;
     map['updated_at'] ??= now;
 
-    return db.insert(
+    // Check if record exists to determine INSERT vs UPDATE
+    final existing = await getById(s.serviceRequestId);
+    final action = existing == null ? 'INSERT' : 'UPDATE';
+
+    final result = await db.insert(
       table,
       map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+
+    // Queue sync after successful insert/update
+    await _queueSync(s.serviceRequestId, action, s);
+
+    return result;
   }
 
-
- Future<List<ServiceRequest>> all({
+  Future<List<ServiceRequest>> all({
     ServiceStatus? status,
     String? clientId,
     String? workerId,
@@ -170,25 +208,50 @@ class ServiceRequestTable {
 
   Future<int> setStatus(String serviceRequestId, ServiceStatus status) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    return db.update(
+    final result = await db.update(
       table,
       {'status': status.index, 'updated_at': now},
       where: 'service_request_id = ?',
       whereArgs: [serviceRequestId],
     );
+
+    // Queue sync
+    final updated = await getById(serviceRequestId);
+    if (updated != null) {
+      await _queueSync(serviceRequestId, 'UPDATE', updated);
+    }
+
+    return result;
   }
 
   Future<int> setWorker(String serviceRequestId, String? workerId) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    return db.update(
+    final result = await db.update(
       table,
       {'worker_id': workerId, 'updated_at': now},
       where: 'service_request_id = ?',
       whereArgs: [serviceRequestId],
     );
+
+    // Queue sync
+    final updated = await getById(serviceRequestId);
+    if (updated != null) {
+      await _queueSync(serviceRequestId, 'UPDATE', updated);
+    }
+
+    return result;
   }
 
-  Future<int> delete(String serviceRequestId) =>
-    db.delete(table, where: 'service_request_id = ?', whereArgs: [serviceRequestId]);
+  Future<int> delete(String serviceRequestId) async {
+    final result = await db.delete(
+      table, 
+      where: 'service_request_id = ?', 
+      whereArgs: [serviceRequestId]
+    );
 
+    // Queue sync for deletion
+    await _queueSync(serviceRequestId, 'DELETE', null);
+
+    return result;
+  }
 }

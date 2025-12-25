@@ -6,11 +6,8 @@ import 'package:sqflite/sqflite.dart';
 import 'tables/client_profile_table.dart';
 import 'tables/service_request_table.dart';
 import 'tables/client_pending_sync_table.dart';
-import 'SyncService/pending_sync_helper_trigger.dart';
 
 class ClientDatabase {
-  /// It should be unique for each user
-  // userid_voicesewa_client.db
   static const _dbname = 'voicesewa_client.db';
   static const _dbversion = 1;
 
@@ -31,11 +28,13 @@ class ClientDatabase {
         await db.execute(ClientProfileTable.createSql);
         await db.execute(ServiceRequestTable.createSql);
         await db.execute(ClientPendingSyncTable.createSql);
+        
         for (final sql in ServiceRequestTable.indexesSql) {
           await db.execute(sql);
         }
-        await installServiceRequestSyncTriggers(db);
 
+        // NO TRIGGERS - sync is handled in Dart code
+        
         await db.execute(
           'CREATE INDEX IF NOT EXISTS idx_sr_status ON service_requests(status);',
         );

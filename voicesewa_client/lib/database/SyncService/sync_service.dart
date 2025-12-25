@@ -9,7 +9,6 @@ class SyncService {
   final Database local_db;
   final FirebaseFirestore firestore_db;
   
-  // Store the subscription to prevent garbage collection
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Timer? _periodicSyncTimer;
   bool _isSyncing = false;
@@ -29,7 +28,7 @@ class SyncService {
             .get(const GetOptions(source: Source.server));
         return true;
       } catch (e) {
-        print('Internet check failed: $e');
+        print('❌ Internet check failed: $e');
         return false;
       }
     }
@@ -37,20 +36,22 @@ class SyncService {
   }
 
   Future<void> syncPending() async {
-    // Prevent multiple simultaneous syncs
     if (_isSyncing) {
-      print('Sync already in progress, skipping...');
+      print('⏭️  Sync already in progress, skipping...');
       return;
     }
 
     _isSyncing = true;
+    int successCount = 0;
+    int failCount = 0;
+    
     try {
       if (!await _hasInternetConnection()) {
-        print('No internet connection, skipping sync');
+        print('📵 No internet connection, skipping sync');
         return;
       }
 
-      print('Starting sync...');
+      print('🔄 Starting sync...');
       
       final rows = await local_db.query(
         ClientPendingSyncTable.table,
@@ -60,7 +61,7 @@ class SyncService {
         limit: 50,
       );
 
-      print('Found ${rows.length} pending items to sync');
+      print('📋 Found ${rows.length} pending items to sync');
 
       for (final r in rows) {
         final id = r['id'] as String;
@@ -70,22 +71,27 @@ class SyncService {
         final payload = r['payload'] as String;
 
         try {
-          print('Syncing: $action $entityType/$entityId');
+          print('🔄 Syncing: $action $entityType/$entityId');
 
           if (entityType == 'service_requests') {
             final data = jsonDecode(payload) as Map<String, dynamic>;
             
-            // Convert integer timestamps to Firestore Timestamps
+            // FIXED: Convert timestamps BEFORE sending to Firestore
             final firestoreData = _convertTimestampsForFirestore(data);
+            
+            print('📤 Sending data to Firestore: $firestoreData');
             
             final docRef = firestore_db.collection('service_requests').doc(entityId);
 
             if (action == 'INSERT' || action == 'UPDATE') {
+              // Use merge:true to avoid overwriting other fields
               await docRef.set(firestoreData, SetOptions(merge: true));
-              print('Successfully synced: $entityId');
+              print('✅ Successfully synced: $entityId');
+              successCount++;
             } else if (action == 'DELETE') {
               await docRef.delete();
-              print('Successfully deleted: $entityId');
+              print('🗑️  Successfully deleted: $entityId');
+              successCount++;
             }
           }
 
@@ -96,13 +102,16 @@ class SyncService {
             whereArgs: [id],
           );
 
-        } catch (e) {
-          print('Sync failed for $entityId: $e');
+        } catch (e, stackTrace) {
+          print('❌ Sync failed for $entityId: $e');
+          print('Stack trace: $stackTrace');
+          failCount++;
           
           final retryCount = (r['retry_count'] as int?) ?? 0;
           
           // Mark as failed after 5 retries
           if (retryCount >= 5) {
+            print('🔴 Max retries reached for $entityId, marking as failed');
             await local_db.update(
               ClientPendingSyncTable.table,
               {
@@ -113,6 +122,7 @@ class SyncService {
               whereArgs: [id],
             );
           } else {
+            print('🔄 Retry ${retryCount + 1}/5 for $entityId');
             await local_db.update(
               ClientPendingSyncTable.table,
               {
@@ -126,82 +136,100 @@ class SyncService {
         }
       }
       
-      print('Sync completed');
-    } catch (e) {
-      print('Sync error: $e');
+      print('✅ Sync completed - Success: $successCount, Failed: $failCount');
+    } catch (e, stackTrace) {
+      print('❌ Sync error: $e');
+      print('Stack trace: $stackTrace');
     } finally {
       _isSyncing = false;
     }
   }
 
-  // Convert integer milliseconds to Firestore Timestamps
+  // FIXED: Better timestamp conversion with proper null handling
   Map<String, dynamic> _convertTimestampsForFirestore(Map<String, dynamic> data) {
     final converted = Map<String, dynamic>.from(data);
     
-    // Convert timestamp fields
-    if (converted['createdAt'] != null && converted['createdAt'] is int) {
-      converted['createdAt'] = Timestamp.fromMillisecondsSinceEpoch(converted['createdAt']);
-    }
-    if (converted['updatedAt'] != null && converted['updatedAt'] is int) {
-      converted['updatedAt'] = Timestamp.fromMillisecondsSinceEpoch(converted['updatedAt']);
-    }
-    if (converted['scheduledAt'] != null && converted['scheduledAt'] is int) {
-      converted['scheduledAt'] = Timestamp.fromMillisecondsSinceEpoch(converted['scheduledAt']);
+    print('🔧 Converting timestamps in data: $data');
+    
+    // Helper function to convert timestamp
+    Timestamp? convertField(String fieldName) {
+      final value = converted[fieldName];
+      if (value == null || value == 0) {
+        print('⏭️  Skipping $fieldName: null or 0');
+        return null;
+      }
+      if (value is int) {
+        print('✅ Converting $fieldName: $value ms -> Timestamp');
+        return Timestamp.fromMillisecondsSinceEpoch(value);
+      }
+      if (value is Timestamp) {
+        print('✅ $fieldName already a Timestamp');
+        return value;
+      }
+      print('⚠️  Unknown type for $fieldName: ${value.runtimeType}');
+      return null;
     }
     
+    // Convert all timestamp fields
+    final createdAt = convertField('createdAt');
+    if (createdAt != null) converted['createdAt'] = createdAt;
+    
+    final updatedAt = convertField('updatedAt');
+    if (updatedAt != null) converted['updatedAt'] = updatedAt;
+    
+    final scheduledAt = convertField('scheduledAt');
+    if (scheduledAt != null) converted['scheduledAt'] = scheduledAt;
+    
+    // Remove fields with value 0 to avoid issues
+    converted.removeWhere((key, value) => value == 0 && (key.contains('At') || key.contains('at')));
+    
+    print('✅ Converted data: $converted');
     return converted;
   }
 
-  // Start listening to connectivity changes
   void startConnectivityListener() {
-    print('Starting connectivity listener');
+    print('👂 Starting connectivity listener');
     
-    // Cancel existing subscription if any
     _connectivitySubscription?.cancel();
     
-    // Listen to connectivity changes
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
       (List<ConnectivityResult> results) {
-        print('Connectivity changed: $results');
+        print('📶 Connectivity changed: $results');
         if (results.contains(ConnectivityResult.wifi) ||
             results.contains(ConnectivityResult.mobile) ||
             results.contains(ConnectivityResult.ethernet)) {
-          print('Internet available, triggering sync');
-          // Add a small delay to ensure connection is stable
+          print('✅ Internet available, triggering sync');
           Future.delayed(const Duration(seconds: 2), () {
             syncPending();
           });
         }
       },
       onError: (error) {
-        print('Connectivity listener error: $error');
+        print('❌ Connectivity listener error: $error');
       },
     );
 
-    // Run initial sync after a short delay to allow app to fully initialize
-    print('Scheduling initial sync on app start');
+    print('⏰ Scheduling initial sync on app start');
     Future.delayed(const Duration(seconds: 3), () async {
-      print('Running initial sync');
+      print('🚀 Running initial sync');
       await syncPending();
     });
   }
 
-  // Start periodic sync (every 5 minutes)
   void startPeriodicSync({Duration interval = const Duration(minutes: 10)}) {
-    print('Starting periodic sync (interval: ${interval.inMinutes} minutes)');
+    print('⏰ Starting periodic sync (interval: ${interval.inMinutes} minutes)');
     
     _periodicSyncTimer?.cancel();
     
     _periodicSyncTimer = Timer.periodic(interval, (_) {
-      print('Periodic sync triggered');
+      print('⏰ Periodic sync triggered');
       syncPending();
     });
   }
 
-  // Initialize both listeners - call this when app starts
   void initialize() {
     if (_isInitialized) {
-      print('⚠️ SyncService already initialized, skipping');
+      print('⚠️  SyncService already initialized, skipping');
       return;
     }
     
@@ -211,28 +239,24 @@ class SyncService {
     startConnectivityListener();
     startPeriodicSync();
     
-    // Also run immediate sync on initialization (with shorter delay)
-    print('Running immediate sync on initialization');
+    print('🔄 Running immediate sync on initialization');
     Future.delayed(const Duration(seconds: 1), () async {
       await syncPending();
     });
   }
 
-  // Clean up resources
   void dispose() {
-    print('Disposing SyncService');
+    print('🧹 Disposing SyncService');
     _connectivitySubscription?.cancel();
     _periodicSyncTimer?.cancel();
     _isInitialized = false;
   }
 
-  // Manual sync trigger (for pull-to-refresh, etc.)
   Future<void> forceSyncNow() async {
-    print('Force sync requested');
+    print('👆 Force sync requested');
     await syncPending();
   }
 
-  // Get sync status
   Future<Map<String, int>> getSyncStatus() async {
     final pending = await local_db.query(
       ClientPendingSyncTable.table,
@@ -246,15 +270,16 @@ class SyncService {
       whereArgs: [ClientSyncStatus.failed.index],
     );
 
+    print('📊 Sync status - Pending: ${pending.length}, Failed: ${failed.length}');
+    
     return {
       'pending': pending.length,
       'failed': failed.length,
     };
   }
 
-  // Retry all failed syncs
   Future<void> retryFailedSyncs() async {
-    print('Retrying all failed syncs');
+    print('🔄 Retrying all failed syncs');
     
     await local_db.update(
       ClientPendingSyncTable.table,
@@ -268,5 +293,16 @@ class SyncService {
     );
     
     await syncPending();
+  }
+
+  // ADDED: Debug method to see what's in the sync queue
+  Future<List<Map<String, dynamic>>> getPendingItems() async {
+    final rows = await local_db.query(
+      ClientPendingSyncTable.table,
+      where: 'sync_status IN (?, ?)',
+      whereArgs: [ClientSyncStatus.pending.index, ClientSyncStatus.failed.index],
+      orderBy: 'queued_at ASC',
+    );
+    return rows.map((r) => Map<String, dynamic>.from(r)).toList();
   }
 }
