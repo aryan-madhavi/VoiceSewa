@@ -162,7 +162,7 @@ class SyncService {
       return null;
     }
 
-    for (final key in ['createdAt', 'updatedAt', 'scheduledAt']) {
+    for (final key in ['created_at', 'updated_at', 'scheduled_at']) {
       final ts = convert(key, result[key]);
       if (ts != null) {
         result[key] = ts;
@@ -188,12 +188,6 @@ class SyncService {
 
     startConnectivityListener();
     startPeriodicSync();
-
-    print('🔄 Running immediate sync on initialization');
-    Future.delayed(const Duration(seconds: 2), () { 
-      print('🚀 Running initial sync'); 
-      syncPending(); 
-    });
   }
 
   void startConnectivityListener() {

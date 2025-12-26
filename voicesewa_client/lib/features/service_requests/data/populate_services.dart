@@ -58,6 +58,8 @@ Future<void> insertTempServiceRequest(BuildContext context, WidgetRef ref) async
           duration: const Duration(seconds: 2),
         ),
       );
+      // TODO: Consider removing if offline-first logic
+      ref.invalidate(syncServiceProvider);
     }
   } catch (e) {
     if (context.mounted) {

@@ -24,11 +24,7 @@ final syncServiceProvider = FutureProvider<SyncService>((ref) async {
     pendingDao: dao,
     firestore: FirebaseFirestore.instance,
   );
-
-  // Initialize sync immediately (this starts listeners and triggers initial sync)
-  service.initialize();
-  print('✅ SyncService initialized and running');
-
+  
   // Dispose service when provider is destroyed
   ref.onDispose((){
     print('🧹 Disposing SyncService');
