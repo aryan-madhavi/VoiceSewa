@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/widgets/layout/root_scaffold.dart';
 import 'package:voicesewa_client/features/auth/presentation/login_screen.dart';
-import 'package:voicesewa_client/core/providers/session_provider.dart';
-import 'package:voicesewa_client/core/database/services/sync_initializer.dart';
+import 'package:voicesewa_client/features/auth/providers/session_provider.dart';
+import 'package:voicesewa_client/features/sync/presentation/sync_initializer.dart';
 
 class AppGate extends ConsumerWidget {
-  const AppGate({super.key});
+  const AppGate({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,7 +18,7 @@ class AppGate extends ConsumerWidget {
           body: Center(child: CircularProgressIndicator()),
         );
       case SessionStatus.loggedIn:
-        return const SyncInitializer(child: const RootScaffold());
+        return SyncInitializer(child: RootScaffold());
       case SessionStatus.loggedOut:
         return const LoginScreen();
     }

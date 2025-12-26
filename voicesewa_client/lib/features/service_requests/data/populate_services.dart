@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:riverpod/legacy.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/core/database/tables/service_request_table.dart';
-import 'package:voicesewa_client/core/database/user_app_database.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:voicesewa_client/core/database/app_database.dart';
+import 'package:voicesewa_client/core/database/daos/service_request_dao.dart';
+import 'package:voicesewa_client/features/service_requests/domain/service_request_model.dart';
+import 'package:voicesewa_client/features/sync/providers/sync_providers.dart';
 
 final clientIdCounterProvider = StateProvider<int>((ref) => 1);
 
 Future<void> insertTempServiceRequest(BuildContext context, WidgetRef ref) async {
   try {
-    final db = await ClientDatabase.instance.database;
-    final srTable = ServiceRequestTable(db);
+    // Get database instance
+    final db = await AppDatabase.instance.database;
+
+    // Get the sync DAO from Riverpod
+    final syncDao = await ref.read(pendingSyncDaoProvider.future);
+
+    // Instantiate ServiceRequestDao
+    final srDao = ServiceRequestDao(db, syncDao);
 
     final now = DateTime.now();
     final id = 'sr_${now.millisecondsSinceEpoch}';
@@ -34,7 +42,7 @@ Future<void> insertTempServiceRequest(BuildContext context, WidgetRef ref) async
       status: ServiceStatus.pending,
     );
 
-    await srTable.upsert(req);
+    await srDao.upsert(req);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,4 +76,3 @@ Future<void> insertTempServiceRequest(BuildContext context, WidgetRef ref) async
     }
   }
 }
-

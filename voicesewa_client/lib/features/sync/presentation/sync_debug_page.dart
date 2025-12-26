@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/core/providers/sync_service_provider.dart';
+import '../providers/sync_providers.dart';
 
 class SyncDebugPage extends ConsumerWidget {
   const SyncDebugPage({super.key});
@@ -20,7 +20,7 @@ class SyncDebugPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: FutureBuilder(
+      body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _loadSyncQueue(ref),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -215,21 +215,18 @@ class SyncDebugPage extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final syncServiceAsync = ref.read(syncServiceProvider);
-          await syncServiceAsync.when(
-            data: (syncService) async {
-              await syncService.forceSyncNow();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Sync triggered')),
-                );
-                // Rebuild the page
-                ref.invalidate(syncServiceProvider);
-              }
-            },
-            loading: () {},
-            error: (e, _) {},
-          );
+          final syncAsync = ref.read(syncServiceProvider);
+        
+          syncAsync.whenData((syncService) async {
+            await syncService.syncPending();
+        
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Sync triggered')),
+              );
+              ref.invalidate(pendingSyncDaoProvider); // Refresh list
+            }
+          });
         },
         icon: const Icon(Icons.sync),
         label: const Text('Force Sync'),
@@ -238,15 +235,9 @@ class SyncDebugPage extends ConsumerWidget {
   }
 
   Future<List<Map<String, dynamic>>> _loadSyncQueue(WidgetRef ref) async {
-    final syncServiceAsync = ref.read(syncServiceProvider);
-    
-    return await syncServiceAsync.when(
-      data: (syncService) async {
-        return await syncService.getPendingItems();
-      },
-      loading: () async => [],
-      error: (e, _) async => [],
-    );
+    final dao = await ref.read(pendingSyncDaoProvider.future);
+    final items = await dao.getPending();
+    return items.map((e) => e.toMap()).toList();
   }
 }
 

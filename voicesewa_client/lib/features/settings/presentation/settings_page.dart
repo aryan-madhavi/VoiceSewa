@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-import 'package:voicesewa_client/core/widgets/feedback/sync_button.dart';
+import 'package:voicesewa_client/app/routes.dart';
+import 'package:voicesewa_client/features/sync/presentation/widgets/sync_button.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_section.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_switches.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_tile.dart';
 import 'package:voicesewa_client/features/voicebot/providers/speech_provider.dart';
-import 'package:voicesewa_client/core/database/services/populate_services.dart';
+import 'package:voicesewa_client/features/service_requests/data/populate_services.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -82,7 +84,7 @@ class SettingsPage extends ConsumerWidget {
                 icon: Icons.bug_report_outlined,
                 title: "Open Debug",
                 iconColor: Colors.blue,
-                onTap: (BuildContext context, WidgetRef ref) => Navigator.pushNamed(context, '/sync-debug')
+                onTap: (BuildContext context, WidgetRef ref) => context.pushNamedTransition(routeName: RoutePaths.syncDebug, type: PageTransitionType.rightToLeft)
               ),
               SettingsTile(
                 icon: Icons.sync,
