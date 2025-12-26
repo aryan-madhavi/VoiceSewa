@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:voicesewa_client/core/database/app_database.dart';
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  print('🗄️ Initializing database...');
   return AppDatabase.instance;
 });
 
@@ -11,5 +12,6 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
 
 final sqfliteDatabaseProvider = FutureProvider<Database>((ref) async {
   final appDb = ref.read(appDatabaseProvider);
+  print('✅ Database initialized');
   return appDb.database;
 });

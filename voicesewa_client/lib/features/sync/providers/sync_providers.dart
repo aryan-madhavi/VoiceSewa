@@ -14,15 +14,26 @@ final pendingSyncDaoProvider =
 
 /// Provides the SyncService once the DAO is ready
 final syncServiceProvider = FutureProvider<SyncService>((ref) async {
+  print('🔄 Initializing SyncService...');
+  
+  // Wait for DAO to be ready
   final dao = await ref.watch(pendingSyncDaoProvider.future);
 
+  // Create sync service instance
   final service = SyncService(
     pendingDao: dao,
     firestore: FirebaseFirestore.instance,
   );
 
+  // Initialize sync immediately (this starts listeners and triggers initial sync)
+  service.initialize();
+  print('✅ SyncService initialized and running');
+
   // Dispose service when provider is destroyed
-  ref.onDispose(service.dispose);
+  ref.onDispose((){
+    print('🧹 Disposing SyncService');
+    service.dispose;
+  });
 
   return service;
 });

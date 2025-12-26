@@ -77,6 +77,7 @@ class ClientPendingSyncDao {
     final nextRetry = item.retryCount + 1;
   
     if (nextRetry >= 5) {
+      print('🔴 Max retries reached for ${item.entityId}, marking as failed');
       await db.update(
         ClientPendingSyncTable.table,
         {
@@ -88,6 +89,7 @@ class ClientPendingSyncDao {
         whereArgs: [item.id],
       );
     } else {
+      print('🔄 Retry ${item.retryCount + 1}/5 for ${item.entityId}');
       await db.update(
         ClientPendingSyncTable.table,
         {
