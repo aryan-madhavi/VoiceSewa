@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/widgets/feedback/coming_soon_page.dart';
+import 'package:voicesewa_client/features/sync/presentation/sync_debug_page.dart';
 import 'package:voicesewa_client/features/history/presentation/requests_page.dart';
 import 'package:voicesewa_client/features/home/presentation/home_page.dart';
 import 'package:voicesewa_client/features/search/presentation/workers_page.dart';
@@ -20,6 +21,7 @@ class RoutePaths {
   static const String login = '/loginPage';
   static const String signup = '/signupPage';
   static const String comingSoon = '/comingSoonPage';
+  static const String syncDebug = '/sync-debug';
 }
 
 /// Global route configuration
@@ -32,5 +34,6 @@ class AppRoutes {
     RoutePaths.support: (context) => const SupportPage(),
     RoutePaths.voicebot: (context) => const VoiceBotPage(),
     RoutePaths.comingSoon: (context) => const ComingSoonPage(),
+    RoutePaths.syncDebug: (context) => const SyncDebugPage(),
   };
 }

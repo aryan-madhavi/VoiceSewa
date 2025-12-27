@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
-import 'package:voicesewa_client/features/auth/presentation/widgets/welcome_header.dart';
 import 'package:voicesewa_client/features/auth/presentation/widgets/login_form.dart';
 import 'package:voicesewa_client/features/auth/presentation/widgets/register_form.dart';
+import 'package:voicesewa_client/features/auth/presentation/widgets/welcome_header.dart';
+import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
+import 'package:voicesewa_client/features/auth/providers/session_provider.dart';
 
 class AuthScreen extends ConsumerWidget {
   const AuthScreen({super.key});

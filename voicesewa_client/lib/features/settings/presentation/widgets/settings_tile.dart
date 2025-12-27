@@ -8,6 +8,7 @@ class SettingsTile extends ConsumerWidget {
   final Widget? trailing;
   final void Function(BuildContext context, WidgetRef ref)? onTap;
   final Color? iconColor;
+  final Widget? leadingWidget;
 
   const SettingsTile({
     super.key,
@@ -17,12 +18,16 @@ class SettingsTile extends ConsumerWidget {
     this.trailing,
     this.onTap,
     this.iconColor,
+    this.leadingWidget
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+
     return ListTile(
-      leading: Icon(icon, color: iconColor ?? Colors.black87),
+      leading: (leadingWidget == null)
+                  ? Icon(icon, color: iconColor ?? Colors.black87)
+                  : leadingWidget,
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: subtitle != null
           ? Text(subtitle!, style: const TextStyle(fontSize: 13))
