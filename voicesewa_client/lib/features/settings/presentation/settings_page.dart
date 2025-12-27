@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:voicesewa_client/features/auth/data/logout_service.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_section.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_switches.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_tile.dart';
@@ -139,6 +140,16 @@ class SettingsPage extends ConsumerWidget {
   static void _openDataUsageSettings(BuildContext context, WidgetRef ref) {}
   static void _openPrivacyPolicy(BuildContext context, WidgetRef ref) {}
   static void _openTerms(BuildContext context, WidgetRef ref) {}
-  static void _logout(BuildContext context, WidgetRef ref) {}
+
+    static void _logout(BuildContext context, WidgetRef ref) {
+    // Schedule for after current frame
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!context.mounted) return;
+      
+      final logoutHandler = LogoutHandler(ref: ref, context: context);
+      await logoutHandler.logout(showConfirmation: true);
+    });
+  }
+
   static void _deleteAccount(BuildContext context, WidgetRef ref) {}
 }

@@ -14,8 +14,8 @@ class SyncInitializer extends ConsumerWidget {
     
     return syncServiceAsync.when(
       data: (syncService) {
-        // Sync service is ready and running
-        print('✅ Sync service initialized successfully');
+        // // Sync service is ready and running
+        // print('✅ Sync service initialized successfully');
         return child;
       },
       loading: () {

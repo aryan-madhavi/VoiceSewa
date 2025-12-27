@@ -20,7 +20,7 @@ class AppGate extends ConsumerWidget {
       case SessionStatus.loggedIn:
         return const SyncInitializer(child: const RootScaffold());
       case SessionStatus.loggedOut:
-        return const LoginScreen();
+        return const AuthScreen();
     }
   }
 }

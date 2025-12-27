@@ -25,6 +25,7 @@ class DbLogin {
     );
   }
 
+  //username is basically email got it man, if changed need to change everywhere, willl see lateerrrrr
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS user_login(
