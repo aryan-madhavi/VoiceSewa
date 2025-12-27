@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:voicesewa_client/features/auth/data/user_app_database.dart';
+import 'package:voicesewa_client/core/database/app_database.dart';
 
 /// Provider for user-specific database instance
 /// Automatically initializes database for logged-in user

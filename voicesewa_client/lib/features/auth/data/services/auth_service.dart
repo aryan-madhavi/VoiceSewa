@@ -1,9 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/core/providers/database_provider.dart';
-import 'package:voicesewa_client/features/auth/data/user_app_database.dart';
+import 'package:voicesewa_client/core/database/app_database.dart';
 import 'package:voicesewa_client/features/auth/providers/session_provider.dart';
-import 'package:voicesewa_client/features/sync/providers/sync_providers.dart';
 
 /// Authentication service - handles Firebase auth + local session
 class AuthService {
@@ -91,48 +89,6 @@ class AuthService {
       return 'Unexpected error: ${e.toString()}';
     }
   }
-
-  /// Handle user logout
-  /// Handle user logout
-  /// Handle user logout
-  Future<void> logout() async {
-    try {
-      print('🚪 Starting logout process');
-      
-      // Get current user before signing out
-      final currentUser = FirebaseAuth.instance.currentUser;
-      final userEmail = currentUser?.email;
-
-      // 1. FIRST - Invalidate all providers that depend on the database
-      // This ensures SyncService is disposed BEFORE database closes
-      ref.invalidate(syncServiceProvider);
-      ref.invalidate(sqfliteDatabaseProvider);
-      print('🔄 All providers invalidated');
-
-      // 2. Wait a moment for providers to fully dispose
-      await Future.delayed(const Duration(milliseconds: 200));
-
-      // 3. Sign out from Firebase
-      await FirebaseAuth.instance.signOut();
-      print('✅ Firebase sign out successful');
-
-      // 4. Close user-specific database
-      if (userEmail != null) {
-        await ClientDatabase.closeUserDatabase(userEmail);
-        print('✅ User database closed');
-      }
-
-      // 5. Update session state
-      final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
-      await sessionNotifier.logout();
-      print('✅ Session cleared');
-    } catch (e) {
-      print('❌ Logout error: $e');
-      rethrow;
-    }
-  }
-
-
   
   /// Get user-friendly error messages from Firebase Auth exceptions
   String _getAuthErrorMessage(FirebaseAuthException e) {

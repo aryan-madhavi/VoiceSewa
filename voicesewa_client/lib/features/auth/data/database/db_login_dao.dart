@@ -4,9 +4,6 @@ import 'package:voicesewa_client/features/auth/data/database/db_login.dart';
 /// Data Access Object for user login operations
 /// Handles all CRUD operations on user_login table
 class DbLoginDao {
-  static final DbLoginDao _instance = DbLoginDao._internal();
-  factory DbLoginDao() => _instance;
-  DbLoginDao._internal();
 
   final DbLogin _dbLogin = DbLogin();
 

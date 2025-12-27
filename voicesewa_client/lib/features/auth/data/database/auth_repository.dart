@@ -1,4 +1,4 @@
-import 'package:voicesewa_client/features/auth/data/daos/db_login_dao.dart';
+import 'package:voicesewa_client/features/auth/data/database/db_login_dao.dart';
 
 /// Repository for authentication operations
 /// Sits above DAO layer and handles business logic

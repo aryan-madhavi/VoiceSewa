@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:voicesewa_client/features/auth/data/user_app_database.dart';
+import 'package:voicesewa_client/core/database/app_database.dart';
 import 'package:voicesewa_client/features/auth/providers/session_provider.dart';
 
 /// Handles user logout functionality with Firebase, SQL, and session management

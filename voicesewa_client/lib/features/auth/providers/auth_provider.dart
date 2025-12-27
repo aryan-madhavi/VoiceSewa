@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:voicesewa_client/features/auth/data/daos/db_login_dao.dart';
-import 'package:voicesewa_client/features/auth/data/repositories/auth_repository.dart';
+import 'package:voicesewa_client/features/auth/data/database/db_login_dao.dart';
+import 'package:voicesewa_client/features/auth/data/database/auth_repository.dart';
 
 // ==================== BASE PROVIDERS ====================
 

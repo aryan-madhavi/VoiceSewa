@@ -8,13 +8,13 @@ import 'tables/job_offer_table.dart';
 import 'tables/booking_table.dart';
 import 'tables/pending_sync_table.dart';
 
-class AppDatabase {
+class ClientDatabase {
 
  static const _dbname = 'voicesewa_worker.db';
   static const _dbversion = 1;  
 
-  AppDatabase._();
-  static final AppDatabase instance = AppDatabase._();  
+  ClientDatabase._();
+  static final ClientDatabase instance = ClientDatabase._();  
 
   Database? _db;
   Future<Database> get database async {

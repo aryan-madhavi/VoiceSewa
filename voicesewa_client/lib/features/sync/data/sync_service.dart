@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-
 import '../domain/client_pending_sync_model.dart';
 import '../../../core/database/daos/client_pending_sync_dao.dart';
 
@@ -17,6 +15,7 @@ class SyncService {
   final ClientPendingSyncDao _pendingDao;
   final FirebaseFirestore _firestore;
 
+  // Store the subscription to prevent garbage collection
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   Timer? _periodicTimer;
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:voicesewa_client/features/auth/providers/sync_service_provider.dart';
+import 'package:voicesewa_client/features/sync/providers/sync_providers.dart';
 
 
 class SyncInitializer extends ConsumerStatefulWidget {

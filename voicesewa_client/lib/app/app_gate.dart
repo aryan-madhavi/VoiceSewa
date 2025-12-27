@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/core/database/app_database.dart';
 import 'package:voicesewa_client/core/widgets/layout/root_scaffold.dart';
-import 'package:voicesewa_client/features/auth/data/user_app_database.dart';
 import 'package:voicesewa_client/features/auth/presentation/login_screen.dart';
 import 'package:voicesewa_client/features/auth/providers/session_provider.dart';
 import 'package:voicesewa_client/features/sync/presentation/sync_initializer.dart';

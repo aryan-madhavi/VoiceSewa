@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:voicesewa_client/features/auth/data/repositories/auth_repository.dart';
+import 'package:voicesewa_client/features/auth/data/database/auth_repository.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 
 /// Session status enum

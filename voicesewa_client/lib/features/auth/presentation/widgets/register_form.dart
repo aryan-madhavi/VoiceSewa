@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
-import 'package:voicesewa_client/features/auth/services/auth_service.dart';
+import 'package:voicesewa_client/features/auth/data/services/auth_service.dart';
 
 class RegisterForm extends ConsumerStatefulWidget {
   const RegisterForm({super.key});
