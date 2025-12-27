@@ -1,7 +1,8 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:voicesewa_client/features/auth/providers/sync_service_provider.dart';
 
-import '../providers/sync_providers.dart';
 
 class SyncInitializer extends ConsumerStatefulWidget {
   final Widget child;
@@ -16,21 +17,32 @@ class SyncInitializer extends ConsumerStatefulWidget {
 }
 
 class _SyncInitializerState extends ConsumerState<SyncInitializer> {
-  bool _initialized = false;
-
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (_initialized) return;
-      _initialized = true;
-
       try {
+        print('🔄 Starting SyncService initialization...');
+        
+        // Get current user
+        final user = FirebaseAuth.instance.currentUser;
+        if (user?.email == null) {
+          print('⚠️ No user logged in, skipping sync initialization');
+          return;
+        }
+        
+        // Initialize sync service
         final syncService = await ref.read(syncServiceProvider.future);
-        syncService.initialize();
-
-        print('✅ SyncService initialized');
+        
+        // Try to get initial status
+        try {
+          final status = await syncService.getSyncStatus();
+          print('✅ SyncService ready - Pending: ${status['pending']}, Failed: ${status['failed']}');
+        } catch (e) {
+          print('⚠️ Could not get initial sync status: $e');
+        }
+        
       } catch (e, st) {
         print('❌ SyncService initialization failed: $e');
         print(st);

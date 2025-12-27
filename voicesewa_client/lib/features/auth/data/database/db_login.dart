@@ -1,97 +1,69 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
+/// Database management for user login/session tracking
+/// Handles database initialization and table creation only
 class DbLogin {
-
   static final DbLogin _instance = DbLogin._internal();
   factory DbLogin() => _instance;
   DbLogin._internal();
 
   static Database? _database;
+  static const String _dbName = 'current_user_login.db';
+  static const int _dbVersion = 1;
+
+  /// Table and column names
+  static const String tableName = 'user_login';
+  static const String columnId = 'id';
+  static const String columnUsername = 'username';
+  static const String columnPassword = 'password';
+  static const String columnIsLoggedIn = 'is_logged_in';
+  static const String columnLastLoginAt = 'last_login_at';
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-
     _database = await _initDatabase();
     return _database!;
   }
 
   Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'current_user_login.db');
+    final path = join(await getDatabasesPath(), _dbName);
     return await openDatabase(
       path,
-      version: 1,
+      version: _dbVersion,
       onCreate: _onCreate,
     );
   }
 
-  //username is basically email got it man, if changed need to change everywhere, willl see lateerrrrr
+  /// Create user_login table
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS user_login(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL,
-        password TEXT NOT NULL,
-        is_logged_in INTEGER NOT NULL DEFAULT 0,
-        last_login_at INTEGER NOT NULL
+      CREATE TABLE IF NOT EXISTS $tableName(
+        $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $columnUsername TEXT NOT NULL UNIQUE,
+        $columnPassword TEXT NOT NULL,
+        $columnIsLoggedIn INTEGER NOT NULL DEFAULT 0,
+        $columnLastLoginAt INTEGER NOT NULL
       )
+    ''');
+
+    // Create index for faster lookups
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_username 
+      ON $tableName($columnUsername)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_is_logged_in 
+      ON $tableName($columnIsLoggedIn)
     ''');
   }
 
- /// Set ONE user as logged in, others logged out
-  Future<void> setLoggedInUser({
-    required String username,
-    required String password,
-  }) async {
-    final db = await database;
-    final now = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-
-    // logout all users first
-    await db.update('user_login', {'is_logged_in': 0});
-
-    // upsert user
-    await db.insert(
-      'user_login',
-      {
-        'username': username, 
-        'password': password,
-        'is_logged_in': 1,
-        'last_login_at': now,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+  /// Close database connection
+  Future<void> close() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
   }
-  
-  /// Get the single user who is logged in
-  Future<Map<String, dynamic>?> getLoggedInUser() async {
-    final db = await database;
-    final rows = await db.query(
-      'user_login',
-      where: 'is_logged_in = 1',
-      orderBy: 'last_login_at DESC',
-      limit: 1,
-    );
-    return rows.isEmpty ? null : rows.first;
-  }
-
-  /// Determines if logged-in user's session is still valid
-  Future<bool> isSessionValid({int days = 5}) async {
-    final u = await getLoggedInUser();
-    if (u == null) return false;
-    final last = u['last_login_at'] as int;
-    final now = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-    return (now - last) <= days * 24 * 60 * 60;
-  }
-
-  /// Logout a user by username
-  Future<void> logoutUser(String username) async {
-    final db = await database;
-    await db.update(
-      'user_login',
-      {'is_logged_in': 0},
-      where: 'username = ?',
-      whereArgs: [username],
-    );
-  }
-
 }

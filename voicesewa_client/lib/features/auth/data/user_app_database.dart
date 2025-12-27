@@ -39,18 +39,31 @@ class ClientDatabase {
     return instanceForUser(_currentUserId!);
   }
 
-  /// Get database for current user
+  // user_app_database.dart
+   // user_app_database.dart - ADD THIS METHOD
   Future<Database> get database async {
-    if (_db != null) return _db!;
-
     if (_currentUserId == null) {
       throw StateError('No user logged in');
     }
 
+    // Check if current database instance is valid
+    if (_db != null) {
+      try {
+        // Verify database is actually open and working
+        await _db!.rawQuery('SELECT 1');
+        return _db!;
+      } catch (e) {
+        print('⚠️ Database instance invalid: $e');
+        _db = null; // Clear invalid instance
+      }
+    }
+
+    // Open or reopen database
     final dir = await getApplicationDocumentsDirectory();
-    // Create user-specific database name: email@example.com_voicesewa_client.db
     final dbName = '${_currentUserId}_voicesewa_client.db';
     final path = join(dir.path, dbName);
+    
+    print('📂 Opening database at: $path');
     
     _db = await openDatabase(
       path,
@@ -58,6 +71,7 @@ class ClientDatabase {
       onCreate: _onCreate,
     );
 
+    print('✅ Database opened successfully');
     return _db!;
   }
 
@@ -91,18 +105,20 @@ class ClientDatabase {
   /// Close and cleanup user database
   /// Call this when user logs out
   static Future<void> closeUserDatabase(String userId) async {
+    print('🔒 Closing database for user: $userId');
     final instance = _instances[userId];
     if (instance?._db != null) {
       await instance!._db!.close();
       instance._db = null;
+      print('✅ Database closed for $userId');
     }
     _instances.remove(userId);
     
-    // Clear current user if it matches
     if (_currentUserId == userId) {
       _currentUserId = null;
+      print('🚪 Current user cleared');
     }
-  }
+}
 
   /// Delete user database file permanently
   /// WARNING: This deletes all user data!
