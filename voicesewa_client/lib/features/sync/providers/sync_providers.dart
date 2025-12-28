@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_client/core/providers/database_provider.dart';
 import 'package:voicesewa_client/core/database/daos/client_pending_sync_dao.dart';
+import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 import 'package:voicesewa_client/features/sync/data/sync_service.dart';
 
 /// Provides the DAO for pending sync
@@ -26,14 +27,18 @@ final pendingSyncDaoProvider = FutureProvider.autoDispose<ClientPendingSyncDao>(
 });
 
 /// Provides the SyncService once the DAO is ready
-final syncServiceProvider = FutureProvider<SyncService>((ref) async {
-  // Get current user
-  final userEmail = FirebaseAuth.instance.currentUser?.email;
+final syncServiceProvider = FutureProvider.autoDispose<SyncService?>((ref) async {
 
-  if (userEmail == null) {
-    throw StateError('No user logged in');
+  final authState = ref.watch(authStateChangesProvider);
+  final user = authState.value;
+
+  // 2. GRACEFUL EXIT: If no user, just return null. Do NOT throw error.
+  if (user == null || user.email == null) {
+    print('⏳ SyncService waiting for user login...');
+    return null;
   }
   
+  final userEmail = user.email!;
   print('🔄 Initializing SyncService for user: $userEmail');
   
   try {
@@ -67,7 +72,7 @@ final syncServiceProvider = FutureProvider<SyncService>((ref) async {
 final syncStatusProvider = FutureProvider.autoDispose<Map<String, int>>((ref) async {
   try {
     final syncService = await ref.watch(syncServiceProvider.future);
-    return await syncService.getSyncStatus();
+    return await syncService?.getSyncStatus() ?? {'pending': 0, 'failed': 0};
   } catch(e) {
     print('❌ Failed to getSyncStatus: $e');
     rethrow;

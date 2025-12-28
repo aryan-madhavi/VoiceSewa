@@ -41,7 +41,7 @@ class _SyncButtonState extends ConsumerState<SyncButton>
       // unwrap AsyncValue
       await syncAsync.when(
         data: (syncService) async {
-          await syncService.syncPending();
+          await syncService?.syncPending();
 
           // Refresh the pending/failed counts
           ref.invalidate(syncStatusProvider);
@@ -203,7 +203,7 @@ class _SyncFABState extends ConsumerState<SyncFAB>
       // unwrap AsyncValue
       await syncAsync.when(
         data: (syncService) async {
-          await syncService.syncPending(); // trigger sync
+          await syncService?.syncPending(); // trigger sync
   
           // refresh sync status counts
           ref.invalidate(syncStatusProvider);

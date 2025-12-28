@@ -73,7 +73,7 @@ class SyncDebugPage extends ConsumerWidget {
             final syncAsync = ref.read(syncServiceProvider);
 
             await syncAsync.whenData((syncService) async {
-              await syncService.syncPending();
+              await syncService?.syncPending();
 
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

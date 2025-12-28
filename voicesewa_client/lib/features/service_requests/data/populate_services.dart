@@ -6,7 +6,10 @@ import 'package:voicesewa_client/features/service_requests/providers/service_req
 
 final clientIdCounterProvider = StateProvider<int>((ref) => 1);
 
-Future<void> insertTempServiceRequest(BuildContext context, WidgetRef ref) async {
+Future<void> insertTempServiceRequest(
+  BuildContext context,
+  WidgetRef ref,
+) async {
   try {
     // Get the ServiceRequestDao from Riverpod
     final srDao = await ref.read(serviceRequestDaoProvider.future);
@@ -53,6 +56,7 @@ Future<void> insertTempServiceRequest(BuildContext context, WidgetRef ref) async
     }
   } catch (e) {
     if (context.mounted) {
+      print('Insert failed: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Insert failed: $e'),

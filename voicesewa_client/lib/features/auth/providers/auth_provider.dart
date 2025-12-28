@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:voicesewa_client/features/auth/data/database/db_login_dao.dart';
@@ -64,3 +65,7 @@ final userByUsernameProvider = FutureProvider.family<Map<String, dynamic>?, Stri
     return await repo.getUserByUsername(username);
   },
 );
+
+final authStateChangesProvider = StreamProvider.autoDispose<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
+});

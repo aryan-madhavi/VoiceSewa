@@ -4,12 +4,12 @@ import '../../../core/database/daos/client_profile_dao.dart';
 import '../domain/client_model.dart';
 import 'auth_provider.dart';
 
-final clientProfileDaoProvider = FutureProvider<ClientProfileDao>((ref) async {
+final clientProfileDaoProvider = FutureProvider.autoDispose<ClientProfileDao>((ref) async {
   final db = await ref.read(sqfliteDatabaseProvider.future);
   return ClientProfileDao(db);
 });
 
-final currentClientProfileProvider = FutureProvider<ClientProfile?>((ref) async {
+final currentClientProfileProvider = FutureProvider.autoDispose<ClientProfile?>((ref) async {
   final dao = await ref.watch(clientProfileDaoProvider.future);
   final loggedInUser = await ref.watch(loggedInUserProvider.future);
 

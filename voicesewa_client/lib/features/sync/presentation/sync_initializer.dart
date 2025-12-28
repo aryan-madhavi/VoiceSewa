@@ -23,6 +23,7 @@ class _SyncInitializerState extends ConsumerState<SyncInitializer> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
+        
         print('🔄 Starting SyncService initialization...');
         
         // Get current user
@@ -37,7 +38,7 @@ class _SyncInitializerState extends ConsumerState<SyncInitializer> {
         
         // Try to get initial status
         try {
-          final status = await syncService.getSyncStatus();
+          final status = await syncService?.getSyncStatus() ?? {'pending': 0, 'failed': 0};
           print('✅ SyncService ready - Pending: ${status['pending']}, Failed: ${status['failed']}');
         } catch (e) {
           print('⚠️ Could not get initial sync status: $e');
