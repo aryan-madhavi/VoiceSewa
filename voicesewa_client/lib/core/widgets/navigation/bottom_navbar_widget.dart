@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/constants/app_constants.dart';
-import 'package:voicesewa_client/core/constants/string_constants.dart';
 import 'package:voicesewa_client/core/providers/navbar_page_provider.dart';
 import 'package:voicesewa_client/features/voicebot/presentation/chat_overlay.dart';
 import 'package:voicesewa_client/features/voicebot/providers/speech_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/voicechat_provder.dart';
+
+import '../../extensions/context_extensions.dart';
 
 class BottomNavBar extends ConsumerWidget {
   const BottomNavBar({super.key});
@@ -22,10 +23,10 @@ class BottomNavBar extends ConsumerWidget {
       selectedIndex: currentTab.index,
       onDestinationSelected: (index) =>
           tabNotifier.setTab(NavTab.values[index]),
-      destinations: AppConstants.pages.entries.map((entry) {
+      destinations: AppConstants.pages(context).entries.map((entry) {
         final icon = entry.value[0] as Widget;
         final label = entry.value[1] as String;
-        return label != StringConstants.voiceBotTitle
+        return label != context.loc.voiceBotTitle
             ? NavigationDestination(icon: icon, label: label)
             : FloatingActionButton(
               tooltip: 'Speak',

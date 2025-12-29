@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/worker_model.dart';
 
 class WorkerDetailsSheet extends StatelessWidget {
@@ -114,7 +115,7 @@ class WorkerDetailsSheet extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${worker.experience} yrs Experience',
+                  '${worker.experience} ${context.loc.yrsExperience}',
                   style: const TextStyle(fontSize: 14, color: Colors.black87),
                 ),
                 Row(
@@ -126,7 +127,8 @@ class WorkerDetailsSheet extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      worker.available! ? 'Available' : 'Unavailable',
+                      worker.available! ? context.loc.available //'Available'
+                          : context.loc.unavailable, //'Unavailable',
                       style: TextStyle(
                         fontSize: 13,
                         color: worker.available! ? Colors.green : Colors.red,
@@ -143,7 +145,7 @@ class WorkerDetailsSheet extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Skills',
+                context.loc.skills, //'Skills',
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
@@ -205,8 +207,8 @@ class WorkerDetailsSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10)),
                 ),
                 icon: const Icon(Icons.calendar_today, color: Colors.white),
-                label: const Text(
-                  'Book Now',
+                label: Text(
+                  context.loc.bookNow, //'Book Now',
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),

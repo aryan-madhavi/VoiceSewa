@@ -4,6 +4,8 @@ import 'package:voicesewa_client/core/constants/helper_functions.dart';
 import 'package:voicesewa_client/app/routes.dart';
 import 'package:voicesewa_client/features/history/presentation/widgets/status_badge.dart';
 
+import '../../../../core/extensions/context_extensions.dart';
+
 class RecentRequestCard extends StatelessWidget {
   const RecentRequestCard({super.key});
 
@@ -48,7 +50,7 @@ class RecentRequestCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 12, bottom: 16),
               child: Text(
-                'Track Recent Requests',
+                context.loc.trackRecentRequests, // 'Track Recent Requests',
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -147,13 +149,13 @@ class _RecentRequestTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Worker: $worker',
+                    '${context.loc.worker}: $worker',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.black54,
                     ),
                   ),
                   Text(
-                    'ETA: $eta',
+                    '${context.loc.eTA}: $eta',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: Colors.green.shade700,
                       fontWeight: FontWeight.w600,

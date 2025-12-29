@@ -8,7 +8,7 @@ class Helpers {
   }) {
     return AppRoutes.routes.containsKey(routeName) ? routeName : fallback;
   }
-
+  
   static Color getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pending' || 'scheduled':
