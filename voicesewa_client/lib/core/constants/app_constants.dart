@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_client/core/constants/string_constants.dart';
 import 'package:voicesewa_client/core/providers/navbar_page_provider.dart';
 import 'package:voicesewa_client/app/routes.dart';
 

@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/app/app_gate.dart';
-import 'package:voicesewa_client/core/constants/string_constants.dart';
 import 'package:voicesewa_client/app/routes.dart';
 import 'package:voicesewa_client/core/theme/light_theme.dart';
 
-import '../core/extensions/context_extensions.dart';
 import '../core/l10n/app_localizations.dart';
 import '../core/providers/language_provider.dart';
 

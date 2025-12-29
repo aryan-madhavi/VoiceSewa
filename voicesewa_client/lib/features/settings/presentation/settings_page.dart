@@ -6,8 +6,6 @@ import 'package:voicesewa_client/features/settings/presentation/widgets/settings
 
 // Imports for your provider and extensions
 import '../../../../core/extensions/context_extensions.dart';
-import '../../../../core/providers/language_provider.dart';
-import '../../../core/constants/helper_functions.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -20,13 +18,13 @@ class SettingsPage extends ConsumerWidget {
         children: [
           SettingsSection(
             title: context.loc.userPreferences,  //"User Preferences",
-            tiles: [
+            tiles: [/* 
               SettingsTile(
                 icon: Icons.language,
                 title: context.loc.language,  //"Language",
                 subtitle: context.loc.selectYourPreferredLanguage, //"Select your preferred language",
-                onTap: (context, ref) => openLanguageSelector(context, ref),
-              ),
+                onTap: (context, ref) => _openLanguageSelector(context, ref),
+              ), */
               SettingsTile(
                 icon: Icons.notifications_outlined,
                 title: context.loc.notifications,  //"Notifications",
@@ -35,13 +33,13 @@ class SettingsPage extends ConsumerWidget {
               SettingsTile(
                 icon: Icons.location_on_outlined,
                 title: context.loc.manageSavedAddresses,  //"Manage Saved Addresses",
-                onTap: manageAddresses,
+                onTap: _manageAddresses,
               ),
               SettingsTile(
                 icon: Icons.data_usage_outlined,
                 title: context.loc.dataUsageAndOfflineCache,  //"Data Usage & Offline Cache",
                 subtitle: context.loc.configureDownloadAndCacheLimits, //"Configure download and cache limits",
-                onTap: openDataUsageSettings,
+                onTap: _openDataUsageSettings,
               ),
             ],
           ),
@@ -56,12 +54,12 @@ class SettingsPage extends ConsumerWidget {
               SettingsTile(
                 icon: Icons.privacy_tip_outlined,
                 title: context.loc.privacyPolicy,  //"Privacy Policy",
-                onTap: openPrivacyPolicy,
+                onTap: _openPrivacyPolicy,
               ),
               SettingsTile(
                 icon: Icons.description_outlined,
                 title: context.loc.termsAndConditions,  //"Terms & Conditions",
-                onTap: openTerms,
+                onTap: _openTerms,
               ),
             ],
           ),
@@ -73,13 +71,13 @@ class SettingsPage extends ConsumerWidget {
                 icon: Icons.logout,
                 title: context.loc.logout,  //"Logout",
                 iconColor: Colors.redAccent,
-                onTap: logout,
+                onTap: _logout,
               ),
               SettingsTile(
                 icon: Icons.delete_forever_outlined,
                 title: context.loc.deleteAccount,  //"Delete Account",
                 iconColor: Colors.redAccent,
-                onTap: deleteAccount,
+                onTap: _deleteAccount,
               ),
             ],
           ),
@@ -87,5 +85,13 @@ class SettingsPage extends ConsumerWidget {
       ),
     );
   }
+  
+  // Dummy Handlers (replace with actual logic/navigation)
+  static void _manageAddresses(BuildContext context, WidgetRef ref) {}
+  static void _openDataUsageSettings(BuildContext context, WidgetRef ref) {}
+  static void _openPrivacyPolicy(BuildContext context, WidgetRef ref) {}
+  static void _openTerms(BuildContext context, WidgetRef ref) {}
+  static void _logout(BuildContext context, WidgetRef ref) {}
+  static void _deleteAccount(BuildContext context, WidgetRef ref) {}
 
 }
