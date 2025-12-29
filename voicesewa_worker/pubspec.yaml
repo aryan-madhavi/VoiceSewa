@@ -44,6 +44,7 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.5
   syncfusion_flutter_charts: ^31.2.12
+  firebase_auth: ^6.1.3
 
 dev_dependencies:
   flutter_test:

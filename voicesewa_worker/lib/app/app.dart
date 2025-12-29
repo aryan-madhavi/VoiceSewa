@@ -35,6 +35,7 @@ class App extends ConsumerWidget {
       theme: lightThemeData,
       home: const AppGate(),
       routes: AppRoutes.routes,
+      
     );
   }
 }

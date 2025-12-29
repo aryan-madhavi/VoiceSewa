@@ -2,7 +2,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class DbLogin {
-
   static final DbLogin _instance = DbLogin._internal();
   factory DbLogin() => _instance;
   DbLogin._internal();
@@ -22,6 +21,7 @@ class DbLogin {
       path,
       version: 1,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -29,7 +29,7 @@ class DbLogin {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS user_login(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL,
+        username TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
         is_logged_in INTEGER NOT NULL DEFAULT 0,
         last_login_at INTEGER NOT NULL
@@ -37,7 +37,16 @@ class DbLogin {
     ''');
   }
 
- /// Set ONE user as logged in, others logged out
+  // Migration from version 1 to version 2
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Recreate table with UNIQUE constraint
+      await db.execute('DROP TABLE IF EXISTS user_login');
+      await _onCreate(db, newVersion);
+    }
+  }
+
+  /// Set ONE user as logged in, others logged out
   Future<void> setLoggedInUser({
     required String username,
     required String password,
@@ -45,22 +54,33 @@ class DbLogin {
     final db = await database;
     final now = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
 
-    // logout all users first
+    // First, logout all users
     await db.update('user_login', {'is_logged_in': 0});
 
-    // upsert user
-    await db.insert(
+    // Check if user already exists
+    final existingUser = await db.query(
       'user_login',
-      {
-        'username': username, 
+      where: 'username = ?',
+      whereArgs: [username],
+    );
+
+    if (existingUser.isNotEmpty) {
+      await db.update(
+        'user_login',
+        {'password': password, 'is_logged_in': 1, 'last_login_at': now},
+        where: 'username = ?',
+        whereArgs: [username],
+      );
+    } else {
+      await db.insert('user_login', {
+        'username': username,
         'password': password,
         'is_logged_in': 1,
         'last_login_at': now,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+      });
+    }
   }
-  
+
   /// Get the single user who is logged in
   Future<Map<String, dynamic>?> getLoggedInUser() async {
     final db = await database;
@@ -92,5 +112,4 @@ class DbLogin {
       whereArgs: [username],
     );
   }
-
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_worker/features/auth/provider/logout_provider.dart';
 import 'package:voicesewa_worker/features/profile/presentation/bank_details_page.dart';
 import 'package:voicesewa_worker/features/profile/presentation/settings_page.dart';
 import 'package:voicesewa_worker/features/profile/presentation/support_and_help_page.dart';
@@ -8,18 +10,80 @@ import '../../../core/constants/color_constants.dart';
 import '../../../core/constants/helper_function.dart';
 import '../../../core/extensions/context_extensions.dart';
 
-class ProfilePage extends StatefulWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  State<ProfilePage> createState() => _ProfileState();
+  ConsumerState<ProfilePage> createState() => _ProfileState();
 }
 
-class _ProfileState extends State<ProfilePage> {
+class _ProfileState extends ConsumerState<ProfilePage> {
+  Future<void> _handleLogout() async {
+    // Show confirmation dialog
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.loc.logOut),
+        content: const Text('Are you sure you want to log out?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Log Out'),
+          ),
+        ],
+      ),
+    );
+
+    // If user confirmed logout
+    if (shouldLogout == true && mounted) {
+      // Call logout from provider
+      await ref.read(logoutProvider.notifier).logout();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final width = MediaQuery.of(context).size.width;
+    
+    // Watch logout state
+    final logoutState = ref.watch(logoutProvider);
+
+    // Listen to logout state changes
+    ref.listen<LogoutState>(logoutProvider, (previous, next) {
+      if (next.isSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else if (next.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logout failed: ${next.errorMessage}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: ColorConstants.backgroundColor,
@@ -28,7 +92,7 @@ class _ProfileState extends State<ProfilePage> {
         elevation: 0,
         title: Text(
           context.loc.myProfile, // "My Profile",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         actions: [
@@ -110,19 +174,31 @@ class _ProfileState extends State<ProfilePage> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () {
-                },
+                onPressed: logoutState.isLoading ? null : _handleLogout,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent.withOpacity(0.1),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  disabledBackgroundColor: Colors.grey.withOpacity(0.1),
                 ),
-                child: Text(
-                  context.loc.logOut, // "Log Out",
-                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                ),
+                child: logoutState.isLoading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                        ),
+                      )
+                    : Text(
+                        context.loc.logOut, // "Log Out",
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 30),
@@ -182,7 +258,4 @@ class _ProfileState extends State<ProfilePage> {
       ],
     );
   }
-
-
-  
 }
