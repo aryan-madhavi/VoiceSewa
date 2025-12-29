@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_worker/core/database/db_login.dart';
+import 'package:voicesewa_worker/features/auth/model/AuthResult.dart';
 
 class AuthRepository {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -46,41 +47,60 @@ class AuthRepository {
     required String password,
   }) async {
     try {
-      // Try Firebase first
-      try {
-        final credential = await _firebaseAuth.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-        
-        // Save to local DB as backup
-        await _dbLogin.setLoggedInUser(
-          username: username,
-          password: password, // In production, never store plain passwords
-        );
-        
-        return AuthResult(
-          success: true,
-          message: 'Registration successful',
-          user: credential.user,
-        );
-      } catch (e) {
-        // If Firebase fails but we have the credentials, save locally
-        await _dbLogin.setLoggedInUser(
-          username: username,
-          password: password,
-        );
-        
-        return AuthResult(
-          success: true,
-          message: 'Registered locally. Will sync with server when online.',
-          isOffline: true,
-        );
+      // Try Firebase registration
+      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      
+      // ONLY save to local DB after Firebase confirms success
+      await _dbLogin.setLoggedInUser(
+        username: email, // Use email as username for consistency
+        password: password, // In production, never store plain passwords
+      );
+      
+      return AuthResult(
+        success: true,
+        message: 'Registration successful',
+        user: credential.user,
+      );
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Registration failed';
+      
+      switch (e.code) {
+        case 'email-already-in-use':
+          errorMessage = 'This email is already registered';
+          break;
+        case 'weak-password':
+          errorMessage = 'Password is too weak';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email address';
+          break;
+        case 'network-request-failed':
+          // If it's a network issue and we want to allow offline registration
+          // Save locally as fallback
+          await _dbLogin.setLoggedInUser(
+            username: email,
+            password: password,
+          );
+          return AuthResult(
+            success: true,
+            message: 'Registered locally. Will sync when online.',
+            isOffline: true,
+          );
+        default:
+          errorMessage = e.message ?? 'Registration failed';
       }
+      
+      return AuthResult(
+        success: false,
+        message: errorMessage,
+      );
     } catch (e) {
       return AuthResult(
         success: false,
-        message: e.toString(),
+        message: 'An unexpected error occurred: ${e.toString()}',
       );
     }
   }
@@ -91,31 +111,33 @@ class AuthRepository {
     required String password,
   }) async {
     try {
-      // Try Firebase first
-      try {
-        final credential = await _firebaseAuth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-        
-        // Update local DB
-        await _dbLogin.setLoggedInUser(
-          username: email,
-          password: password,
-        );
-        
-        return AuthResult(
-          success: true,
-          message: 'Login successful',
-          user: credential.user,
-        );
-      } catch (e) {
-        // If Firebase fails, try local DB
+      // Try Firebase login first
+      final credential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      
+      // ONLY save to local DB after Firebase confirms success
+      await _dbLogin.setLoggedInUser(
+        username: email,
+        password: password,
+      );
+      
+      return AuthResult(
+        success: true,
+        message: 'Login successful',
+        user: credential.user,
+      );
+    } on FirebaseAuthException catch (e) {
+      // If Firebase fails, try local DB as fallback
+      if (e.code == 'network-request-failed') {
+        // Network issue - try offline login
         final localUser = await _dbLogin.getLoggedInUser();
         
         if (localUser != null && 
             localUser['username'] == email && 
-            localUser['password'] == password) {
+            localUser['password'] == password &&
+            await _dbLogin.isSessionValid()) {
           
           return AuthResult(
             success: true,
@@ -123,21 +145,49 @@ class AuthRepository {
             isOffline: true,
           );
         }
-        
-        throw Exception('Invalid credentials');
       }
+      
+      // Handle specific Firebase errors
+      String errorMessage = 'Login failed';
+      
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No user found with this email';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password';
+          break;
+        case 'invalid-email':
+          errorMessage = 'Invalid email address';
+          break;
+        case 'user-disabled':
+          errorMessage = 'This account has been disabled';
+          break;
+        case 'too-many-requests':
+          errorMessage = 'Too many attempts. Please try again later';
+          break;
+        default:
+          errorMessage = e.message ?? 'Login failed';
+      }
+      
+      return AuthResult(
+        success: false,
+        message: errorMessage,
+      );
     } catch (e) {
       return AuthResult(
         success: false,
-        message: e.toString(),
+        message: 'An unexpected error occurred: ${e.toString()}',
       );
     }
   }
 
   // Logout
   Future<void> logout() async {
+    // Sign out from Firebase
     await _firebaseAuth.signOut();
     
+    // Logout from local DB
     final user = await _dbLogin.getLoggedInUser();
     if (user != null) {
       await _dbLogin.logoutUser(user['username']);
@@ -145,16 +195,3 @@ class AuthRepository {
   }
 }
 
-class AuthResult {
-  final bool success;
-  final String message;
-  final User? user;
-  final bool isOffline;
-
-  AuthResult({
-    required this.success,
-    required this.message,
-    this.user,
-    this.isOffline = false,
-  });
-}

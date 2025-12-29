@@ -36,40 +36,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Call login and wait for completion
       await ref.read(sessionNotifierProvider.notifier).login(
             _emailController.text.trim(),
             _passwordController.text,
           );
 
+      // Check if widget is still mounted before accessing ref or context
+      if (!mounted) return;
+
+      // Now read the session state
       final sessionState = ref.read(sessionNotifierProvider);
 
       if (sessionState.status == SessionStatus.loggedOut) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(sessionState.errorMessage ?? 'Login failed'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(sessionState.errorMessage ?? 'Login failed'),
+            backgroundColor: Colors.red,
+          ),
+        );
       } else if (sessionState.status == SessionStatus.loggedIn) {
         // Clear fields after successful login
         _clearFields();
         
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login successful!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-          
-          // Navigation is handled automatically by AppGate
-          // No need to manually navigate
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login successful!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        
+        // Navigation is handled automatically by AppGate
       }
     } finally {
+      // Check mounted before setState
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -156,7 +158,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: AuthTextButton(
                     text: 'Forgot Password?',
                     onPressed: () {
-                      // TODO: Navigate to forgot password
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Forgot password feature coming soon'),
