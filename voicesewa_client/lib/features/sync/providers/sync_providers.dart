@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_client/core/providers/database_provider.dart';
 import 'package:voicesewa_client/core/database/daos/client_pending_sync_dao.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';

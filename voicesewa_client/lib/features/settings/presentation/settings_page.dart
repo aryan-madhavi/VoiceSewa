@@ -102,12 +102,6 @@ class SettingsPage extends ConsumerWidget {
             title: "Account",
             tiles: [
               SettingsTile(
-                icon: Icons.add_box,
-                title: "Populate Services",
-                iconColor: Colors.green,
-                onTap: insertTempServiceRequest,
-              ),
-              SettingsTile(
                 icon: Icons.logout,
                 title: "Logout",
                 iconColor: Colors.redAccent,
