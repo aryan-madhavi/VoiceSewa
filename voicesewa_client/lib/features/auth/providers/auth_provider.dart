@@ -1,26 +1,71 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/daos/db_login_dao.dart';
-import '../data/repositories/auth_repository.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:voicesewa_client/features/auth/data/database/db_login_dao.dart';
+import 'package:voicesewa_client/features/auth/data/database/auth_repository.dart';
 
-// DAO provider
+// ==================== BASE PROVIDERS ====================
+
+/// DAO Provider - Singleton instance
 final dbLoginDaoProvider = Provider<DbLoginDao>((ref) {
   return DbLoginDao();
 });
 
-// Repository provider
+/// Repository Provider - Uses DAO
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final dao = ref.watch(dbLoginDaoProvider);
   return AuthRepository(dao);
 });
 
-// Logged-in user provider
+// ==================== DATA PROVIDERS ====================
+
+/// Provider to get currently logged-in user
 final loggedInUserProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
   final repo = ref.watch(authRepositoryProvider);
   return await repo.getLoggedInUser();
 });
 
-// Session validation provider
+/// Provider to check if session is valid
 final sessionValidProvider = FutureProvider<bool>((ref) async {
   final repo = ref.watch(authRepositoryProvider);
   return await repo.isSessionValid();
+});
+
+/// Provider to get total user count
+final totalUsersProvider = FutureProvider<int>((ref) async {
+  final repo = ref.watch(authRepositoryProvider);
+  return await repo.getTotalUsers();
+});
+
+// ==================== UI STATE PROVIDERS ====================
+
+/// Toggle between login and register mode (true = login, false = register)
+final authModeProvider = StateProvider<bool>((ref) => true);
+
+/// Loading state for auth operations
+final authLoadingProvider = StateProvider<bool>((ref) => false);
+
+/// Password visibility toggles
+final loginPasswordVisibleProvider = StateProvider<bool>((ref) => false);
+final registerPasswordVisibleProvider = StateProvider<bool>((ref) => false);
+final confirmPasswordVisibleProvider = StateProvider<bool>((ref) => false);
+
+// ==================== HELPER PROVIDERS ====================
+
+/// Provider to check if a specific user exists
+final userExistsProvider = FutureProvider.family<bool, String>((ref, username) async {
+  final repo = ref.watch(authRepositoryProvider);
+  return await repo.userExists(username);
+});
+
+/// Provider to get user by username
+final userByUsernameProvider = FutureProvider.family<Map<String, dynamic>?, String>(
+  (ref, username) async {
+    final repo = ref.watch(authRepositoryProvider);
+    return await repo.getUserByUsername(username);
+  },
+);
+
+final authStateChangesProvider = StreamProvider.autoDispose<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
 });

@@ -66,7 +66,14 @@ class ServiceRequestDao {
     return ServiceRequest.fromMap(rows.first);
   }
 
-  Future<List<ServiceRequest>> all({ServiceStatus? status, String? clientId, String? workerId}) async {
+  Future<List<ServiceRequest>> all({
+    ServiceStatus? status,
+    String? clientId,
+    String? workerId,
+    String? searchTitle,
+    int? limit,
+    int? offset,
+  }) async {
     final wheres = <String>[];
     final args = <Object?>[];
 
@@ -82,12 +89,18 @@ class ServiceRequestDao {
       wheres.add('worker_id = ?');
       args.add(workerId);
     }
+    if (searchTitle != null && searchTitle.trim().isNotEmpty) {
+      wheres.add('title LIKE ?');
+      args.add('%$searchTitle%');
+    }
 
     final rows = await db.query(
       ServiceRequestTable.table,
       where: wheres.isEmpty ? null : wheres.join(' AND '),
       whereArgs: wheres.isEmpty ? null : args,
       orderBy: 'updated_at DESC',
+      limit: limit,
+      offset: offset,
     );
 
     return rows.map(ServiceRequest.fromMap).toList();
