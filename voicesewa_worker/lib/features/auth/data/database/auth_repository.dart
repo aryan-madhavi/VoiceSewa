@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:voicesewa_worker/core/database/db_login.dart';
+import 'package:voicesewa_worker/features/auth/data/database/db_login.dart';
 import 'package:voicesewa_worker/features/auth/model/AuthResult.dart';
 
 class AuthRepository {

@@ -7,7 +7,7 @@ class Booking {
   final String jobOfferId;
   final String workerId;
   final String clientId;
-  final int scheduledAt; 
+  final int scheduledAt;
   final BookingStatus status;
   final int updatedAt;
 
@@ -44,7 +44,8 @@ class Booking {
 
 class BookingTable {
   static const table = 'bookings';
-  static const createSql = '''
+  static const createSql =
+      '''
   CREATE TABLE IF NOT EXISTS $table(
     booking_id TEXT PRIMARY KEY,
     job_offer_id TEXT NOT NULL,
@@ -55,26 +56,4 @@ class BookingTable {
     updated_at INTEGER NOT NULL
   );
   ''';
-
-  final Database db;
-  BookingTable(this.db);
-
-  Future<int> upsert(Booking b) =>
-      db.insert(table, b.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-
-  Future<List<Booking>> all({BookingStatus? status}) async {
-    final rows = await db.query(
-      table,
-      where: status == null ? null : 'status=?',
-      whereArgs: status == null ? null : [status.index],
-      orderBy: 'updated_at DESC',
-    );
-    return rows.map(Booking.fromMap).toList();
-  }
-
-  Future<int> setStatus(String bookingId, BookingStatus s) =>
-      db.update(table, {'status': s.index, 'updated_at': DateTime.now().millisecondsSinceEpoch},
-          where: 'booking_id=?', whereArgs: [bookingId]);
-
-  Future<int> delete(String id) => db.delete(table, where: 'booking_id=?', whereArgs: [id]);
 }

@@ -7,7 +7,7 @@ class JobOffer {
   final String clientId;
   final String title;
   final String description;
-  final String location;  
+  final String location;
   final int createdAt;
   final JobOfferStatus status;
 
@@ -44,7 +44,8 @@ class JobOffer {
 
 class JobOfferTable {
   static const table = 'job_offers';
-  static const createSql = '''
+  static const createSql =
+      '''
   CREATE TABLE IF NOT EXISTS $table(
     id TEXT PRIMARY KEY,
     client_id TEXT NOT NULL,
@@ -55,20 +56,4 @@ class JobOfferTable {
     status INTEGER NOT NULL
   );
   ''';
-
-  final Database db;
-  JobOfferTable(this.db);
-
-  Future<int> upsert(JobOffer j) => db.insert(table, j.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace);
-
-  Future<List<JobOffer>> byStatus(JobOfferStatus s) async {
-    final rows = await db.query(table, where: 'status=?', whereArgs: [s.index], orderBy: 'created_at DESC');
-    return rows.map(JobOffer.fromMap).toList();
-  }
-
-  Future<int> setStatus(String id, JobOfferStatus s) =>
-      db.update(table, {'status': s.index}, where: 'id=?', whereArgs: [id]);
-
-  Future<int> delete(String id) => db.delete(table, where: 'id=?', whereArgs: [id]);
 }

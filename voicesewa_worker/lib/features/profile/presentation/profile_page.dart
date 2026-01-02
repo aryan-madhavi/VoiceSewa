@@ -170,37 +170,37 @@ class _ProfileState extends ConsumerState<ProfilePage> {
 
             // Logout Button
             const SizedBox(height: 30),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: logoutState.isLoading ? null : _handleLogout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent.withOpacity(0.1),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  disabledBackgroundColor: Colors.grey.withOpacity(0.1),
-                ),
-                child: logoutState.isLoading
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-                        ),
-                      )
-                    : Text(
-                        context.loc.logOut, // "Log Out",
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-              ),
-            ),
+            // SizedBox(
+            //   width: double.infinity,
+            //   height: 50,
+            //   child: ElevatedButton(
+            //     onPressed: logoutState.isLoading ? null : _handleLogout,
+            //     style: ElevatedButton.styleFrom(
+            //       backgroundColor: Colors.redAccent.withOpacity(0.1),
+            //       elevation: 0,
+            //       shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.circular(12),
+            //       ),
+            //       disabledBackgroundColor: Colors.grey.withOpacity(0.1),
+            //     ),
+            //     child: logoutState.isLoading
+            //         ? const SizedBox(
+            //             width: 24,
+            //             height: 24,
+            //             child: CircularProgressIndicator(
+            //               strokeWidth: 2.5,
+            //               valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+            //             ),
+            //           )
+            //         : Text(
+            //             context.loc.logOut, // "Log Out",
+            //             style: const TextStyle(
+            //               color: Colors.red,
+            //               fontWeight: FontWeight.bold,
+            //             ),
+            //           ),
+            //   ),
+            // ),
             const SizedBox(height: 30),
           ],
         ),

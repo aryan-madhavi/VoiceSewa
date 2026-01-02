@@ -53,25 +53,4 @@ class WorkerProfileTable {
     updated_at INTEGER NOT NULL
   );
   ''';
-
-  final Database db;
-  WorkerProfileTable(this.db);
-
-  Future<int> upsert(WorkerProfile p) async {
-    return db.insert(table, p.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace);
-  }
-
-  Future<WorkerProfile?> get(String workerId) async {
-    final rows = await db.query(table, where: 'worker_id=?', whereArgs: [workerId], limit: 1);
-    if (rows.isEmpty) return null;
-    return WorkerProfile.fromMap(rows.first);
-  }
-
-  Future<List<WorkerProfile>> all() async {
-    final rows = await db.query(table, orderBy: 'updated_at DESC');
-    return rows.map(WorkerProfile.fromMap).toList();
-  }
-
-  Future<int> delete(String workerId) => db.delete(table, where: 'worker_id=?', whereArgs: [workerId]);
 }
