@@ -18,50 +18,11 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfileState extends ConsumerState<ProfilePage> {
-  Future<void> _handleLogout() async {
-    // Show confirmation dialog
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.loc.logOut),
-        content: const Text('Are you sure you want to log out?'),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Log Out'),
-          ),
-        ],
-      ),
-    );
-
-    // If user confirmed logout
-    if (shouldLogout == true && mounted) {
-      // Call logout from provider
-      await ref.read(logoutProvider.notifier).logout();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
-    final width = MediaQuery.of(context).size.width;
-    
+    // final height = MediaQuery.of(context).size.height;
+    // final width = MediaQuery.of(context).size.width;
+
     // Watch logout state
     final logoutState = ref.watch(logoutProvider);
 
@@ -92,14 +53,17 @@ class _ProfileState extends ConsumerState<ProfilePage> {
         elevation: 0,
         title: Text(
           context.loc.myProfile, // "My Profile",
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.edit_note_rounded, color: Colors.black),
-          )
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -116,9 +80,9 @@ class _ProfileState extends ConsumerState<ProfilePage> {
               child: Text(
                 context.loc.general, // "General",
                 style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
                 ),
               ),
             ),
@@ -126,46 +90,57 @@ class _ProfileState extends ConsumerState<ProfilePage> {
 
             profilePageBuildMenuCard(
               icon: Icons.settings,
-              title: context.loc.settings,  //"Settings",
-              subtitle: context.loc.privacyNotificationsLanguage, //"Privacy, notifications, language",
-              onTap: (){
+              title: context.loc.settings, //"Settings",
+              subtitle: context
+                  .loc
+                  .privacyNotificationsLanguage, //"Privacy, notifications, language",
+              onTap: () {
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SettingsPage())
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsPage()),
                 );
-                },
+              },
             ),
             profilePageBuildMenuCard(
               icon: Icons.history,
-              title: context.loc.workHistory,  //"Work History",
-              subtitle: context.loc.viewPastJobsAndEarnings, //"View past jobs and earnings",
-              onTap: (){
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const WorkHistoryPage())
+              title: context.loc.workHistory, //"Work History",
+              subtitle: context
+                  .loc
+                  .viewPastJobsAndEarnings, //"View past jobs and earnings",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WorkHistoryPage(),
+                  ),
                 );
-                },
+              },
             ),
             profilePageBuildMenuCard(
               icon: Icons.account_balance_wallet,
-              title: context.loc.bankDetails,  //"Bank Details",
-              subtitle: context.loc.managePayoutsAndAccounts, //"Manage payouts and accounts",
-              onTap:  (){
+              title: context.loc.bankDetails, //"Bank Details",
+              subtitle: context
+                  .loc
+                  .managePayoutsAndAccounts, //"Manage payouts and accounts",
+              onTap: () {
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const BankDetailsPage())
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BankDetailsPage(),
+                  ),
                 );
-                },
+              },
             ),
             profilePageBuildMenuCard(
               icon: Icons.help_outline,
-              title: context.loc.helpAndSupport,  //"Support & Help",
+              title: context.loc.helpAndSupport, //"Support & Help",
               subtitle: context.loc.fAQsContactUs, //"FAQs, Contact us",
-              onTap: (){
+              onTap: () {
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SupportPage())
+                  context,
+                  MaterialPageRoute(builder: (context) => const SupportPage()),
                 );
-                },
+              },
             ),
 
             // Logout Button
@@ -227,8 +202,7 @@ class _ProfileState extends ConsumerState<ProfilePage> {
               ),
               child: const CircleAvatar(
                 radius: 60,
-                backgroundImage: NetworkImage(
-                    "https://i.pravatar.cc/300"),
+                backgroundImage: NetworkImage("https://i.pravatar.cc/300"),
               ),
             ),
             Positioned(
@@ -240,7 +214,11 @@ class _ProfileState extends ConsumerState<ProfilePage> {
                   color: Colors.blue,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.camera_alt,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           ],

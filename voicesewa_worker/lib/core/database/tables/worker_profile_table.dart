@@ -1,4 +1,3 @@
-import 'package:sqflite/sqflite.dart';
 
 class WorkerProfile {
   final String workerId; 

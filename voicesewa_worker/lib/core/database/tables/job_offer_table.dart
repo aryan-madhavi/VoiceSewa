@@ -1,4 +1,3 @@
-import 'package:sqflite/sqflite.dart';
 
 enum JobOfferStatus { newOffer, seen, declined, accepted }
 
