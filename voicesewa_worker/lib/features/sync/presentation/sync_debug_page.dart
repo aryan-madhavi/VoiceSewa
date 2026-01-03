@@ -1,15 +1,16 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:voicesewa_worker/core/database/app_database.dart';
-import '../providers/sync_providers.dart';
-import '../../../core/providers/database_provider.dart';
-import '../../../core/database/tables/worker_profile_table.dart';
-import '../../../core/database/tables/job_offer_table.dart';
-import '../../../core/database/tables/booking_table.dart';
-import '../../../core/database/dao/worker_profile_dao.dart';
-import '../../../core/database/dao/job_offer_dao.dart';
-import '../../../core/database/dao/booking_dao.dart';
+import 'package:voicesewa_worker/core/providers/database_provider.dart';
+import 'package:voicesewa_worker/core/database/tables/worker_profile_table.dart';
+import 'package:voicesewa_worker/core/database/tables/job_offer_table.dart';
+import 'package:voicesewa_worker/core/database/tables/booking_table.dart';
+import 'package:voicesewa_worker/core/database/dao/worker_profile_dao.dart';
+import 'package:voicesewa_worker/core/database/dao/job_offer_dao.dart';
+import 'package:voicesewa_worker/core/database/dao/booking_dao.dart';
+import 'package:voicesewa_worker/features/sync/providers/sync_providers.dart';
 
 class SyncDebugPage extends ConsumerWidget {
   const SyncDebugPage({super.key});
@@ -25,8 +26,11 @@ class SyncDebugPage extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              ref.invalidate(syncServiceProvider);
-              ref.invalidate(pendingSyncDaoProvider);
+              final userId = _getUserId();
+              if (userId != null) {
+                ref.invalidate(syncServiceProvider(userId));
+                ref.invalidate(pendingSyncDaoProvider(userId));
+              }
             },
           ),
         ],
@@ -99,9 +103,22 @@ class SyncDebugPage extends ConsumerWidget {
     );
   }
 
+  /// Helper to get current user ID
+  String? _getUserId() {
+    return WorkerDatabase.currentUserId ??
+        FirebaseAuth.instance.currentUser?.email;
+  }
+
   Future<void> _populateTestData(BuildContext context, WidgetRef ref) async {
     try {
-      final db = await ref.read(sqfliteDatabaseProvider.future);
+      // Get userId first
+      final userId = _getUserId();
+      if (userId == null || userId.isEmpty) {
+        throw Exception('No user logged in');
+      }
+
+      // Get database with explicit userId
+      final db = await ref.read(sqfliteDatabaseProvider(userId).future);
       final uuid = const Uuid();
 
       // Show loading
@@ -115,7 +132,7 @@ class SyncDebugPage extends ConsumerWidget {
 
       // 1. Create test Worker Profile
       final workerDao = WorkerProfileDao(db);
-      final workerId = uuid.v4();
+      final workerId = userId; // Use actual userId
 
       final profile = WorkerProfile(
         workerId: workerId,
@@ -170,11 +187,8 @@ class SyncDebugPage extends ConsumerWidget {
 
       // Refresh the UI
       if (context.mounted) {
-        ref.invalidate(pendingSyncDaoProvider);
-        final userId = WorkerDatabase.currentUserId;
-        if (userId == null) {
-          throw Exception('No user logged in');
-        }
+        ref.invalidate(pendingSyncDaoProvider(userId));
+
         // Get updated sync status
         final syncStatus = await ref.read(syncStatusProvider(userId).future);
         final pendingCount = syncStatus['pending'] ?? 0;
@@ -201,10 +215,11 @@ class SyncDebugPage extends ConsumerWidget {
 
   Future<void> _forceSyncData(BuildContext context, WidgetRef ref) async {
     try {
-      final userId = WorkerDatabase.currentUserId;
-      if (userId == null) {
+      final userId = _getUserId();
+      if (userId == null || userId.isEmpty) {
         throw Exception('No user logged in');
       }
+
       final syncAsync = ref.read(syncServiceProvider(userId));
 
       await syncAsync.whenData((syncService) async {
@@ -271,7 +286,7 @@ class SyncDebugPage extends ConsumerWidget {
           }
 
           // Refresh the UI
-          ref.invalidate(pendingSyncDaoProvider);
+          ref.invalidate(pendingSyncDaoProvider(userId));
         }
       });
     } catch (e) {
@@ -568,10 +583,11 @@ class SyncDebugPage extends ConsumerWidget {
 
   Future<List<Map<String, dynamic>>> _loadSyncQueue(WidgetRef ref) async {
     try {
-      final userId = WorkerDatabase.currentUserId;
-      if (userId == null) {
+      final userId = _getUserId();
+      if (userId == null || userId.isEmpty) {
         throw Exception('No user logged in');
       }
+
       final dao = await ref.read(pendingSyncDaoProvider(userId).future);
       final items = await dao.getPending();
       return items.map((e) => e.toMap()).toList();

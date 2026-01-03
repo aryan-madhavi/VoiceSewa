@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_worker/app/app_gate.dart';
 import 'package:voicesewa_worker/app/routes.dart';
+import 'package:voicesewa_worker/core/constants/app_constants.dart';
 import 'package:voicesewa_worker/core/theme/light_theme.dart';
 import 'package:voicesewa_worker/core/providers/language_provider.dart';
 
@@ -19,12 +20,13 @@ class App extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appName,
       locale: locale,
-      supportedLocales: const [
-        Locale('en'), // English
-        Locale('hi'), // Hindi
-        Locale('mr'), // Marathi
-        Locale('gu'), // Gujarati
-      ],
+      supportedLocales: AppConstants.supportedLanguages.map(
+        (language) => Locale(language.code),
+      ),
+      // Locale('en'), // English
+      // Locale('hi'), // Hindi
+      // Locale('mr'), // Marathi
+      // Locale('gu'), // Gujarati
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -35,7 +37,6 @@ class App extends ConsumerWidget {
       theme: lightThemeData,
       home: const AppGate(),
       routes: AppRoutes.routes,
-      
     );
   }
 }

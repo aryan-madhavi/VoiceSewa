@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:voicesewa_worker/core/database/app_database.dart';
+import 'package:voicesewa_worker/core/providers/database_provider.dart';
 import 'package:voicesewa_worker/features/auth/data/database/auth_repository.dart';
-import 'package:voicesewa_worker/features/sync/providers/sync_providers.dart'; // 👈 Add this import
+import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 
 enum SessionStatus { loading, loggedIn, loggedOut }
 
@@ -10,49 +11,73 @@ class SessionState {
   final SessionStatus status;
   final Map<String, dynamic>? user;
   final String? errorMessage;
+  final bool isNewUser;
 
-  SessionState({required this.status, this.user, this.errorMessage});
+  SessionState({
+    required this.status,
+    this.user,
+    this.errorMessage,
+    this.isNewUser = false,
+  });
 
   SessionState copyWith({
     SessionStatus? status,
     Map<String, dynamic>? user,
     String? errorMessage,
+    bool? isNewUser,
   }) {
     return SessionState(
       status: status ?? this.status,
       user: user ?? this.user,
       errorMessage: errorMessage ?? this.errorMessage,
+      isNewUser: isNewUser ?? this.isNewUser,
     );
   }
 }
 
 class SessionNotifier extends StateNotifier<SessionState> {
   final AuthRepository _authRepository;
-  final Ref _ref; // 👈 Add Ref field
+  final Ref _ref;
 
-  SessionNotifier(
-    this._authRepository,
-    this._ref,
-  ) // 👈 Accept Ref in constructor
-  : super(SessionState(status: SessionStatus.loading)) {
+  SessionNotifier(this._authRepository, this._ref)
+    : super(SessionState(status: SessionStatus.loading)) {
     _checkSession();
   }
 
   Future<void> _checkSession() async {
+    print('🔍 Checking user session...');
+
     final isLoggedIn = await _authRepository.isUserLoggedIn();
 
     if (isLoggedIn) {
       final user = await _authRepository.getCurrentUser();
-      state = SessionState(status: SessionStatus.loggedIn, user: user);
 
-      // 👇 Trigger sync initialization
-      // _initializeSync();
+      // --- FIX START: Initialize Database on Auto-Login ---
+      if (user != null && user['email'] != null) {
+        print(
+          '🗄️ Initializing database for existing session: ${user['email']}',
+        );
+        WorkerDatabase.instanceForUser(user['email']);
+        await WorkerDatabase.instance.database; // Ensure DB is ready
+      }
+      // --- FIX END ---
+
+      print('✅ User is logged in: ${user?['email']}');
+
+      // This is an existing session (auto-login), so NOT a new user
+      state = SessionState(
+        status: SessionStatus.loggedIn,
+        user: user,
+        isNewUser: false, // Returning user
+      );
     } else {
+      print('⚠️ No active session found');
       state = SessionState(status: SessionStatus.loggedOut);
     }
   }
 
   Future<void> login(String email, String password) async {
+    print('🔑 Attempting login for: $email');
     state = state.copyWith(status: SessionStatus.loading);
 
     final result = await _authRepository.login(
@@ -61,12 +86,23 @@ class SessionNotifier extends StateNotifier<SessionState> {
     );
 
     if (result.success) {
-      final user = await _authRepository.getCurrentUser();
-      state = SessionState(status: SessionStatus.loggedIn, user: user);
+      // --- FIX START: Initialize Database on Login ---
+      print('🗄️ Initializing database for user: $email');
+      WorkerDatabase.instanceForUser(email);
+      await WorkerDatabase.instance.database; // Ensure DB is ready
+      // --- FIX END ---
 
-      // 👇 Trigger sync initialization after successful login
-      // _initializeSync();
+      final user = await _authRepository.getCurrentUser();
+      print('✅ Login successful for: ${user?['email']}');
+
+      // Login = returning user, NOT new
+      state = SessionState(
+        status: SessionStatus.loggedIn,
+        user: user,
+        isNewUser: false, // Returning user logging in
+      );
     } else {
+      print('❌ Login failed: ${result.message}');
       state = SessionState(
         status: SessionStatus.loggedOut,
         errorMessage: result.message,
@@ -75,6 +111,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
   }
 
   Future<void> register(String email, String username, String password) async {
+    print('📝 Attempting registration for: $email');
     state = state.copyWith(status: SessionStatus.loading);
 
     final result = await _authRepository.register(
@@ -84,12 +121,23 @@ class SessionNotifier extends StateNotifier<SessionState> {
     );
 
     if (result.success) {
-      final user = await _authRepository.getCurrentUser();
-      state = SessionState(status: SessionStatus.loggedIn, user: user);
+      // --- FIX START: Initialize Database on Register ---
+      print('🗄️ Initializing database for new user: $email');
+      WorkerDatabase.instanceForUser(email);
+      await WorkerDatabase.instance.database; // Ensure DB is ready
+      // --- FIX END ---
 
-      // 👇 Trigger sync initialization after successful registration
-      // _initializeSync();
+      final user = await _authRepository.getCurrentUser();
+      print('✅ Registration successful for: ${user?['email']}');
+
+      // Registration = NEW USER who needs to complete profile
+      state = SessionState(
+        status: SessionStatus.loggedIn,
+        user: user,
+        isNewUser: true, // 🔥 KEY FIX: This is a new user!
+      );
     } else {
+      print('❌ Registration failed: ${result.message}');
       state = SessionState(
         status: SessionStatus.loggedOut,
         errorMessage: result.message,
@@ -97,27 +145,9 @@ class SessionNotifier extends StateNotifier<SessionState> {
     }
   }
 
-  // 👇 Add this method to initialize sync
-  // Future<void> _initializeSync() async {
-  //   try {
-  //     final userId = WorkerDatabase.currentUserId;
-
-  //     if (userId == null) {
-  //       print('⚠️ No userId available for sync initialization');
-  //       return;
-  //     }
-
-  //     print('🔄 Triggering SyncService initialization from SessionNotifier...');
-  //     // Just read the provider - it will auto-initialize
-  //     _ref.read(syncServiceProvider(userId));
-  //     print('✅ SyncService trigger sent');
-  //   } catch (e) {
-  //     print('⚠️ Failed to trigger SyncService: $e');
-  //   }
-  // }
-
   Future<void> logout() async {
     final userId = WorkerDatabase.currentUserId;
+    print('🚪 Logging out user: $userId');
 
     await _authRepository.logout();
 
@@ -127,6 +157,14 @@ class SessionNotifier extends StateNotifier<SessionState> {
       print('✅ Database closed successfully');
     }
 
+    // Force Riverpod to forget the old database connection
+    _ref.invalidate(sqfliteDatabaseProvider);
+
+    // Also clear any cached profile data
+    _ref.invalidate(profileCompletionProvider);
+    _ref.invalidate(workerProfileProvider);
+
+    print('✅ Logout complete');
     state = SessionState(status: SessionStatus.loggedOut);
   }
 }
@@ -138,5 +176,5 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final sessionNotifierProvider =
     StateNotifierProvider<SessionNotifier, SessionState>((ref) {
       final authRepository = ref.watch(authRepositoryProvider);
-      return SessionNotifier(authRepository, ref); // 👈 Pass ref to constructor
+      return SessionNotifier(authRepository, ref);
     });

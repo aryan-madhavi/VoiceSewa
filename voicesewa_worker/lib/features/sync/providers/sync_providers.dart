@@ -15,7 +15,12 @@ final pendingSyncDaoProvider = FutureProvider.family
     .autoDispose<WorkerPendingSyncDao, String>((ref, userId) async {
       print('🔧 Creating WorkerPendingSyncDao for $userId...');
 
-      final db = await ref.watch(sqfliteDatabaseProvider.future);
+      if (userId.isEmpty) {
+        throw StateError('Empty userId provided');
+      }
+
+      // Use the family provider with explicit userId from database_provider.dart
+      final db = await ref.watch(sqfliteDatabaseProvider(userId).future);
 
       try {
         await db.rawQuery('SELECT 1');
@@ -35,9 +40,14 @@ final syncServiceProvider = FutureProvider.family
     .autoDispose<WorkerSyncService?, String>((ref, userId) async {
       print('🔄 Initializing SyncService for user: $userId');
 
+      if (userId.isEmpty) {
+        print('❌ Empty userId provided to SyncService');
+        return null;
+      }
+
       try {
-        // Wait for database
-        await ref.watch(sqfliteDatabaseProvider.future);
+        // Wait for database using the family provider from database_provider.dart
+        await ref.watch(sqfliteDatabaseProvider(userId).future);
 
         if (!ref.mounted) {
           print('⚠️ Provider disposed during database init');
@@ -68,13 +78,17 @@ final syncServiceProvider = FutureProvider.family
         return service;
       } catch (e) {
         print('❌ Failed to initialize SyncService for $userId: $e');
-        rethrow;
+        return null;
       }
     });
 
 /// Provides the current sync status - user-specific
 final syncStatusProvider = FutureProvider.family
     .autoDispose<Map<String, int>, String>((ref, userId) async {
+      if (userId.isEmpty) {
+        return {'pending': 0, 'failed': 0};
+      }
+
       try {
         final WorkerSyncService? syncService = await ref.watch(
           syncServiceProvider(userId).future,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_worker/core/constants/app_constants.dart';
 import '../../extensions/context_extensions.dart';
 import '../../providers/language_provider.dart';
 
@@ -15,31 +16,39 @@ class AppBarWidget extends ConsumerWidget implements PreferredSizeWidget {
       actions: [
         PopupMenuButton<String>(
           icon: const Icon(Icons.translate),
-          tooltip: context.loc.selectLanguage,  //'Select Language',
+          tooltip: context.loc.selectLanguage, //'Select Language',
           onSelected: (String languageCode) {
             ref.read(localeProvider.notifier).changeLanguage(languageCode);
           },
-          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            PopupMenuItem<String>(
-              value: 'en',
-                child: Text(
-                    "English" //"🇺🇸 English"
+          itemBuilder: (BuildContext context) => AppConstants.supportedLanguages
+              .map(
+                (language) => PopupMenuItem<String>(
+                  value: language.code,
+                  child: Text(language.displayName),
                 ),
-            ),
-            const PopupMenuItem<String>(
-              value: 'hi',  
-              child: Text('हिंदी'),
-            ),
-            const PopupMenuItem<String>(
-               value: 'mr',
-               child: Text('मराठी'),
-            ),
-            const PopupMenuItem<String>(
-              value: 'gu',
-              child: Text('ગુજરાતી'),
-            ),
-          ],
-        )
+              )
+              .toList(),
+          // <PopupMenuEntry<String>>[
+          // PopupMenuItem<String>(
+          //   value: 'en',
+          //     child: Text(
+          //         "English" //"🇺🇸 English"
+          //     ),
+          // ),
+          // const PopupMenuItem<String>(
+          //   value: 'hi',
+          //   child: Text('हिंदी'),
+          // ),
+          // const PopupMenuItem<String>(
+          //    value: 'mr',
+          //    child: Text('मराठी'),
+          // ),
+          // const PopupMenuItem<String>(
+          //   value: 'gu',
+          //   child: Text('ગુજરાતી'),
+          // ),
+          // ],
+        ),
       ],
     );
   }

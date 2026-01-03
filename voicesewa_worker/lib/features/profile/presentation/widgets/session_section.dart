@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_worker/core/constants/helper_function.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 import 'settings_section_header.dart';
 
 class SessionSection extends StatelessWidget {
@@ -15,7 +16,7 @@ class SessionSection extends StatelessWidget {
         const SettingsSectionHeader(title: 'Session'),
         const SizedBox(height: 10),
         settingsPageBuildActionTile(
-          'Logout',
+          context.loc.logOut,
           Icons.logout,
           onLogout,
           isDestructive: false,
