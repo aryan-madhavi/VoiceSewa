@@ -11,7 +11,7 @@ import '../../features/sync/data/sync_triggers.dart';
 /// User-specific database manager for Worker app
 /// Each user gets their own isolated database file
 class WorkerDatabase {
-  static const _dbVersion = 2; // Bumped from 1 to 2 for trigger fix
+  static const _dbVersion = 1; // Bumped from 1 to 2 for trigger fix
 
   // Store instances per user (userId -> WorkerDatabase)
   static final Map<String, WorkerDatabase> _instances = {};

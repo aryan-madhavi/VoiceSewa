@@ -8,19 +8,16 @@ import 'package:voicesewa_worker/features/sync/domain/worker_pending_sync_model.
 class WorkerSyncService {
   final WorkerPendingSyncDao pendingDao;
   final FirebaseFirestore firestore;
-  
+
   Timer? _periodicTimer;
   bool _isSyncing = false;
 
-  WorkerSyncService({
-    required this.pendingDao,
-    required this.firestore,
-  });
+  WorkerSyncService({required this.pendingDao, required this.firestore});
 
   /// Initialize periodic sync
   void initialize() {
-    print('🔄 Starting periodic sync (every 30 seconds)...');
-    
+    print('🔄 Starting periodic sync (every 15min)...');
+
     // Run initial sync after a short delay
     Future.delayed(const Duration(seconds: 2), () {
       syncPending();
@@ -36,8 +33,9 @@ class WorkerSyncService {
   /// Check internet connectivity
   Future<bool> _hasInternetConnection() async {
     try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 5));
+      final result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 5));
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } on SocketException catch (_) {
       return false;
@@ -96,15 +94,26 @@ class WorkerSyncService {
 
       // 5. Report results
       if (failedCount > 0) {
-        print('⚠️ Sync completed with errors: $successCount succeeded, $failedCount failed');
-        return {'success': false, 'synced': successCount, 'failed': failedCount};
+        print(
+          '⚠️ Sync completed with errors: $successCount succeeded, $failedCount failed',
+        );
+        return {
+          'success': false,
+          'synced': successCount,
+          'failed': failedCount,
+        };
       } else {
         print('✅ Sync completed successfully: $successCount items synced');
         return {'success': true, 'synced': successCount, 'failed': 0};
       }
     } catch (e) {
       print('❌ Sync failed: $e');
-      return {'success': false, 'synced': 0, 'failed': 0, 'error': e.toString()};
+      return {
+        'success': false,
+        'synced': 0,
+        'failed': 0,
+        'error': e.toString(),
+      };
     } finally {
       _isSyncing = false;
     }
@@ -148,22 +157,20 @@ class WorkerSyncService {
       await pendingDao.delete(item.id);
       print('✅ Successfully synced ${item.entityId}');
       return true;
-      
     } on SocketException catch (e) {
       print('❌ Network error syncing ${item.entityId}: $e');
       await _handleSyncFailure(item, 'Network error: No internet connection');
       return false;
-      
     } on TimeoutException catch (e) {
       print('❌ Timeout syncing ${item.entityId}: $e');
       await _handleSyncFailure(item, 'Timeout: Request took too long');
       return false;
-      
     } on FirebaseException catch (e) {
-      print('❌ Firebase error syncing ${item.entityId}: ${e.code} - ${e.message}');
+      print(
+        '❌ Firebase error syncing ${item.entityId}: ${e.code} - ${e.message}',
+      );
       await _handleSyncFailure(item, 'Firebase error: ${e.message}');
       return false;
-      
     } catch (e) {
       print('❌ Failed to sync ${item.entityId}: $e');
       await _handleSyncFailure(item, e.toString());
@@ -176,16 +183,20 @@ class WorkerSyncService {
     try {
       // Mark as failed with error details
       await pendingDao.markFailed(item, error: error);
-      
+
       // If retry count is less than max (e.g., 3), reset to pending for next attempt
       if (item.retryCount < 2) {
-        print('🔄 Will retry ${item.entityId} (attempt ${item.retryCount + 1}/3)');
+        print(
+          '🔄 Will retry ${item.entityId} (attempt ${item.retryCount + 1}/3)',
+        );
         await pendingDao.updateStatus(
           id: item.id,
           status: WorkerSyncStatus.pending,
         );
       } else {
-        print('🚫 Max retries reached for ${item.entityId}, marking as permanently failed');
+        print(
+          '🚫 Max retries reached for ${item.entityId}, marking as permanently failed',
+        );
       }
     } catch (e) {
       print('⚠️ Error handling sync failure: $e');
@@ -195,21 +206,23 @@ class WorkerSyncService {
   /// Perform the actual Firestore sync operation
   Future<void> _performFirestoreSync(WorkerPendingSync item) async {
     final collection = firestore.collection(item.entityType);
-    
+
     switch (item.action) {
       case 'INSERT':
       case 'UPDATE':
         // Parse payload and upsert to Firestore
         final data = _parsePayload(item.payload);
-        await collection.doc(item.entityId).set(
-          data,
-          SetOptions(merge: true),
-        ).timeout(const Duration(seconds: 10));
+        await collection
+            .doc(item.entityId)
+            .set(data, SetOptions(merge: true))
+            .timeout(const Duration(seconds: 10));
         break;
 
       case 'DELETE':
         // Delete from Firestore
-        await collection.doc(item.entityId).delete()
+        await collection
+            .doc(item.entityId)
+            .delete()
             .timeout(const Duration(seconds: 10));
         break;
 
@@ -235,10 +248,7 @@ class WorkerSyncService {
       final pendingCount = await pendingDao.getPendingCount();
       final failedCount = await pendingDao.getFailedCount();
 
-      return {
-        'pending': pendingCount,
-        'failed': failedCount,
-      };
+      return {'pending': pendingCount, 'failed': failedCount};
     } catch (e) {
       print('❌ Error getting sync status: $e');
       return {'pending': 0, 'failed': 0};
@@ -249,9 +259,9 @@ class WorkerSyncService {
   Future<void> retryFailed() async {
     try {
       final failedItems = await pendingDao.getFailed();
-      
+
       print('🔄 Retrying ${failedItems.length} failed items...');
-      
+
       for (final item in failedItems) {
         // Reset status to pending
         await pendingDao.updateStatus(
@@ -260,7 +270,7 @@ class WorkerSyncService {
           retryCount: 0,
         );
       }
-      
+
       // Trigger sync
       await syncPending();
     } catch (e) {

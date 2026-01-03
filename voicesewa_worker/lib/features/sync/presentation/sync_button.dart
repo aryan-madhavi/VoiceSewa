@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_worker/core/database/app_database.dart';
 import 'package:voicesewa_worker/features/sync/providers/sync_providers.dart';
 
 class SyncButton extends ConsumerStatefulWidget {
@@ -36,8 +37,12 @@ class _SyncButtonState extends ConsumerState<SyncButton>
     _rotationController.repeat();
 
     try {
-      final syncAsync = ref.read(syncServiceProvider);
-      
+      final userId = WorkerDatabase.currentUserId;
+      if (userId == null) {
+        throw Exception('No user logged in');
+      }
+      final syncAsync = ref.read(syncServiceProvider(userId));
+
       await syncAsync.when(
         data: (syncService) async {
           await syncService?.syncPending();
@@ -45,9 +50,9 @@ class _SyncButtonState extends ConsumerState<SyncButton>
           ref.invalidate(syncStatusProvider);
 
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Sync triggered')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('✅ Sync triggered')));
         },
         loading: () {
           if (!mounted) return;
@@ -84,7 +89,14 @@ class _SyncButtonState extends ConsumerState<SyncButton>
 
   @override
   Widget build(BuildContext context) {
-    final syncStatusAsync = ref.watch(syncStatusProvider);
+    final userId = WorkerDatabase.currentUserId;
+    if (userId == null) {
+      return IconButton(
+        onPressed: null,
+        icon: const Icon(Icons.sync, color: Colors.grey),
+      );
+    }
+    final syncStatusAsync = ref.watch(syncStatusProvider(userId));
 
     return syncStatusAsync.when(
       data: (status) {
@@ -103,15 +115,15 @@ class _SyncButtonState extends ConsumerState<SyncButton>
                   color: _isSyncing
                       ? Colors.grey
                       : hasItems
-                          ? Colors.orange
-                          : Colors.blue,
+                      ? Colors.orange
+                      : Colors.blue,
                 ),
               ),
               tooltip: _isSyncing
                   ? 'Syncing...'
                   : hasItems
-                      ? 'Sync $pendingCount pending items'
-                      : 'All synced',
+                  ? 'Sync $pendingCount pending items'
+                  : 'All synced',
             ),
             if (hasItems && !_isSyncing)
               Positioned(
@@ -189,22 +201,26 @@ class _SyncFABState extends ConsumerState<SyncFAB>
 
   Future<void> _handleSync() async {
     if (_isSyncing) return;
-  
+
     setState(() => _isSyncing = true);
     _rotationController.repeat();
-  
+
     try {
-      final syncAsync = ref.read(syncServiceProvider);
-  
+      final userId = WorkerDatabase.currentUserId;
+      if (userId == null) {
+        throw Exception('No user logged in');
+      }
+      final syncAsync = ref.read(syncServiceProvider(userId));
+
       await syncAsync.when(
         data: (syncService) async {
           await syncService?.syncPending();
           ref.invalidate(syncStatusProvider);
-  
+
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Sync triggered')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('✅ Sync triggered')));
         },
         loading: () {
           if (!mounted) return;
@@ -233,7 +249,14 @@ class _SyncFABState extends ConsumerState<SyncFAB>
 
   @override
   Widget build(BuildContext context) {
-    final syncStatusAsync = ref.watch(syncStatusProvider);
+    final userId = WorkerDatabase.currentUserId;
+    if (userId == null) {
+      return IconButton(
+        onPressed: null,
+        icon: const Icon(Icons.sync, color: Colors.grey),
+      );
+    }
+    final syncStatusAsync = ref.watch(syncStatusProvider(userId));
 
     return syncStatusAsync.when(
       data: (status) {
@@ -249,24 +272,24 @@ class _SyncFABState extends ConsumerState<SyncFAB>
               _isSyncing
                   ? Icons.sync
                   : failedCount > 0
-                      ? Icons.sync_problem
-                      : Icons.cloud_upload,
+                  ? Icons.sync_problem
+                  : Icons.cloud_upload,
             ),
           ),
           label: Text(
             _isSyncing
                 ? 'Syncing...'
                 : pendingCount > 0
-                    ? 'Sync ($pendingCount)'
-                    : 'All Synced',
+                ? 'Sync ($pendingCount)'
+                : 'All Synced',
           ),
           backgroundColor: _isSyncing
               ? Colors.grey
               : failedCount > 0
-                  ? Colors.red
-                  : pendingCount > 0
-                      ? Colors.orange
-                      : Colors.green,
+              ? Colors.red
+              : pendingCount > 0
+              ? Colors.orange
+              : Colors.green,
         );
       },
       loading: () => FloatingActionButton.extended(

@@ -24,7 +24,7 @@ class _ProfileState extends ConsumerState<ProfilePage> {
     // final width = MediaQuery.of(context).size.width;
 
     // Watch logout state
-    final logoutState = ref.watch(logoutProvider);
+    // final logoutState = ref.watch(logoutProvider);
 
     // Listen to logout state changes
     ref.listen<LogoutState>(logoutProvider, (previous, next) {

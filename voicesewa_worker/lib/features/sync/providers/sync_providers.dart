@@ -10,74 +10,83 @@ final authStateChangesProvider = StreamProvider.autoDispose<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
-/// Provides the DAO for pending sync
-final pendingSyncDaoProvider = FutureProvider.autoDispose<WorkerPendingSyncDao>((ref) async {
-  print('🔧 Creating WorkerPendingSyncDao...');
-  
-  final db = await ref.watch(sqfliteDatabaseProvider.future);
-  
-  // Verify database is actually open
-  try {
-    await db.rawQuery('SELECT 1');
-  } catch (e) {
-    print('⚠️ Database verification failed: $e');
-    throw StateError('Database not ready: $e');
-  }
-  
-  final dao = WorkerPendingSyncDao(db);
-  
-  print('✅ WorkerPendingSyncDao ready');
-  return dao;
-});
+/// Provides the DAO for pending sync - user-specific
+final pendingSyncDaoProvider = FutureProvider.family
+    .autoDispose<WorkerPendingSyncDao, String>((ref, userId) async {
+      print('🔧 Creating WorkerPendingSyncDao for $userId...');
 
-/// Provides the SyncService once the DAO is ready
-final syncServiceProvider = FutureProvider.autoDispose<WorkerSyncService?>((ref) async {
-  final authState = ref.watch(authStateChangesProvider);
-  final user = authState.value;
+      final db = await ref.watch(sqfliteDatabaseProvider.future);
 
-  // Graceful exit: If no user, just return null
-  if (user == null || user.email == null) {
-    print('⏳ SyncService waiting for user login...');
-    return null;
-  }
-  
-  final userEmail = user.email!;
-  print('🔄 Initializing SyncService for user: $userEmail');
-  
-  try {
-    // Wait for DAO to be ready
-    final dao = await ref.watch(pendingSyncDaoProvider.future);
+      try {
+        await db.rawQuery('SELECT 1');
+      } catch (e) {
+        print('⚠️ Database verification failed: $e');
+        throw StateError('Database not ready: $e');
+      }
 
-    // Create sync service instance
-    final service = WorkerSyncService(
-      pendingDao: dao,
-      firestore: FirebaseFirestore.instance,
-    );
+      final dao = WorkerPendingSyncDao(db);
 
-    // Initialize the service
-    service.initialize();
-    print('✅ SyncService initialized and running for $userEmail');
-
-    // Dispose service when provider is destroyed
-    ref.onDispose(() {
-      print('🧹 Disposing SyncService for user: $userEmail');
-      service.dispose();
+      print('✅ WorkerPendingSyncDao ready for $userId');
+      return dao;
     });
 
-    return service;
-  } catch (e) {
-    print('❌ Failed to initialize SyncService for $userEmail: $e');
-    rethrow;
-  }
-});
+/// Provides the SyncService - user-specific
+final syncServiceProvider = FutureProvider.family
+    .autoDispose<WorkerSyncService?, String>((ref, userId) async {
+      print('🔄 Initializing SyncService for user: $userId');
 
-/// Provides the current sync status
-final syncStatusProvider = FutureProvider.autoDispose<Map<String, int>>((ref) async {
-  try {
-    final syncService = await ref.watch(syncServiceProvider.future);
-    return await syncService?.getSyncStatus() ?? {'pending': 0, 'failed': 0};
-  } catch (e) {
-    print('❌ Failed to getSyncStatus: $e');
-    return {'pending': 0, 'failed': 0};
-  }
-});
+      try {
+        // Wait for database
+        await ref.watch(sqfliteDatabaseProvider.future);
+
+        if (!ref.mounted) {
+          print('⚠️ Provider disposed during database init');
+          return null;
+        }
+
+        // Get DAO for this user
+        final dao = await ref.read(pendingSyncDaoProvider(userId).future);
+
+        if (!ref.mounted) {
+          print('⚠️ Provider disposed after reading DAO');
+          return null;
+        }
+
+        final service = WorkerSyncService(
+          pendingDao: dao,
+          firestore: FirebaseFirestore.instance,
+        );
+
+        service.initialize();
+        print('✅ SyncService initialized and running for $userId');
+
+        ref.onDispose(() {
+          print('🧹 Disposing SyncService for user: $userId');
+          service.dispose();
+        });
+
+        return service;
+      } catch (e) {
+        print('❌ Failed to initialize SyncService for $userId: $e');
+        rethrow;
+      }
+    });
+
+/// Provides the current sync status - user-specific
+final syncStatusProvider = FutureProvider.family
+    .autoDispose<Map<String, int>, String>((ref, userId) async {
+      try {
+        final WorkerSyncService? syncService = await ref.watch(
+          syncServiceProvider(userId).future,
+        );
+
+        if (syncService == null) {
+          return {'pending': 0, 'failed': 0};
+        }
+
+        return await syncService.getSyncStatus();
+      } catch (e) {
+        print('❌ Failed to getSyncStatus: $e');
+        return {'pending': 0, 'failed': 0};
+      }
+    });

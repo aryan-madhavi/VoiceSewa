@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
+import 'package:voicesewa_worker/core/database/app_database.dart';
 import '../providers/sync_providers.dart';
 import '../../../core/providers/database_provider.dart';
 import '../../../core/database/tables/worker_profile_table.dart';
@@ -170,9 +171,12 @@ class SyncDebugPage extends ConsumerWidget {
       // Refresh the UI
       if (context.mounted) {
         ref.invalidate(pendingSyncDaoProvider);
-
+        final userId = WorkerDatabase.currentUserId;
+        if (userId == null) {
+          throw Exception('No user logged in');
+        }
         // Get updated sync status
-        final syncStatus = await ref.read(syncStatusProvider.future);
+        final syncStatus = await ref.read(syncStatusProvider(userId).future);
         final pendingCount = syncStatus['pending'] ?? 0;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -197,7 +201,11 @@ class SyncDebugPage extends ConsumerWidget {
 
   Future<void> _forceSyncData(BuildContext context, WidgetRef ref) async {
     try {
-      final syncAsync = ref.read(syncServiceProvider);
+      final userId = WorkerDatabase.currentUserId;
+      if (userId == null) {
+        throw Exception('No user logged in');
+      }
+      final syncAsync = ref.read(syncServiceProvider(userId));
 
       await syncAsync.whenData((syncService) async {
         if (syncService == null) {
@@ -560,7 +568,11 @@ class SyncDebugPage extends ConsumerWidget {
 
   Future<List<Map<String, dynamic>>> _loadSyncQueue(WidgetRef ref) async {
     try {
-      final dao = await ref.read(pendingSyncDaoProvider.future);
+      final userId = WorkerDatabase.currentUserId;
+      if (userId == null) {
+        throw Exception('No user logged in');
+      }
+      final dao = await ref.read(pendingSyncDaoProvider(userId).future);
       final items = await dao.getPending();
       return items.map((e) => e.toMap()).toList();
     } catch (e) {
