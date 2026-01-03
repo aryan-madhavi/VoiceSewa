@@ -16,7 +16,7 @@ class AuthService {
   }) async {
     try {
       print('🔐 Starting login process for: $email');
-      
+
       // 1. Firebase Authentication
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email.trim(),
@@ -27,7 +27,7 @@ class AuthService {
       // 2. Initialize user-specific database
       final trimmedEmail = email.trim();
       ClientDatabase.instanceForUser(trimmedEmail);
-      
+
       // Ensure database is created by accessing it once
       final db = await ClientDatabase.instance.database;
       print('✅ User database initialized: ${db.path}');
@@ -36,6 +36,9 @@ class AuthService {
       final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
       await sessionNotifier.login(trimmedEmail, password);
       print('✅ Session state updated');
+
+      // 4. Profile check will be handled by AppGate
+      print('✅ Login complete, AppGate will check profile');
 
       return null; // Success
     } on FirebaseAuthException catch (e) {
@@ -54,13 +57,14 @@ class AuthService {
     required String username,
   }) async {
     try {
-      print('📝 Starting registration process for: $email');
-      
+      print('🔐 Starting registration process for: $email');
+
       // 1. Firebase Authentication
-      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
-      );
+      final userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: email.trim(),
+            password: password,
+          );
       print('✅ Firebase registration successful');
 
       // 2. Update display name
@@ -70,7 +74,7 @@ class AuthService {
       // 3. Initialize user-specific database
       final trimmedEmail = email.trim();
       ClientDatabase.instanceForUser(trimmedEmail);
-      
+
       // Ensure database is created
       final db = await ClientDatabase.instance.database;
       print('✅ User database created: ${db.path}');
@@ -79,6 +83,10 @@ class AuthService {
       final sessionNotifier = ref.read(sessionNotifierProvider.notifier);
       await sessionNotifier.login(trimmedEmail, password);
       print('✅ Session state updated');
+
+      // 5. Profile setup will be handled by AppGate
+      // AppGate will detect no profile exists and show ProfileSetupScreen
+      print('✅ Registration complete, redirecting to profile setup');
 
       return null; // Success
     } on FirebaseAuthException catch (e) {
@@ -89,7 +97,7 @@ class AuthService {
       return 'Unexpected error: ${e.toString()}';
     }
   }
-  
+
   /// Get user-friendly error messages from Firebase Auth exceptions
   String _getAuthErrorMessage(FirebaseAuthException e) {
     switch (e.code) {

@@ -5,6 +5,8 @@ import 'package:sqflite/sqflite.dart';
 import 'tables/client_profile_table.dart';
 import 'tables/service_request_table.dart';
 import 'tables/client_pending_sync_table.dart';
+import 'daos/client_profile_dao.dart';
+import 'daos/client_pending_sync_dao.dart';
 //import 'package:voicesewa_client/features/sync/data/pending_sync_helper_trigger.dart';
 
 /// User-specific database manager
@@ -17,6 +19,10 @@ class ClientDatabase {
   static String? _currentUserId;
 
   Database? _db;
+  
+  // DAO instances (lazy-initialized)
+  ClientProfileDao? _clientProfileDao;
+  ClientPendingSyncDao? _clientPendingSyncDao;
 
   ClientDatabase._();
 
@@ -53,13 +59,17 @@ class ClientDatabase {
       } catch (e) {
         print('⚠️ Database instance invalid: $e');
         _db = null; // Clear invalid instance
+        // Also clear DAOs since they depend on the database
+        _clientProfileDao = null;
+        _clientPendingSyncDao = null;
       }
-      return _db!;
     }
 
-    _db = await _openDatabase();
+    if (_db == null) {
+      _db = await _openDatabase();
+      print('✅ Database opened successfully');
+    }
 
-    print('✅ Database opened successfully');
     return _db!;
   }
 
@@ -120,6 +130,39 @@ class ClientDatabase {
     );
   }
 
+  // ============================================================================
+  // DAO GETTERS - Access database tables through Data Access Objects
+  // ============================================================================
+
+  /// Get ClientProfileDao instance
+  /// This is used to read/write client profile data
+  ClientProfileDao get clientProfileDao {
+    if (_clientProfileDao == null) {
+      if (_db == null) {
+        throw StateError('Database not initialized. Call database getter first.');
+      }
+      // ClientProfileDao needs syncDao, so initialize syncDao first
+      _clientProfileDao = ClientProfileDao(_db!, clientPendingSyncDao);
+    }
+    return _clientProfileDao!;
+  }
+
+  /// Get ClientPendingSyncDao instance
+  /// This is used to manage the sync queue
+  ClientPendingSyncDao get clientPendingSyncDao {
+    if (_clientPendingSyncDao == null) {
+      if (_db == null) {
+        throw StateError('Database not initialized. Call database getter first.');
+      }
+      _clientPendingSyncDao = ClientPendingSyncDao(_db!);
+    }
+    return _clientPendingSyncDao!;
+  }
+
+  // ============================================================================
+  // DATABASE LIFECYCLE MANAGEMENT
+  // ============================================================================
+
   /// Close and cleanup user database
   /// Call this when user logs out
   static Future<void> closeUserDatabase(String userId) async {
@@ -128,6 +171,9 @@ class ClientDatabase {
     if (instance?._db != null) {
       await instance!._db!.close();
       instance._db = null;
+      // Clear DAO instances
+      instance._clientProfileDao = null;
+      instance._clientPendingSyncDao = null;
       print('✅ Database closed for $userId');
     }
     _instances.remove(userId);
@@ -150,8 +196,9 @@ class ClientDatabase {
       final _dbName = '${userId}_voicesewa_client.db';
       final path = join(dir.path, _dbName);
       await deleteDatabase(path);
+      print('🗑️ Database deleted for $userId');
     } catch (e) {
-      print('Error deleting database for $userId: $e');
+      print('❌ Error deleting database for $userId: $e');
     }
   }
 

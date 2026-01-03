@@ -12,7 +12,11 @@ class ClientProfileDao {
   ClientProfileDao(this.db, this.syncDao); // ✅ Update constructor
 
   /// Helper method to queue sync (similar to ServiceRequestDao)
-  Future<void> _queueSync(String clientId, String action, ClientProfile? profile) async {
+  Future<void> _queueSync(
+    String clientId,
+    String action,
+    ClientProfile? profile,
+  ) async {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     Map<String, dynamic> payload = {};
@@ -55,7 +59,7 @@ class ClientProfileDao {
 
     // ✅ Queue sync after local insert
     await _queueSync(profile.clientId, action, profile);
-    
+
     return result;
   }
 
@@ -80,8 +84,8 @@ class ClientProfileDao {
   /// Optional: delete a client
   Future<int> delete(String clientId) async {
     // Get profile before deleting (for sync payload)
-    final profile = await get(clientId);
-    
+    // final profile = await get(clientId);
+
     final result = await db.delete(
       ClientProfileTable.table,
       where: 'client_id = ?',

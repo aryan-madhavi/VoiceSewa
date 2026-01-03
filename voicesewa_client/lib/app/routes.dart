@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/widgets/feedback/coming_soon_page.dart';
+import 'package:voicesewa_client/features/auth/presentation/profile_form_screen.dart';
 import 'package:voicesewa_client/features/sync/presentation/sync_debug_page.dart';
 import 'package:voicesewa_client/features/history/presentation/requests_page.dart';
 import 'package:voicesewa_client/features/home/presentation/home_page.dart';
@@ -7,6 +8,7 @@ import 'package:voicesewa_client/features/search/presentation/workers_page.dart'
 import 'package:voicesewa_client/features/settings/presentation/settings_page.dart';
 import 'package:voicesewa_client/features/settings/presentation/support_page.dart';
 import 'package:voicesewa_client/features/voicebot/presentation/voicebot_chat.dart';
+
 
 /// Centralized route names for the entire app
 class RoutePaths {
@@ -20,6 +22,7 @@ class RoutePaths {
   static const String support = '/support';
   static const String login = '/loginPage';
   static const String signup = '/signupPage';
+  static const String profileSetup = '/profile-setup';
   static const String comingSoon = '/comingSoonPage';
   static const String syncDebug = '/sync-debug';
 }
@@ -33,6 +36,7 @@ class AppRoutes {
     RoutePaths.settings: (context) => const SettingsPage(),
     RoutePaths.support: (context) => const SupportPage(),
     RoutePaths.voicebot: (context) => const VoiceBotPage(),
+    RoutePaths.profileSetup: (context) => const ProfileSetupScreen(),
     RoutePaths.comingSoon: (context) => const ComingSoonPage(),
     RoutePaths.syncDebug: (context) => const SyncDebugPage(),
   };
