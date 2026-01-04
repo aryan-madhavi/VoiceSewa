@@ -6,18 +6,16 @@ import 'package:voicesewa_client/features/auth/presentation/login_screen.dart';
 import 'package:voicesewa_client/features/auth/presentation/profile_form_screen.dart';
 import 'package:voicesewa_client/features/auth/providers/profile_form_provider.dart';
 import 'package:voicesewa_client/features/sync/presentation/sync_initializer.dart';
-import 'package:voicesewa_client/app/services/user_profile_checker.dart';
 
 /// Determines whether to show profile setup or main app
 ///
-/// Decision Logic (PRIORITY ORDER):
+/// Decision Logic:
 /// 1. If profile was just completed → Main App
-/// 2. If profile exists in LOCAL database → Main App (PRIORITY!)
-/// 3. If profile exists in Firestore → Main App
-/// 4. If user is NEW and no profile anywhere → Profile Setup
-/// 5. If user EXISTS but no profile anywhere → Profile Setup
+/// 2. If user just registered → Profile Setup Screen
+/// 3. If user logged in → Main App
 ///
-/// Uses UserProfileChecker service for the actual checks.
+/// NO database or Firestore checks are performed.
+/// Routing is based purely on registration vs login status.
 class ProfileCheckHandler extends ConsumerWidget {
   const ProfileCheckHandler({Key? key}) : super(key: key);
 
@@ -25,7 +23,10 @@ class ProfileCheckHandler extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final firebaseUser = FirebaseAuth.instance.currentUser;
 
-    // Watch profile completion status
+    // Watch registration status (set by login/register forms)
+    final isNewRegistration = ref.watch(isNewRegistrationProvider);
+
+    // Watch profile completion status (set by profile form)
     final isProfileComplete = ref.watch(profileCompletionProvider);
 
     // Safety check - should never happen
@@ -34,84 +35,32 @@ class ProfileCheckHandler extends ConsumerWidget {
       return const AuthScreen();
     }
 
-    // If profile was just completed, go directly to main app
+    print('📊 Profile Check Status:');
+    print('   - User: ${firebaseUser.email}');
+    print('   - Is new registration: $isNewRegistration');
+    print('   - Is profile complete: $isProfileComplete');
+
+    // PRIORITY 1: If profile was just completed, go to main app
     if (isProfileComplete) {
       print('✅ Profile completed, navigating to main app');
-      // Reset the completion flag
+
+      // Reset both flags
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(profileCompletionProvider.notifier).reset();
+        ref.read(isNewRegistrationProvider.notifier).reset();
       });
+
       return const SyncInitializer(child: RootScaffold());
     }
 
-    // Use FutureBuilder to check profile status
-    return FutureBuilder<ProfileCheckResult>(
-      future: UserProfileChecker.checkProfileStatus(firebaseUser),
-      builder: (context, snapshot) {
-        // Loading state
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingScreen();
-        }
-
-        // Error state - default to profile setup for safety
-        if (snapshot.hasError) {
-          print('❌ Profile check error: ${snapshot.error}');
-          return const ProfileSetupScreen();
-        }
-
-        // Success - route based on result
-        final result = snapshot.data!;
-        return _routeBasedOnProfileStatus(result);
-      },
-    );
-  }
-
-  /// Route user based on profile check result
-  ///
-  /// IMPORTANT: Local database takes priority!
-  /// If local profile exists, user goes to main app regardless
-  /// of Firebase Auth timestamps or Firestore status.
-  Widget _routeBasedOnProfileStatus(ProfileCheckResult result) {
-    print('📊 Profile Check Results:');
-    print('   - Is new user: ${result.isNewUser}');
-    print('   - Has LOCAL profile: ${result.hasLocalProfile}');
-    // print('   - Has cloud profile: ${result.hasCloudProfile}');
-
-    // PRIORITY CHECK: If local profile exists, go to main app!
-    if (result.hasLocalProfile) {
-      print('✅ Local profile exists → Main App');
-      return const SyncInitializer(child: RootScaffold());
+    // PRIORITY 2: If user just registered, show profile setup
+    if (isNewRegistration) {
+      print('🆕 New registration detected → Profile Setup Screen');
+      return const ProfileSetupScreen();
     }
 
-    // If cloud profile exists (but not local), go to main app
-    // The sync service will download the profile to local DB
-    // if (result.hasCloudProfile) {
-    //   print('✅ Cloud profile exists → Main App (will sync down)');
-    //   return const SyncInitializer(child: RootScaffold());
-    // }
-
-    // No profile exists anywhere - need to create one
-    if (result.isNewUser) {
-      print('🆕 New user without profile → Profile Setup');
-    } else {
-      print('⚠️ Existing user without profile → Profile Setup');
-    }
-
-    return const ProfileSetupScreen();
-  }
-
-  Widget _buildLoadingScreen() {
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Checking profile...'),
-          ],
-        ),
-      ),
-    );
+    // PRIORITY 3: User logged in (not a new registration) → Main app
+    print('✅ Existing user login → Main App');
+    return const SyncInitializer(child: RootScaffold());
   }
 }
