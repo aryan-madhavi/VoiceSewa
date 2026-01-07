@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/booking_model.dart';
 
 class JobDetailsSheet extends StatelessWidget {
@@ -48,27 +49,35 @@ class JobDetailsSheet extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.person_outline),
               title: Text(job.workerName),
-              subtitle: Text("Rating: ${job.workerRating.toStringAsFixed(1)} ★"),
+              subtitle: Text("${context.loc.rating}: ${job.workerRating.toStringAsFixed(1)} ★"),
             ),
             ListTile(
               leading: const Icon(Icons.calendar_today_outlined),
-              title: const Text("Date"),
+              title: Text(
+                context.loc.date, // "Date"
+              ),
               subtitle: Text(job.formattedDate),
             ),
             if (job.eta != null)
               ListTile(
                 leading: const Icon(Icons.timer_outlined),
-                title: const Text("ETA"),
+                title: Text(
+                    context.loc.eTA, //"ETA"
+                ),
                 subtitle: Text(job.eta!),
               ),
             ListTile(
               leading: const Icon(Icons.attach_money),
-              title: const Text("Amount"),
+              title: Text(
+                context.loc.amount, //"Amount"
+              ),
               subtitle: Text("₹${job.amount.toStringAsFixed(0)}"),
             ),
             ListTile(
               leading: const Icon(Icons.assignment_turned_in_outlined),
-              title: const Text("Status"),
+              title: Text(
+                context.loc.status, // "Status"
+              ),
               subtitle: Text(
                 job.status,
                 style: TextStyle(
@@ -80,8 +89,10 @@ class JobDetailsSheet extends StatelessWidget {
             if (job.userRating != null)
               ListTile(
                 leading: const Icon(Icons.star, color: Colors.amber),
-                title: const Text("Your Rating"),
-                subtitle: Text("${job.userRating!.toStringAsFixed(1)} / 5"),
+                title: Text(
+                  context.loc.yourRating, // "Your Rating"
+                ),
+                subtitle: Text("${job.userRating!.toStringAsFixed(1)} / ${context.loc.five}"),
               ),
             const SizedBox(height: 10),
           ],

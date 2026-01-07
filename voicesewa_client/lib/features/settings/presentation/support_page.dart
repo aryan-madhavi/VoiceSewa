@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/support_button.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/voice_helpbot_section.dart';
 import 'package:voicesewa_client/features/settings/providers/support_provider.dart';
@@ -14,7 +15,9 @@ class SupportPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Support & Help"),
+        title: Text(
+            context.loc.supportAndHelp, // "Support & Help"
+        ),
         centerTitle: true,
       ),
       body: Padding(
@@ -26,7 +29,7 @@ class SupportPage extends ConsumerWidget {
             const SizedBox(height: 24),
 
             Text(
-              "Quick Assistance",
+              context.loc.quickAssistance, // "Quick Assistance",
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: Colors.grey.shade800,
@@ -35,25 +38,25 @@ class SupportPage extends ConsumerWidget {
             const SizedBox(height: 12),
 
             SupportButton(
-              label: "Payment issue",
+              label: context.loc.paymentIssue,  //"Payment issue",
               icon: Icons.payment_outlined,
               isSelected: selectedIssue == "Payment issue",
               onTap: () => ref.read(selectedIssueProvider.notifier).state = "Payment issue",
             ),
             SupportButton(
-              label: "Worker not arrived",
+              label: context.loc.workerNotArrived,  //"Worker not arrived",
               icon: Icons.person_off_outlined,
               isSelected: selectedIssue == "Worker not arrived",
               onTap: () => ref.read(selectedIssueProvider.notifier).state = "Worker not arrived",
             ),
             SupportButton(
-              label: "Cancel job",
+              label: context.loc.cancelJob, //"Cancel job",
               icon: Icons.cancel_outlined,
               isSelected: selectedIssue == "Cancel job",
               onTap: () => ref.read(selectedIssueProvider.notifier).state = "Cancel job",
             ),
             SupportButton(
-              label: "FAQs",
+              label: context.loc.fAQs,  //"FAQs",
               icon: Icons.help_outline,
               isSelected: selectedIssue == "FAQs",
               onTap: () => ref.read(selectedIssueProvider.notifier).state = "FAQs",
@@ -65,7 +68,9 @@ class SupportPage extends ConsumerWidget {
               child: ElevatedButton.icon(
                 onPressed: () => _openChatSupport(context),
                 icon: const Icon(Icons.chat_bubble_outline),
-                label: const Text("Chat with Support"),
+                label: Text(
+                  context.loc.chatWithSupport, // "Chat with Support"
+                ),
               ),
             ),
           ],
@@ -78,12 +83,18 @@ class SupportPage extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text("Chat with Support"),
-        content: const Text("Chat functionality coming soon!"),
+        title: Text(
+          context.loc.chatWithSupport, // "Chat with Support"
+        ),
+        content: Text(
+            context.loc.chatFunctionalityComingSoon, //"Chat functionality coming soon!"
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
+            child: Text(
+              context.loc.oK, //"OK"
+            ),
           ),
         ],
       ),

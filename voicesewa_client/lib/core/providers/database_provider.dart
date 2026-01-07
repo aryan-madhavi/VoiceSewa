@@ -45,5 +45,5 @@ final userHasDatabaseProvider = FutureProvider.autoDispose<bool>((ref) async {
 
 /// Provider to get current user ID
 final currentUserIdProvider = Provider<String?>((ref) {
-  return FirebaseAuth.instance.currentUser?.email;
+  return FirebaseAuth.instance.currentUser?.uid;
 });

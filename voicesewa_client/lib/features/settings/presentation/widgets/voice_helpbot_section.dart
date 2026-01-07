@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 
 class VoiceHelpBotSection extends StatelessWidget {
-  final String voicePrompt;
+  final String? voicePrompt;
 
   const VoiceHelpBotSection({super.key, required this.voicePrompt});
 
   @override
   Widget build(BuildContext context) {
+    final textToShow = voicePrompt ?? context.loc.speakWhatIsTheProblem;
+
     return Card(
       color: ColorConstants.navBar,
       child: Padding(
@@ -21,11 +24,11 @@ class VoiceHelpBotSection extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: Text(
-                voicePrompt,
+                textToShow,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade800,
-                    ),
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade800,
+                ),
               ),
             ),
           ],
