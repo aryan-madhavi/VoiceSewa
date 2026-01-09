@@ -5,10 +5,8 @@ import 'package:uuid/uuid.dart';
 import 'package:voicesewa_worker/core/database/app_database.dart';
 import 'package:voicesewa_worker/core/providers/database_provider.dart';
 import 'package:voicesewa_worker/core/database/tables/worker_profile_table.dart';
-import 'package:voicesewa_worker/core/database/tables/job_offer_table.dart';
 import 'package:voicesewa_worker/core/database/tables/booking_table.dart';
 import 'package:voicesewa_worker/core/database/dao/worker_profile_dao.dart';
-import 'package:voicesewa_worker/core/database/dao/job_offer_dao.dart';
 import 'package:voicesewa_worker/core/database/dao/booking_dao.dart';
 import 'package:voicesewa_worker/features/sync/providers/sync_providers.dart';
 
@@ -147,26 +145,9 @@ class SyncDebugPage extends ConsumerWidget {
       await workerDao.upsert(profile);
       print('✅ Created worker profile: $workerId');
 
-      // 2. Create test Job Offers
-      final jobOfferDao = JobOfferDao(db);
+      // Job offers are fetched from Firestore, not inserted locally
 
-      for (int i = 0; i < 3; i++) {
-        final jobId = uuid.v4();
-        final jobOffer = JobOffer(
-          id: jobId,
-          clientId: 'client_${uuid.v4().substring(0, 8)}',
-          title: 'Test Job ${i + 1}',
-          description: 'This is a test job offer created at ${DateTime.now()}',
-          location: 'Mumbai, Maharashtra',
-          createdAt: now,
-          status: JobOfferStatus.values[i % 4],
-        );
-
-        await jobOfferDao.upsert(jobOffer);
-        print('✅ Created job offer: $jobId');
-      }
-
-      // 3. Create test Bookings
+      // 2. Create test Bookings
       final bookingDao = BookingDao(db);
 
       for (int i = 0; i < 2; i++) {
