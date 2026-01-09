@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_worker/core/database/app_database.dart';
+import 'package:voicesewa_worker/core/services/fcm_service.dart';
 import 'package:voicesewa_worker/core/widgets/layout/root_scaffold.dart';
 import 'package:voicesewa_worker/features/auth/presentation/login_screen.dart';
 import 'package:voicesewa_worker/features/auth/presentation/signup_screen.dart';
@@ -9,13 +10,54 @@ import 'package:voicesewa_worker/core/providers/session_provider.dart';
 import 'package:voicesewa_worker/features/auth/provider/auth_screen_provider.dart';
 import 'package:voicesewa_worker/features/profile/presentation/worker_profile_form_page.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
-import 'package:voicesewa_worker/features/sync/presentation/sync_initializer.dart';
 
-class AppGate extends ConsumerWidget {
+class AppGate extends ConsumerStatefulWidget {
   const AppGate({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppGate> createState() => _AppGateState();
+}
+
+class _AppGateState extends ConsumerState<AppGate> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Setup FCM after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupFCM();
+    });
+  }
+
+  Future<void> _setupFCM() async {
+    final fcmService = ref.read(fcmServiceProvider);
+
+    // Setup foreground message handler
+    fcmService.setupForegroundMessageHandler(context);
+
+    // Setup notification interaction
+    await fcmService.setupNotificationInteraction();
+
+    // Get and store FCM token
+    final token = await fcmService.getToken();
+    if (token != null) {
+      // TODO: Send token to your backend
+      print('FCM Token ready: $token');
+
+      // Subscribe to topics based on user role
+      await fcmService.subscribeToTopic('workers');
+      await fcmService.subscribeToTopic('all_users');
+    }
+
+    // Listen to token refresh
+    fcmService.onTokenRefresh.listen((newToken) {
+      print('FCM Token refreshed: $newToken');
+      // TODO: Update token in your backend
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final sessionState = ref.watch(sessionNotifierProvider);
     final authScreen = ref.watch(authScreenProvider);
 
@@ -24,20 +66,16 @@ class AppGate extends ConsumerWidget {
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
       case SessionStatus.loggedIn:
-        // 1. Get user ID
         String? userId = WorkerDatabase.currentUserId;
 
-        // 2. Fallback: If Local DB isn't ready, use Firebase Auth ID
         if (userId == null || userId.isEmpty) {
           userId = FirebaseAuth.instance.currentUser?.email;
 
-          // If we found it in Firebase but not Local DB, init Local DB now
           if (userId != null) {
             WorkerDatabase.instanceForUser(userId);
           }
         }
 
-        // 3. If STILL null, show error
         if (userId == null || userId.isEmpty) {
           return const Scaffold(
             body: Center(
@@ -46,7 +84,6 @@ class AppGate extends ConsumerWidget {
           );
         }
 
-        // 4. Check if profile is complete
         final profileCompletion = ref.watch(profileCompletionProvider(userId));
 
         return profileCompletion.when(
@@ -55,16 +92,11 @@ class AppGate extends ConsumerWidget {
               '📊 Profile complete: $isProfileComplete, isNewUser: ${sessionState.isNewUser}',
             );
 
-            // Show profile form if:
-            // - Profile doesn't exist AND user just registered (isNewUser = true)
-            // OR
-            // - Profile doesn't exist (regardless of isNewUser, for safety)
             if (!isProfileComplete) {
               print('🆕 Showing profile form (profile incomplete)');
               return const WorkerProfileFormPage();
             }
 
-            // Profile exists, go to home
             print('✅ Profile complete, navigating to home');
             return const RootScaffold();
           },
@@ -76,7 +108,6 @@ class AppGate extends ConsumerWidget {
           },
           error: (error, stack) {
             print('❌ Error checking profile: $error');
-            // On error, show profile form to be safe
             return const WorkerProfileFormPage();
           },
         );
