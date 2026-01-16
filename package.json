@@ -1,0 +1,25 @@
+{
+  "name": "voicesewa_backend",
+  "version": "1.0.0",
+  "description": "Multilingual Voice-Assisted Job Connection Platform for Blue-Collar Services",
+  "homepage": "https://github.com/aryan-madhavi/VoiceSewa#readme",
+  "bugs": {
+    "url": "https://github.com/aryan-madhavi/VoiceSewa/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aryan-madhavi/VoiceSewa/tree/backend"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ."
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "http-status-codes": "^2.3.0"
+  }
+}
