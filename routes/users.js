@@ -5,8 +5,7 @@ import verifyFirebaseToken from '../middleware/authfirebasetoken.js';
 const router = Router();
 
 router.get('/users/me', verifyFirebaseToken, (req, res) => {
-  res.status(StatusCodes.NOT_FOUND)
-  res.send({
+  res.status(StatusCodes.NOT_FOUND).json({
     error: "Resource not Found",
   });
 })
