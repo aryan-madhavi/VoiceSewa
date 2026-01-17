@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:voicesewa_worker/features/jobs/presentation/contact_msg_page.dart';
 
 import '../../../../core/constants/color_constants.dart';
 import '../../../../core/constants/helper_function.dart';
 import '../../../../core/constants/static_data.dart';
 import '../../../../core/extensions/context_extensions.dart';
 
-class MyJobCard extends StatelessWidget {
+class MyJobCard extends StatefulWidget {
   final Job job;
 
   const MyJobCard({super.key, required this.job});
 
   @override
+  State<MyJobCard> createState() => _MyJobCardState();
+}
+
+class _MyJobCardState extends State<MyJobCard> {
+  @override
   Widget build(BuildContext context) {
     Color statusColor;
     String statusText;
-    switch (job.status){
+    switch (widget.job.status){
       case JobStatus.ongoing:
         statusColor = ColorConstants.primaryBlue;
         statusText = context.loc.ongoing;  //"Ongoing";
@@ -45,7 +51,7 @@ class MyJobCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      job.title,
+                      widget.job.title,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -73,7 +79,7 @@ class MyJobCard extends StatelessWidget {
                 const SizedBox(height: 4,),
 
                 Text(
-                  "${context.loc.client}: ${job.clientName}",
+                  "${context.loc.client}: ${widget.job.clientName}",
                   style: const TextStyle(
                     color: ColorConstants.textGrey,
                     fontSize: 13,
@@ -85,19 +91,19 @@ class MyJobCard extends StatelessWidget {
                   child: Divider(height: 1),
                 ),
 
-                myJobBuildIconText(Icons.location_on_outlined, job.location),
+                myJobBuildIconText(Icons.location_on_outlined, widget.job.location),
 
                 const SizedBox(height: 8,),
 
-                myJobBuildIconText(Icons.access_time, job.time),
+                myJobBuildIconText(Icons.access_time, widget.job.time),
 
                 const SizedBox(height: 8,),
 
-                myJobBuildIconText(Icons.payment_outlined, job.price, isBold: true),
+                myJobBuildIconText(Icons.payment_outlined, widget.job.price, isBold: true),
 
                 const SizedBox(height: 20,),
 
-                if (job.status == JobStatus.completed)
+                if (widget.job.status == JobStatus.completed)
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
@@ -112,10 +118,17 @@ class MyJobCard extends StatelessWidget {
                     children: [
                       Expanded(
                           child: OutlinedButton.icon(
-                            icon: const Icon(Icons.call, size: 18,),
-                            onPressed: (){},
+                            // icon: const Icon(Icons.call, size: 18,),
+                            icon: const Icon(Icons.person, size: 18,),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const ContactMsgPage()),
+                              );
+                            },
                             label: Text(
-                              context.loc.call, // "Call"
+                              // context.loc.call, // "Call"
+                              context.loc.contact, // "Contact"
                             ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: ColorConstants.textDark,
@@ -126,7 +139,7 @@ class MyJobCard extends StatelessWidget {
                     ],
                   ),
 
-                  if (job.status == JobStatus.ongoing) ...[
+                  if (widget.job.status == JobStatus.ongoing) ...[
                     const SizedBox(height: 12,),
                     SizedBox(
                       width: double.infinity,
@@ -153,7 +166,7 @@ class MyJobCard extends StatelessWidget {
               ],
             ),
           ),
-          
+
           Positioned(
             left: 0,
             top: 0,

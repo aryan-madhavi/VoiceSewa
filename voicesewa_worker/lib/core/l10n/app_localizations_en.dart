@@ -251,4 +251,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get experience => 'Experience';
+
+  @override
+  String get contact => 'Contact';
 }

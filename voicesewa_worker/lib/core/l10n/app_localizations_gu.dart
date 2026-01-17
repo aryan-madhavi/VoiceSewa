@@ -251,4 +251,7 @@ class AppLocalizationsGu extends AppLocalizations {
 
   @override
   String get experience => 'અનુભવ';
+
+  @override
+  String get contact => 'સંપર્ક કરો';
 }

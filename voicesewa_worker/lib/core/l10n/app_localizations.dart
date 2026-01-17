@@ -587,6 +587,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Experience'**
   String get experience;
+
+  /// No description provided for @contact.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get contact;
 }
 
 class _AppLocalizationsDelegate

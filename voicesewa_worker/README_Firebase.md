@@ -51,8 +51,8 @@ dart pub global activate flutterfire_cli
    Follow the prompts to select your Firebase project, platforms, and apps. This generates `firebase_options.dart` with the required config for initializing Firebase.
 
 ## Security
-**To Not to leak any API key or appID of firebase Database.**
-Always run
-```gitexclude
-git add -- . -- :! ./work
+**To not to leak any API key or appID of firebase Database. Always run:**
+
+```git
+ git add . :! ./voicesewa_worker/firebase.json :! ./voicesewa_worker/lib/firebase_options.dart :! ./voicesewa_worker/.flutter-plugins-dependencies 
 ```

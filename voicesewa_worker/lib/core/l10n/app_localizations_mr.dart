@@ -251,4 +251,7 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get experience => 'अनुभव';
+
+  @override
+  String get contact => 'संपर्क करा';
 }
