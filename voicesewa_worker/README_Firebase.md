@@ -54,5 +54,5 @@ dart pub global activate flutterfire_cli
 **To not to leak any API key or appID of firebase Database. Always run:**
 
 ```git
- git add . :! ./voicesewa_worker/firebase.json :! ./voicesewa_worker/lib/firebase_options.dart :! ./voicesewa_worker/.flutter-plugins-dependencies 
+ git add . ':!voicesewa_worker/firebase.json' ':!voicesewa_worker/lib/firebase_options.dart' ':!voicesewa_worker/.flutter-plugins-dependencies'
 ```
