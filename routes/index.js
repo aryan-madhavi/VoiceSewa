@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import userRoutes from './users.route.js';
+import jobRoutes from './job.route.js';
 
 const router = Router();
 
 // Mount routes
 router.use('/users', userRoutes);
+router.use('/jobs', jobRoutes);
 
 // Health check
 router.get('/health', (req, res) => {
