@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 
 try {
   execSync(
-    "ssh oneplus-gm1901 'bash -lc \"cd ~/services/voicesewa_backend && ./stop-backend.sh\"'",
+    'ssh oneplus-gm1901 "bash -lc \'cd ~/services/voicesewa_backend && ./stop-backend.sh\'"',
     { stdio: "inherit", shell: true }
   );
 } catch {
