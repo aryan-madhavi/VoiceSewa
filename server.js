@@ -14,21 +14,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api', routes);
-
-// app.get('/api/deploy/status', (req,res) => {
-//   res.status(200).json({
-//     msg: `Server is running on http://oneplus-gm1901.orthrus-mahi.ts.net:${config.port}`,
-//   })
-// })
-app.get('/api/deploy/status', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: `Server is running on port ${config.port}`,
-    timestamp: new Date().toISOString(),
-    environment: config.nodeEnv
-  });
-});
+app.use(config.baseEndpoint, routes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

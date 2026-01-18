@@ -16,7 +16,15 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ."
+    "start": "node server.js",
+
+    "remote:preflight": "node scripts/preflight.remote.js",
+    "remote:ssh": "node scripts/run.remote.js ssh",
+    "remote:deploy": "node scripts/run.remote.js deploy",
+    "remote:stop": "node scripts/run.remote.js stop",
+    "remote:logs": "node scripts/run.remote.js logs",
+    "remote:status": "node scripts/run.remote.js status",
+    "remote:help": "node scripts/help.remote.js"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
