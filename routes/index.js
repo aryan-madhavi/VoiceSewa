@@ -5,11 +5,9 @@ import jobRoutes from './job.route.js';
 
 const router = Router();
 
-// Mount routes
 router.use('/users', userRoutes);
 router.use('/jobs', jobRoutes);
 
-// Health check
 router.get('/health', (req, res) => {
   res.status(StatusCodes.OK).json({
     success: true,

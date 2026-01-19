@@ -14,7 +14,6 @@ class JobService {
       const jobRef = this.jobsCollection.doc();
       const jobId = jobRef.id;
 
-      // Parse scheduled_at if it's a string
       let scheduledAt = null;
       if (jobData.scheduled_at) {
         if (typeof jobData.scheduled_at === 'string') {
@@ -35,14 +34,27 @@ class JobService {
         scheduled_at: scheduledAt
       };
 
-      await jobRef.set(job);
+      try {
+        await jobRef.set(job);
+      } catch (error) {
+        logger.error('Failed to create job in Firestore:', error);
+        throw new Error('Failed to create job. Please try again.');
+      }
 
-      // Add job reference to client's requested array
-      await this.clientsCollection.doc(clientUid).update({
-        'services.requested': FieldValue.arrayUnion(jobRef)
-      });
+      try {
+        await this.clientsCollection.doc(clientUid).update({
+          'services.requested': FieldValue.arrayUnion(jobRef)
+        });
+      } catch (error) {
+        logger.error('Failed to update client services, rolling back job creation:', error);
+        try {
+          await jobRef.delete();
+        } catch (rollbackError) {
+          logger.error('Rollback failed:', rollbackError);
+        }
+        throw new Error('Failed to update client profile. Job creation aborted.');
+      }
 
-      // Return job with proper timestamp format
       return { 
         id: jobId, 
         ...job,
@@ -50,7 +62,7 @@ class JobService {
         scheduled_at: scheduledAt ? scheduledAt.toISOString() : null
       };
     } catch (error) {
-      logger.error('Error creating job:', error);
+      logger.error('Error in createJob service:', error);
       throw error;
     }
   }
@@ -65,24 +77,30 @@ class JobService {
 
       const jobData = jobDoc.data();
 
-      // Get client details
       let clientData = null;
       if (jobData.client_uid) {
-        const clientDoc = await this.clientsCollection.doc(jobData.client_uid).get();
-        if (clientDoc.exists) {
-          const client = clientDoc.data();
-          clientData = {
-            name: client.name,
-            phone: client.phone
-          };
+        try {
+          const clientDoc = await this.clientsCollection.doc(jobData.client_uid).get();
+          if (clientDoc.exists) {
+            const client = clientDoc.data();
+            clientData = {
+              name: client.name,
+              phone: client.phone
+            };
+          }
+        } catch (error) {
+          logger.error('Failed to fetch client details:', error);
         }
       }
 
-      // Get quotations count
-      const quotationsSnapshot = await jobDoc.ref.collection('quotations').get();
-      const quotationsCount = quotationsSnapshot.size;
+      let quotationsCount = 0;
+      try {
+        const quotationsSnapshot = await jobDoc.ref.collection('quotations').get();
+        quotationsCount = quotationsSnapshot.size;
+      } catch (error) {
+        logger.error('Failed to fetch quotations count:', error);
+      }
 
-      // Helper function to safely convert timestamp
       const toISOString = (timestamp) => {
         if (!timestamp) return null;
         if (timestamp.toDate && typeof timestamp.toDate === 'function') {
@@ -106,8 +124,8 @@ class JobService {
         scheduled_at: toISOString(jobData.scheduled_at)
       };
     } catch (error) {
-      logger.error('Error fetching job:', error);
-      throw error;
+      logger.error('Error in getJobById service:', error);
+      throw new Error('Failed to retrieve job. Please try again.');
     }
   }
 
@@ -124,7 +142,6 @@ class JobService {
       const snapshot = await query.get();
       const jobs = [];
 
-      // Helper function to safely convert timestamp
       const toISOString = (timestamp) => {
         if (!timestamp) return null;
         if (timestamp.toDate && typeof timestamp.toDate === 'function') {
@@ -169,7 +186,6 @@ class JobService {
       const snapshot = await query.get();
       const jobs = [];
 
-      // Helper function to safely convert timestamp
       const toISOString = (timestamp) => {
         if (!timestamp) return null;
         if (timestamp.toDate && typeof timestamp.toDate === 'function') {
@@ -187,7 +203,6 @@ class JobService {
       for (const doc of snapshot.docs) {
         const jobData = doc.data();
         
-        // Get client info
         let clientInfo = null;
         if (jobData.client_uid) {
           const clientDoc = await this.clientsCollection.doc(jobData.client_uid).get();
@@ -229,12 +244,10 @@ class JobService {
 
       const jobData = jobDoc.data();
 
-      // Verify ownership
       if (jobData.client_uid !== clientUid) {
         throw new Error('Unauthorized to update this job');
       }
 
-      // Cannot update if job is already confirmed
       if (jobData.status === 'confirmed' || jobData.status === 'completed') {
         throw new Error('Cannot update job in current status');
       }
@@ -244,15 +257,28 @@ class JobService {
 
       Object.keys(updateData).forEach(key => {
         if (allowedFields.includes(key)) {
-          updates[key] = updateData[key];
+          if (key === 'scheduled_at' && typeof updateData[key] === 'string') {
+            updates[key] = new Date(updateData[key]);
+          } else {
+            updates[key] = updateData[key];
+          }
         }
       });
 
-      await this.jobsCollection.doc(jobId).update(updates);
+      if (Object.keys(updates).length === 0) {
+        throw new Error('No valid fields to update');
+      }
+
+      try {
+        await this.jobsCollection.doc(jobId).update(updates);
+      } catch (error) {
+        logger.error('Failed to update job in Firestore:', error);
+        throw new Error('Failed to update job. Please try again.');
+      }
 
       return await this.getJobById(jobId);
     } catch (error) {
-      logger.error('Error updating job:', error);
+      logger.error('Error in updateJob service:', error);
       throw error;
     }
   }
@@ -267,45 +293,53 @@ class JobService {
 
       const jobData = jobDoc.data();
 
-      // Verify ownership
       if (jobData.client_uid !== clientUid) {
         throw new Error('Unauthorized to cancel this job');
       }
 
-      // Cannot cancel if already completed
       if (jobData.status === 'completed') {
         throw new Error('Cannot cancel completed job');
       }
 
-      // Update job status
-      await this.jobsCollection.doc(jobId).update({
-        status: 'cancelled'
-      });
+      try {
+        await this.jobsCollection.doc(jobId).update({
+          status: 'cancelled'
+        });
+      } catch (error) {
+        logger.error('Failed to update job status to cancelled:', error);
+        throw new Error('Failed to cancel job. Please try again.');
+      }
 
-      // Get job reference
       const jobRef = this.jobsCollection.doc(jobId);
 
-      // Move from requested/scheduled to cancelled in client's services
-      const clientDoc = await this.clientsCollection.doc(clientUid).get();
-      const clientData = clientDoc.data();
-
-      await this.clientsCollection.doc(clientUid).update({
-        'services.requested': FieldValue.arrayRemove(jobRef),
-        'services.scheduled': FieldValue.arrayRemove(jobRef),
-        'services.cancelled': FieldValue.arrayUnion(jobRef)
-      });
+      try {
+        await this.clientsCollection.doc(clientUid).update({
+          'services.requested': FieldValue.arrayRemove(jobRef),
+          'services.scheduled': FieldValue.arrayRemove(jobRef),
+          'services.cancelled': FieldValue.arrayUnion(jobRef)
+        });
+      } catch (error) {
+        logger.error('Failed to update client services, rolling back cancellation:', error);
+        try {
+          await this.jobsCollection.doc(jobId).update({
+            status: jobData.status 
+          });
+        } catch (rollbackError) {
+          logger.error('Rollback failed:', rollbackError);
+        }
+        throw new Error('Failed to update client profile. Cancellation aborted.');
+      }
 
       return {
         id: jobId,
         status: 'cancelled'
       };
     } catch (error) {
-      logger.error('Error cancelling job:', error);
+      logger.error('Error in cancelJob service:', error);
       throw error;
     }
   }
 
-  //TODO: In Delete Job dont delete job permanently, just mark status as deleted.
   async deleteJob(jobId, clientUid) {
     try {
       const jobDoc = await this.jobsCollection.doc(jobId).get();
@@ -316,25 +350,21 @@ class JobService {
 
       const jobData = jobDoc.data();
 
-      // Verify ownership
       if (jobData.client_uid !== clientUid) {
         throw new Error('Unauthorized to delete this job');
       }
 
-      // Can only delete if posted or cancelled
       if (jobData.status !== 'posted' && jobData.status !== 'cancelled') {
         throw new Error('Cannot delete job in current status');
       }
 
       const jobRef = this.jobsCollection.doc(jobId);
 
-      // Remove from client's services arrays
       await this.clientsCollection.doc(clientUid).update({
         'services.requested': FieldValue.arrayRemove(jobRef),
         'services.cancelled': FieldValue.arrayRemove(jobRef)
       });
 
-      // Delete all quotations
       const quotationsSnapshot = await jobDoc.ref.collection('quotations').get();
       const batch = db.batch();
       quotationsSnapshot.docs.forEach(doc => {
@@ -342,7 +372,6 @@ class JobService {
       });
       await batch.commit();
 
-      // Delete the job
       await this.jobsCollection.doc(jobId).delete();
 
       return true;

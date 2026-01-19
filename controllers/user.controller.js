@@ -35,7 +35,6 @@ class UserController {
       const uid = req.user.uid;
       const updateData = req.body;
 
-      // Remove fields that shouldn't be updated directly
       delete updateData.id;
       delete updateData.role;
       delete updateData.services;

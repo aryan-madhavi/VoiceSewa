@@ -9,11 +9,9 @@ class JobController {
       const clientUid = req.user.uid;
       const jobData = req.body;
 
-      // Debug log
       logger.debug('Create job request body:', jobData);
       logger.debug('User UID:', clientUid);
 
-      // Check if body exists
       if (!jobData || Object.keys(jobData).length === 0) {
         return errorResponse(
           res,
@@ -22,7 +20,6 @@ class JobController {
         );
       }
 
-      // Validate required fields
       if (!jobData.service_type) {
         return errorResponse(
           res,
@@ -82,6 +79,13 @@ class JobController {
         'Job retrieved successfully'
       );
     } catch (error) {
+      if (error.message.includes('Failed to retrieve job')) {
+        return errorResponse(
+          res,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          error.message
+        );
+      }
       logger.error('Error in getJobById controller:', error);
       next(error);
     }
@@ -135,6 +139,15 @@ class JobController {
       const { jobId } = req.params;
       const updateData = req.body;
 
+      // Check if body exists
+      if (!updateData || Object.keys(updateData).length === 0) {
+        return errorResponse(
+          res,
+          StatusCodes.BAD_REQUEST,
+          'Request body is required'
+        );
+      }
+
       const updatedJob = await jobService.updateJob(jobId, clientUid, updateData);
 
       if (!updatedJob) {
@@ -163,6 +176,20 @@ class JobController {
         return errorResponse(
           res,
           StatusCodes.BAD_REQUEST,
+          error.message
+        );
+      }
+      if (error.message === 'No valid fields to update') {
+        return errorResponse(
+          res,
+          StatusCodes.BAD_REQUEST,
+          error.message
+        );
+      }
+      if (error.message.includes('Failed to update job')) {
+        return errorResponse(
+          res,
+          StatusCodes.INTERNAL_SERVER_ERROR,
           error.message
         );
       }
@@ -207,6 +234,13 @@ class JobController {
           error.message
         );
       }
+      if (error.message.includes('Failed to cancel job') || error.message.includes('Failed to update client profile')) {
+        return errorResponse(
+          res,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          error.message
+        );
+      }
       logger.error('Error in cancelJob controller:', error);
       next(error);
     }
@@ -245,6 +279,13 @@ class JobController {
         return errorResponse(
           res,
           StatusCodes.BAD_REQUEST,
+          error.message
+        );
+      }
+      if (error.message.includes('Failed to delete job') || error.message.includes('Failed to update client profile')) {
+        return errorResponse(
+          res,
+          StatusCodes.INTERNAL_SERVER_ERROR,
           error.message
         );
       }

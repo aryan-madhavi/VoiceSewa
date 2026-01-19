@@ -17,12 +17,12 @@ router.get('/client/my-jobs', verifyFirebaseToken, jobController.getMyJobs);
 router.get('/worker/available', verifyFirebaseToken, jobController.getAvailableJobs);
 
 // Update job
-router.patch('/update/:jobId', verifyFirebaseToken, jobController.updateJob);
+router.patch('/:jobId/update', verifyFirebaseToken, jobController.updateJob);
 
 // Cancel job
-router.post('/cancel/:jobId/', verifyFirebaseToken, jobController.cancelJob);
+router.post('/:jobId/cancel', verifyFirebaseToken, jobController.cancelJob);
 
 // Delete job
-router.delete('/delete/:jobId', verifyFirebaseToken, jobController.deleteJob);
+router.delete('/:jobId/delete', verifyFirebaseToken, jobController.deleteJob);
 
 export default router;
