@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:voicesewa_client/app/routes.dart';
 import 'package:voicesewa_client/features/auth/data/services/logout_service.dart';
-import 'package:voicesewa_client/features/sync/presentation/widgets/sync_button.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_section.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_switches.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_tile.dart';

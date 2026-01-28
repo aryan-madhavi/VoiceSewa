@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/widgets/feedback/coming_soon_page.dart';
 import 'package:voicesewa_client/features/auth/presentation/profile_form_screen.dart';
-import 'package:voicesewa_client/features/sync/presentation/sync_debug_page.dart';
 import 'package:voicesewa_client/features/history/presentation/requests_page.dart';
 import 'package:voicesewa_client/features/home/presentation/home_page.dart';
 import 'package:voicesewa_client/features/search/presentation/workers_page.dart';
