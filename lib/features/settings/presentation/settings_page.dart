@@ -6,7 +6,6 @@ import 'package:voicesewa_client/features/auth/data/services/logout_service.dart
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_section.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_switches.dart';
 import 'package:voicesewa_client/features/settings/presentation/widgets/settings_tile.dart';
-import 'package:voicesewa_client/features/service_requests/data/populate_services.dart';
 
 // Imports for your provider and extensions
 import '../../../../core/extensions/context_extensions.dart';
