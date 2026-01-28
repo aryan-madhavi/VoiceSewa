@@ -9,8 +9,8 @@ class SyncService {
   SyncService({
     required ClientPendingSyncDao pendingDao,
     required FirebaseFirestore firestore,
-  })  : _pendingDao = pendingDao,
-        _firestore = firestore;
+  }) : _pendingDao = pendingDao,
+       _firestore = firestore;
 
   final ClientPendingSyncDao _pendingDao;
   final FirebaseFirestore _firestore;
@@ -26,10 +26,12 @@ class SyncService {
 
   Future<bool> _hasInternet() async {
     final result = await Connectivity().checkConnectivity();
-    if (!result.any((r) =>
-        r == ConnectivityResult.wifi ||
-        r == ConnectivityResult.mobile ||
-        r == ConnectivityResult.ethernet)) {
+    if (!result.any(
+      (r) =>
+          r == ConnectivityResult.wifi ||
+          r == ConnectivityResult.mobile ||
+          r == ConnectivityResult.ethernet,
+    )) {
       return false;
     }
 
@@ -76,7 +78,9 @@ class SyncService {
       final result = await getSyncStatus();
       final failed = result['failed'] ?? 0;
       final pending = result['pending'] ?? 0;
-      print('✅ Sync completed - Success: ${items.length - failed}, Failed: $failed, Pending: $pending');
+      print(
+        '✅ Sync completed - Success: ${items.length - failed}, Failed: $failed, Pending: $pending',
+      );
     } finally {
       _isSyncing = false;
     }
@@ -90,8 +94,9 @@ class SyncService {
         final converted = _convertTimestamps(data);
 
         print('📤 Sending data to Firestore: $converted');
-        final ref =
-            _firestore.collection('service_requests').doc(item.entityId);
+        final ref = _firestore
+            .collection('service_requests')
+            .doc(item.entityId);
 
         switch (item.action) {
           case 'INSERT':
@@ -104,6 +109,27 @@ class SyncService {
             print('🗑️ Successfully deleted: ${item.entityId}');
             break;
         }
+      } else if (item.entityType == 'client_profile') {
+        final data = jsonDecode(item.payload);
+        final converted = _convertTimestamps(data);
+
+        print('📤 Sending profile to Firestore: $converted');
+        final ref = _firestore.collection('client_profiles').doc(item.entityId);
+
+        switch (item.action) {
+          case 'INSERT':
+          case 'UPDATE':
+            await ref.set(converted, SetOptions(merge: true));
+            print('✅ Successfully synced profile: ${item.entityId}');
+            break;
+          case 'DELETE':
+            await ref.delete();
+            print('🗑️ Successfully deleted profile: ${item.entityId}');
+            break;
+        }
+      } else {
+        print('⚠️ Unknown entity type: ${item.entityType}');
+        throw Exception('Unsupported entity type: ${item.entityType}');
       }
 
       await _pendingDao.delete(item.id);
@@ -126,14 +152,11 @@ class SyncService {
     final pending = await _pendingDao.getPendingCount();
     final failed = await _pendingDao.getFailedCount();
     print('📊 Sync status - Pending: $pending, Failed: $failed');
-    return {
-      'pending': pending,
-      'failed': failed,
-    };
+    return {'pending': pending, 'failed': failed};
   }
 
   //TODO: Retrying failed syncs logic implementation
-/* Future<void> syncFailed() async {
+  /* Future<void> syncFailed() async {
     print('🔄 Retrying failed syncs');
   } */
 
@@ -192,20 +215,18 @@ class SyncService {
   void startConnectivityListener() {
     print('👂 Starting connectivity listener');
     _connectivitySub?.cancel();
-    _connectivitySub =
-        Connectivity().onConnectivityChanged.listen(
-            (_) => syncPending(), 
-            onError: (e) => print('❌ Connectivity listener error: $e')
-        );
+    _connectivitySub = Connectivity().onConnectivityChanged.listen(
+      (_) => syncPending(),
+      onError: (e) => print('❌ Connectivity listener error: $e'),
+    );
   }
 
   void startPeriodicSync({Duration interval = const Duration(minutes: 10)}) {
     print('⏰ Starting periodic sync (interval: ${interval.inMinutes} minutes)');
-    _periodicTimer =
-        Timer.periodic(interval, (_) { 
-          print('⏰ Periodic sync triggered');
-          syncPending();
-        });
+    _periodicTimer = Timer.periodic(interval, (_) {
+      print('⏰ Periodic sync triggered');
+      syncPending();
+    });
   }
 
   void dispose() {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 import 'package:voicesewa_client/features/auth/data/services/auth_service.dart';
+import 'package:voicesewa_client/features/auth/providers/profile_form_provider.dart';
 
 class RegisterForm extends ConsumerStatefulWidget {
   const RegisterForm({super.key});
@@ -43,6 +44,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     if (!mounted) return;
 
     if (error == null) {
+      // Mark as new registration
+      ref.read(isNewRegistrationProvider.notifier).markAsNewRegistration();
+
       // Only clear on success
       _usernameCtrl.clear();
       _emailCtrl.clear();
@@ -158,8 +162,8 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                       : Icons.visibility,
                 ),
                 onPressed: () {
-                  ref.read(confirmPasswordVisibleProvider.notifier).state =
-                      !ref.read(confirmPasswordVisibleProvider);
+                  ref.read(confirmPasswordVisibleProvider.notifier).state = !ref
+                      .read(confirmPasswordVisibleProvider);
                 },
               ),
             ),

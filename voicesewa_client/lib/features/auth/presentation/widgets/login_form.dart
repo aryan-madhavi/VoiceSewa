@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 import 'package:voicesewa_client/features/auth/data/services/auth_service.dart';
+import 'package:voicesewa_client/features/auth/providers/profile_form_provider.dart';
 
 class LoginForm extends ConsumerStatefulWidget {
   const LoginForm({super.key});
@@ -38,7 +39,10 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     if (!mounted) return;
 
     if (error == null) {
-      // Only clear on success
+      // Mark as login (not a new registration)
+      ref.read(isNewRegistrationProvider.notifier).markAsLogin();
+
+      // Clear form on success
       _emailCtrl.clear();
       _passwordCtrl.clear();
 
@@ -102,8 +106,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                   obscurePassword ? Icons.visibility_off : Icons.visibility,
                 ),
                 onPressed: () {
-                  ref.read(loginPasswordVisibleProvider.notifier).state =
-                      !ref.read(loginPasswordVisibleProvider);
+                  ref.read(loginPasswordVisibleProvider.notifier).state = !ref
+                      .read(loginPasswordVisibleProvider);
                 },
               ),
             ),
