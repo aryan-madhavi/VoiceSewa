@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicesewa_client/core/providers/database_provider.dart';
-import 'package:voicesewa_client/core/providers/language_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/audio_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/chat_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/speech_provider.dart';
