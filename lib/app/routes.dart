@@ -38,6 +38,6 @@ class AppRoutes {
     RoutePaths.voicebot: (context) => const VoiceBotPage(),
     RoutePaths.profileSetup: (context) => const ProfileSetupScreen(),
     RoutePaths.comingSoon: (context) => const ComingSoonPage(),
-    RoutePaths.syncDebug: (context) => const SyncDebugPage(),
+    // RoutePaths.syncDebug: (context) => const SyncDebugPage(),
   };
 }

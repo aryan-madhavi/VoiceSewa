@@ -77,7 +77,7 @@ class SettingsPage extends ConsumerWidget {
                 icon: Icons.add_box,
                 title: "Populate Services",
                 iconColor: Colors.green,
-                onTap: insertTempServiceRequest,
+                // onTap: insertTempServiceRequest,
               ),
               SettingsTile(
                 icon: Icons.bug_report_outlined,
@@ -87,7 +87,7 @@ class SettingsPage extends ConsumerWidget {
               ),
               SettingsTile(
                 icon: Icons.sync,
-                leadingWidget: SyncFAB(),
+                // leadingWidget: SyncFAB(),
                 title: "Sync Pending Services",
                 iconColor: Colors.green,
                 onTap: null,

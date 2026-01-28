@@ -17,6 +17,19 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   final _passwordCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+
+    // CRITICAL FIX: Reset loading state when form is mounted
+    // This prevents stuck loading buttons after logout
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(authLoadingProvider.notifier).state = false;
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
@@ -50,6 +63,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         const SnackBar(
           content: Text('Login successful!'),
           backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
         ),
       );
     } else {

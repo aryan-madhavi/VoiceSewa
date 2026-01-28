@@ -19,6 +19,19 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
   final _confirmPasswordCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+
+    // CRITICAL FIX: Reset loading state when form is mounted
+    // This prevents stuck loading buttons after logout
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(authLoadingProvider.notifier).state = false;
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _usernameCtrl.dispose();
     _emailCtrl.dispose();
@@ -44,10 +57,10 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     if (!mounted) return;
 
     if (error == null) {
-      // Mark as new registration
+      // Mark as new registration (needs profile setup)
       ref.read(isNewRegistrationProvider.notifier).markAsNewRegistration();
 
-      // Only clear on success
+      // Clear form on success
       _usernameCtrl.clear();
       _emailCtrl.clear();
       _passwordCtrl.clear();
@@ -57,6 +70,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
         const SnackBar(
           content: Text('Account created successfully!'),
           backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
         ),
       );
     } else {

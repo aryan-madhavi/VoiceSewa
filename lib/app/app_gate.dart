@@ -1,29 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/features/auth/presentation/login_screen.dart';
-import 'package:voicesewa_client/features/auth/providers/session_provider.dart';
-import 'package:voicesewa_client/app/widgets/logged_in_handler.dart';
+import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
+import 'package:voicesewa_client/app/widgets/profile_check_handler.dart';
 
-/// Main application gate that routes users based on authentication state
+/// Main application gate that routes users based on Firebase authentication state
 ///
 /// This is the root-level router that determines what the user sees:
-/// - Loading: Checking session state
-/// - LoggedIn: Initialize user workspace and check profile
+/// - Loading: Checking Firebase auth state
+/// - LoggedIn: Check if profile exists, then route accordingly
 /// - LoggedOut: Show authentication screen
+///
+/// SIMPLIFIED: No database initialization needed since we use pure Firebase
 class AppGate extends ConsumerWidget {
   const AppGate({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionStatus = ref.watch(sessionNotifierProvider);
+    final sessionStatus = ref.watch(sessionStatusProvider);
 
     switch (sessionStatus) {
       case SessionStatus.loading:
-        return _buildLoadingScreen('Checking session...');
+        return _buildLoadingScreen('Checking authentication...');
 
       case SessionStatus.loggedIn:
-        // User is authenticated - handle initialization and profile check
-        return const LoggedInHandler();
+        // User is authenticated - check profile and route
+        // No database initialization needed - pure Firebase approach
+        return const ProfileCheckHandler();
 
       case SessionStatus.loggedOut:
         return const AuthScreen();
