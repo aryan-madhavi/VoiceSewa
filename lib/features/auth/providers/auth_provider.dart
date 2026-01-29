@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:voicesewa_client/features/auth/domain/client_model.dart';
+import 'package:voicesewa_client/shared/models/client_model.dart';
 import '../data/firebase/client_firebase_repository.dart';
 
 // ==================== FIREBASE PROVIDERS ====================

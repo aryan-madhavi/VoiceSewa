@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/features/auth/domain/client_model.dart';
+import 'package:voicesewa_client/shared/models/client_model.dart';
 import '../firebase/client_firebase_repository.dart';
 
 /// Authentication service - handles Firebase Auth + Firestore profile management

@@ -5,7 +5,7 @@ final quickActionsProvider = Provider<List<Actions>>((ref) {
   return [
     Actions.again,
     Actions.myRequests,
-    Actions.offers,
+    Actions.newRequests,
     Actions.help,
   ];
 });

@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
-import 'package:voicesewa_client/features/auth/domain/client_model.dart';
+import 'package:voicesewa_client/shared/models/address_model.dart';
+import 'package:voicesewa_client/shared/models/client_model.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_client/features/auth/providers/profile_form_provider.dart';
@@ -139,11 +140,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       print('   Skip address: $_skipAddress');
 
       // Prepare addresses list
-      List<ClientAddress> addresses = [];
+      List<Address> addresses = [];
       
       if (!_skipAddress && _location != null) {
         addresses.add(
-          ClientAddress(
+          Address(
             location: _location!,
             line1: _addressLine1Controller.text.trim(),
             line2: _addressLine2Controller.text.trim(),

@@ -1,45 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:page_transition/page_transition.dart';
-import 'package:voicesewa_client/core/constants/helper_functions.dart';
-import 'package:voicesewa_client/app/routes.dart';
-import 'package:voicesewa_client/features/history/presentation/widgets/status_badge.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/shared/models/job_model.dart';
+import 'package:voicesewa_client/features/jobs/providers/job_provider.dart';
+import 'package:voicesewa_client/features/jobs/presentation/job_details_screen.dart';
 
-import '../../../../core/extensions/context_extensions.dart';
-
-class RecentRequestCard extends StatelessWidget {
+class RecentRequestCard extends ConsumerWidget {
   const RecentRequestCard({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-
-    // Replace with Future
-    final List<Map<String, String>> recentRequests = [
-      {
-        'title': 'Kitchen tap repair',
-        'worker': 'Rajesh K.',
-        'eta': '30 mins',
-        'status': 'Pending',
-      },
-      {
-        'title': 'AC service',
-        'worker': 'Anita S.',
-        'eta': 'In Progress',
-        'status': 'In Progress',
-      },
-      {
-        'title': 'Light fixture install',
-        'worker': 'Kumar P.',
-        'eta': 'Cancelled',
-        'status': 'Cancelled',
-      },
-      {
-        'title': 'Light fixture install',
-        'worker': 'Sunil T.',
-        'eta': 'Completed',
-        'status': 'Completed',
-      },
-    ];
+    final recentJobsAsync = ref.watch(recentJobsProvider);
 
     return Card(
       child: Padding(
@@ -50,37 +21,42 @@ class RecentRequestCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 12, bottom: 16),
               child: Text(
-                context.loc.trackRecentRequests, // 'Track Recent Requests',
+                'Recent Requests',
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
             ),
+            recentJobsAsync.when(
+              data: (jobs) {
+                if (jobs.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('No recent requests'),
+                    ),
+                  );
+                }
 
-            ListView.separated(
-              itemCount: recentRequests.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final req = recentRequests[index];
-                final status = req['status']!;
-                final color = Helpers.getStatusColor(status);
-
-                return _RecentRequestTile(
-                  title: req['title']!,
-                  worker: req['worker']!,
-                  eta: req['eta']!,
-                  status: status,
-                  color: color,
-                  onTap: () => context.pushNamedTransition(
-                    routeName: Helpers.getValidRoute(RoutePaths.track),
-                    type: PageTransitionType.bottomToTop,
-                    duration: Duration(milliseconds: 500),
-                  ),
+                return ListView.separated(
+                  itemCount: jobs.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final job = jobs[index];
+                    return _RecentJobTile(job: job);
+                  },
                 );
               },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (e, _) => Center(child: Text('Error: $e')),
             ),
           ],
         ),
@@ -89,29 +65,20 @@ class RecentRequestCard extends StatelessWidget {
   }
 }
 
-class _RecentRequestTile extends StatelessWidget {
-  final String title;
-  final String worker;
-  final String eta;
-  final String status;
-  final Color color;
-  final VoidCallback onTap;
+class _RecentJobTile extends StatelessWidget {
+  final Job job;
 
-  const _RecentRequestTile({
-    required this.title,
-    required this.worker,
-    required this.eta,
-    required this.status,
-    required this.color,
-    required this.onTap,
-  });
+  const _RecentJobTile({required this.job});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => JobDetailsScreen(jobId: job.id)),
+        );
+      },
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -123,49 +90,63 @@ class _RecentRequestTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            //Left status bar
             Container(
               width: 6,
               height: 48,
               decoration: BoxDecoration(
-                color: color,
+                color: job.statusColor,
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
-
             const SizedBox(width: 12),
-
-            // Main details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
-                    style: theme.textTheme.bodyLarge?.copyWith(
+                    job.serviceName,
+                    style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${context.loc.worker}: $worker',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.black54,
-                    ),
+                    job.description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
-                  Text(
-                    '${context.loc.eTA}: $eta',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.green.shade700,
-                      fontWeight: FontWeight.w600,
+                  // ✅ Only show worker info if it exists
+                  if (job.hasWorker && job.workerName != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        'Worker: ${job.workerName}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
-
-            StatusBadge(status: status, color: color),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: job.statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                job.statusLabel,
+                style: TextStyle(
+                  color: job.statusColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
           ],
         ),
       ),

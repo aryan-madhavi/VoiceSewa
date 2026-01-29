@@ -68,30 +68,30 @@ class SettingsPage extends ConsumerWidget {
           ),
 
           // --- Services Interaction ---
-          SettingsSection(
-            title: "User Services", 
-            tiles: [
-              SettingsTile(
-                icon: Icons.add_box,
-                title: "Populate Services",
-                iconColor: Colors.green,
-                // onTap: insertTempServiceRequest,
-              ),
-              SettingsTile(
-                icon: Icons.bug_report_outlined,
-                title: "Open Debug",
-                iconColor: Colors.blue,
-                onTap: (BuildContext context, WidgetRef ref) => context.pushNamedTransition(routeName: RoutePaths.syncDebug, type: PageTransitionType.rightToLeft)
-              ),
-              SettingsTile(
-                icon: Icons.sync,
-                // leadingWidget: SyncFAB(),
-                title: "Sync Pending Services",
-                iconColor: Colors.green,
-                onTap: null,
-              ),
-            ]
-          ),
+          // SettingsSection(
+          //   title: "User Services", 
+          //   tiles: [
+          //     SettingsTile(
+          //       icon: Icons.add_box,
+          //       title: "Populate Services",
+          //       iconColor: Colors.green,
+          //       // onTap: insertTempServiceRequest,
+          //     ),
+          //     SettingsTile(
+          //       icon: Icons.bug_report_outlined,
+          //       title: "Open Debug",
+          //       iconColor: Colors.blue,
+          //       onTap: (BuildContext context, WidgetRef ref) => context.pushNamedTransition(routeName: RoutePaths.syncDebug, type: PageTransitionType.rightToLeft)
+          //     ),
+          //     SettingsTile(
+          //       icon: Icons.sync,
+          //       // leadingWidget: SyncFAB(),
+          //       title: "Sync Pending Services",
+          //       iconColor: Colors.green,
+          //       onTap: null,
+          //     ),
+          //   ]
+          // ),
 
           // --- Account ---
           SettingsSection(

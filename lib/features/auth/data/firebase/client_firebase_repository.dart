@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:voicesewa_client/features/auth/domain/client_model.dart';
+import 'package:voicesewa_client/shared/models/address_model.dart';
+import 'package:voicesewa_client/shared/models/client_model.dart';
 
 /// Repository for Firebase Firestore client operations
 /// Handles all CRUD operations for client profiles
@@ -137,7 +138,7 @@ class ClientFirebaseRepository {
   }
 
   /// Add address to client profile
-  Future<void> addAddress(String uid, ClientAddress address) async {
+  Future<void> addAddress(String uid, Address address) async {
     try {
       await _clientsCollection.doc(uid).update({
         'addresses': FieldValue.arrayUnion([address.toMap()])
@@ -150,7 +151,7 @@ class ClientFirebaseRepository {
   }
 
   /// Remove address from client profile
-  Future<void> removeAddress(String uid, ClientAddress address) async {
+  Future<void> removeAddress(String uid, Address address) async {
     try {
       await _clientsCollection.doc(uid).update({
         'addresses': FieldValue.arrayRemove([address.toMap()])

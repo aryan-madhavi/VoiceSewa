@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/app/routes.dart';
 
-enum Actions { again, myRequests, offers, help }
+enum Actions { again, myRequests, newRequests, help }
 
 class ActionsData {
   static Map<Actions, List<dynamic>> actions(BuildContext context) {
@@ -19,11 +19,11 @@ class ActionsData {
         context.loc.myRequests, // 'My Requests',
         RoutePaths.comingSoon,
       ],
-      Actions.offers: [
+      Actions.newRequests: [
         Colors.purpleAccent,
-        Icons.local_offer_outlined,
-        context.loc.offers, // 'Offers',
-        RoutePaths.comingSoon,
+        Icons.add_circle_outline_outlined,
+        context.loc.bookNow, // 'New Request',
+        RoutePaths.createJob,
       ],
       Actions.help: [
         Colors.blueGrey,
