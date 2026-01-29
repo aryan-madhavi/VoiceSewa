@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD 2-Clause License
 #
 
-"""voicesewa-agent - Pipecat Voice Agent
+"""voicesewa-agent - Pipecat Voice Agent (Intent & Entity Extraction)
 
 This bot uses a cascade pipeline: Speech-to-Text → LLM → Text-to-Speech
 
@@ -60,6 +60,8 @@ from pipecat_whisker import WhiskerObserver
 
 load_dotenv(override=True)
 
+SYSTEM_PROMPT=open("prompts/system.txt").read()
+GOOGLE_APP_CREDENTIALS=open(os.getenv("GOOGLE_APPLICATION_CREDENTIALS")).read()
 
 async def save_audio_file(audio: bytes, filename: str, sample_rate: int, num_channels: int):
     """Save audio data to a WAV file."""
@@ -77,11 +79,7 @@ async def save_audio_file(audio: bytes, filename: str, sample_rate: int, num_cha
 
 async def run_bot(transport: BaseTransport):
     """Main bot logic."""
-    logger.info("Starting bot")
-
-    # Read GOOGLE_APPLICATION_CREDENTIALS (file: credentials.json)
-    with open(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"), "r") as f:
-        GOOGLE_APP_CREDENTIALS = f.read()
+    logger.info("Starting Intent & Entity Extraction Bot")
 
     # Speech-to-Text service
     stt = GoogleSTTService(
@@ -96,21 +94,27 @@ async def run_bot(transport: BaseTransport):
     )
 
     # LLM service
-    llm = GoogleLLMService(api_key=os.getenv("GOOGLE_API_KEY"), model=os.getenv("GOOGLE_MODEL"))
+    llm = GoogleLLMService(
+        api_key=os.getenv("GOOGLE_API_KEY"),
+        model=os.getenv("GOOGLE_MODEL"),
+    )
 
     messages = [
         {
             "role": "system",
-            "content": "You are a friendly AI assistant. Respond naturally and keep your answers conversational.",
+            "content": SYSTEM_PROMPT,
         },
     ]
 
     context = LLMContext(messages)
+
     user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(
             user_turn_strategies=UserTurnStrategies(
-                stop=[TurnAnalyzerUserTurnStopStrategy(turn_analyzer=LocalSmartTurnAnalyzerV3())]
+                stop=[TurnAnalyzerUserTurnStopStrategy(
+                    turn_analyzer=LocalSmartTurnAnalyzerV3()
+                )]
             ),
         ),
     )
@@ -148,11 +152,15 @@ async def run_bot(transport: BaseTransport):
         ],
     )
 
+    # ----------------------
+    # Friendly greeting instead of raw JSON
+    # ----------------------
     @rtvi.event_handler("on_client_ready")
     async def on_client_ready(rtvi):
         await rtvi.set_bot_ready()
+        logger.info("Assistant: Hello! How can I help you today?")  # GREETING
         # Kick off the conversation
-        await task.queue_frames([LLMRunFrame()])
+        # await task.queue_frames([LLMRunFrame()])
 
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
@@ -203,7 +211,9 @@ async def bot(runner_args: RunnerArguments):
                 params=TransportParams(
                     audio_in_enabled=True,
                     audio_out_enabled=True,
-                    vad_analyzer=SileroVADAnalyzer(params=VADParams(stop_secs=0.2)),
+                    vad_analyzer=SileroVADAnalyzer(
+                        params=VADParams(stop_secs=0.2)
+                    ),
                 ),
             )
         case _:
