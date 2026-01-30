@@ -58,23 +58,15 @@ from pipecat.turns.user_turn_strategies import UserTurnStrategies
 from pipecat_tail.observer import TailObserver
 from pipecat_whisker import WhiskerObserver
 
+from pipecat.adapters.schemas.function_schema import FunctionSchema
+from pipecat.adapters.schemas.tools_schema import ToolsSchema
+from utils.record_audio import save_audio_file
+from utils.switch_lang import SwitchLanguage
+
 load_dotenv(override=True)
 
 SYSTEM_PROMPT=open("prompts/system.txt").read()
 GOOGLE_APP_CREDENTIALS=open(os.getenv("GOOGLE_APPLICATION_CREDENTIALS")).read()
-
-async def save_audio_file(audio: bytes, filename: str, sample_rate: int, num_channels: int):
-    """Save audio data to a WAV file."""
-    if len(audio) > 0:
-        with io.BytesIO() as buffer:
-            with wave.open(buffer, "wb") as wf:
-                wf.setsampwidth(2)
-                wf.setnchannels(num_channels)
-                wf.setframerate(sample_rate)
-                wf.writeframes(audio)
-            async with aiofiles.open(filename, "wb") as file:
-                await file.write(buffer.getvalue())
-        logger.info(f"Audio saved to {filename}")
 
 
 async def run_bot(transport: BaseTransport):
@@ -85,28 +77,42 @@ async def run_bot(transport: BaseTransport):
     stt = GoogleSTTService(
         credentials=GOOGLE_APP_CREDENTIALS,
         location=os.getenv("GOOGLE_LOCATION"),
-    )
+        params=GoogleSTTService.InputParams(
+            languages=['en-US', 'hi-IN', 'mr-IN'],
+            enable_automatic_punctuation=False
+        )
+    )    
 
     # Text-to-Speech service
-    tts = GoogleTTSService(
-        credentials=GOOGLE_APP_CREDENTIALS,
-        voice_id=os.getenv("GOOGLE_VOICE_ID"),
-    )
+    tts = SwitchLanguage()
 
     # LLM service
     llm = GoogleLLMService(
         api_key=os.getenv("GOOGLE_API_KEY"),
         model=os.getenv("GOOGLE_MODEL"),
     )
+    llm.register_function("switch_language", tts.switch_language)
+    switch_language_function = FunctionSchema(
+        name="switch_language",
+        description="Switch to another language when the user asks you to",
+        properties={
+            "language": {
+                "type": "string",
+                "description": "The language the user wants you to speak",
+            },
+        },
+        required=["language"],
+    )
+    tools = ToolsSchema(standard_tools=[switch_language_function])
 
     messages = [
         {
             "role": "system",
-            "content": SYSTEM_PROMPT,
+            "content": "You are a helpful LLM in a WebRTC call. Your goal is to demonstrate your capabilities. Respond to what the user said in a creative and helpful way. Your output should not include non-alphanumeric characters. You can speak the following languages: 'English', 'Hindi' and 'Marathi'.",
         },
     ]
 
-    context = LLMContext(messages)
+    context = LLMContext(messages,tools)
 
     user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
         context,
@@ -160,7 +166,7 @@ async def run_bot(transport: BaseTransport):
         await rtvi.set_bot_ready()
         logger.info("Assistant: Hello! How can I help you today?")  # GREETING
         # Kick off the conversation
-        # await task.queue_frames([LLMRunFrame()])
+        await task.queue_frames([LLMRunFrame()])
 
     @transport.event_handler("on_client_connected")
     async def on_client_connected(transport, client):
