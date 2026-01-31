@@ -47,7 +47,7 @@ from pipecat.processors.frameworks.rtvi import RTVIObserver, RTVIProcessor
 from pipecat.runner.types import RunnerArguments, SmallWebRTCRunnerArguments
 from pipecat.services.google.llm import GoogleLLMService
 from pipecat.services.google.stt import GoogleSTTService
-from pipecat.services.google.tts import GoogleTTSService
+from pipecat.transcriptions.language import Language
 from pipecat.transports.base_transport import BaseTransport, TransportParams
 from pipecat.transports.smallwebrtc.connection import SmallWebRTCConnection
 from pipecat.transports.smallwebrtc.transport import SmallWebRTCTransport
@@ -65,9 +65,6 @@ from utils.switch_lang import SwitchLanguage
 
 load_dotenv(override=True)
 
-SYSTEM_PROMPT=open("prompts/system.txt").read()
-GOOGLE_APP_CREDENTIALS=open(os.getenv("GOOGLE_APPLICATION_CREDENTIALS")).read()
-
 
 async def run_bot(transport: BaseTransport):
     """Main bot logic."""
@@ -75,10 +72,10 @@ async def run_bot(transport: BaseTransport):
 
     # Speech-to-Text service
     stt = GoogleSTTService(
-        credentials=GOOGLE_APP_CREDENTIALS,
+        credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
         location=os.getenv("GOOGLE_LOCATION"),
         params=GoogleSTTService.InputParams(
-            languages=['en-US', 'hi-IN', 'mr-IN'],
+            languages=[Language.HI_IN, Language.EN_US, Language.MR_IN],
             enable_automatic_punctuation=False
         )
     )    
@@ -108,7 +105,7 @@ async def run_bot(transport: BaseTransport):
     messages = [
         {
             "role": "system",
-            "content": "You are a helpful LLM in a WebRTC call. Your goal is to demonstrate your capabilities. Respond to what the user said in a creative and helpful way. Your output should not include non-alphanumeric characters. You can speak the following languages: 'English', 'Hindi' and 'Marathi'.",
+            "content": open("prompts/multilingual.txt").read(),
         },
     ]
 

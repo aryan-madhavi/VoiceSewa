@@ -2,31 +2,40 @@ import os
 from dotenv import load_dotenv
 from pipecat.pipeline.parallel_pipeline import ParallelPipeline
 from pipecat.services.google.tts import GoogleTTSService
+from pipecat.transcriptions.language import Language
 from pipecat.processors.filters.function_filter import FunctionFilter
 from pipecat.services.llm_service import FunctionCallParams
 from pipecat.frames.frames import Frame
 
 load_dotenv(override=True)
 
-GOOGLE_APP_CREDENTIALS=open(os.getenv("GOOGLE_APPLICATION_CREDENTIALS")).read()
 
 class SwitchLanguage(ParallelPipeline):
     def __init__(self):
         self._current_language = "English"
 
         english_tts = GoogleTTSService(
-          credentials=GOOGLE_APP_CREDENTIALS,
-          voice_id="en-us-Chirp3-HD-Leda",
+            credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+            voice_id="en-US-Chirp3-HD-Leda",
+            params=GoogleTTSService.InputParams(
+                language=Language.EN_US,
+            )
         )
 
         hindi_tts = GoogleTTSService(
-          credentials=GOOGLE_APP_CREDENTIALS,
-          voice_id="hi-in-Chirp3-HD-Leda",
+            credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+            voice_id="hi-IN-Chirp3-HD-Leda",
+            params=GoogleTTSService.InputParams(
+                language=Language.HI_IN,
+            )
         )
 
         marathi_tts = GoogleTTSService(
-          credentials=GOOGLE_APP_CREDENTIALS,
-          voice_id="mr-in-Chirp3-HD-Leda",
+            credentials_path=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+            voice_id="mr-IN-Chirp3-HD-Leda",
+            params=GoogleTTSService.InputParams(
+                language=Language.MR_IN,
+            )
         )
 
         super().__init__(
