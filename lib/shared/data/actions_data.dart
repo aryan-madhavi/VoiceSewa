@@ -11,13 +11,13 @@ class ActionsData {
         Colors.teal,
         Icons.refresh,
         context.loc.bookAgain, // 'Book Again',
-        RoutePaths.comingSoon,
+        RoutePaths.bookAgain,
       ],
       Actions.myRequests: [
         Colors.deepOrange,
         Icons.assignment_outlined,
         context.loc.myRequests, // 'My Requests',
-        RoutePaths.comingSoon,
+        RoutePaths.myRequests,
       ],
       Actions.newRequests: [
         Colors.purpleAccent,

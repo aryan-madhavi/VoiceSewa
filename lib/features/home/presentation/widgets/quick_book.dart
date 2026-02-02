@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:page_transition/page_transition.dart';
 import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/data/services_data.dart';
 import 'package:voicesewa_client/features/home/providers/quick_book_services_provider.dart';
-import 'package:voicesewa_client/app/routes.dart';
+import 'package:voicesewa_client/features/jobs/presentation/create_job_screen.dart';
 
 class QuickBookCard extends StatelessWidget {
   const QuickBookCard({super.key});
@@ -44,8 +43,6 @@ class QuickBookGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final quickServices = ref.watch(quickBookServicesProvider);
 
-    const String routeName = RoutePaths.book;
-
     return GridView.builder(
       itemCount: quickServices.length,
       shrinkWrap: true,
@@ -68,12 +65,15 @@ class QuickBookGrid extends ConsumerWidget {
           color: color,
           icon: icon,
           label: label,
-          onTap: () => context.pushNamedTransition(
-            routeName: AppRoutes.routes.containsKey(routeName)
-                ? routeName
-                : RoutePaths.comingSoon,
-            type: PageTransitionType.rightToLeft,
-          ),
+          onTap: () {
+            // ✅ Navigate to CreateJobScreen with preselected service
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CreateJobScreen(preselectedService: service),
+              ),
+            );
+          },
         );
       },
     );

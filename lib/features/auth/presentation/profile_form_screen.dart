@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
 import 'package:voicesewa_client/shared/models/address_model.dart';
 import 'package:voicesewa_client/shared/models/client_model.dart';
@@ -9,6 +8,7 @@ import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_client/features/auth/providers/profile_form_provider.dart';
 import 'package:voicesewa_client/features/auth/services/fcm_service.dart';
+import 'package:voicesewa_client/shared/widgets/address_form.dart';
 
 /// Enhanced profile setup screen with address, geolocation, and FCM
 /// Creates complete profile in Firebase Firestore with FCM token
@@ -24,7 +24,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
 
-  // Address controllers
+  // Address controllers (passed to AddressFormWidget)
   final _addressLine1Controller = TextEditingController();
   final _addressLine2Controller = TextEditingController();
   final _landmarkController = TextEditingController();
@@ -35,7 +35,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _fcmService = FCMService();
 
   GeoPoint? _location;
-  bool _isLoadingLocation = false;
   bool _isLoading = false;
   bool _skipAddress = false;
 
@@ -51,68 +50,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     super.dispose();
   }
 
-  /// Get current location using GPS
-  Future<void> _getCurrentLocation() async {
-    setState(() => _isLoadingLocation = true);
-
-    try {
-      // Check if location services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception(
-          'Location services are disabled. Please enable them in settings.',
-        );
-      }
-
-      // Check location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception('Location permissions denied');
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception(
-          'Location permissions permanently denied. Please enable in settings.',
-        );
-      }
-
-      // Get current position
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      setState(() {
-        _location = GeoPoint(position.latitude, position.longitude);
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Location captured: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      print('❌ Location error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to get location: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } finally {
-      setState(() => _isLoadingLocation = false);
-    }
+  /// Handle location capture from AddressFormWidget
+  void _onLocationCaptured(GeoPoint location) {
+    setState(() {
+      _location = location;
+    });
   }
 
   /// Submit profile to Firestore with FCM token
@@ -348,152 +290,20 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Location capture button (only if not skipping)
-                      if (!_skipAddress) ...[
-                        OutlinedButton.icon(
-                          onPressed: _isLoadingLocation
-                              ? null
-                              : _getCurrentLocation,
-                          icon: _isLoadingLocation
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Icon(
-                                  _location != null
-                                      ? Icons.check_circle
-                                      : Icons.my_location,
-                                  color: _location != null
-                                      ? Colors.green
-                                      : ColorConstants.seed,
-                                ),
-                          label: Text(
-                            _location != null
-                                ? 'Location Captured ✓'
-                                : 'Capture Current Location',
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            side: BorderSide(
-                              color: _location != null
-                                  ? Colors.green
-                                  : ColorConstants.seed,
-                              width: 2,
-                            ),
-                          ),
+                      // Address Form Widget (only if not skipping)
+                      if (!_skipAddress)
+                        AddressFormWidget(
+                          line1Controller: _addressLine1Controller,
+                          line2Controller: _addressLine2Controller,
+                          landmarkController: _landmarkController,
+                          cityController: _cityController,
+                          pincodeController: _pincodeController,
+                          location: _location,
+                          onLocationCaptured: _onLocationCaptured,
+                          showLocationCapture: true,
+                          showValidationWarnings: true,
+                          isRequired: true,
                         ),
-                        const SizedBox(height: 16),
-
-                        // Address Line 1
-                        _buildTextField(
-                          controller: _addressLine1Controller,
-                          label: 'Address Line 1 (Street) *',
-                          hint: 'House/Flat No., Street Name',
-                          icon: Icons.home,
-                          validator: (value) {
-                            if (_skipAddress) return null;
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter street address';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Address Line 2
-                        _buildTextField(
-                          controller: _addressLine2Controller,
-                          label: 'Address Line 2',
-                          hint: 'Apartment, Suite, Building (Optional)',
-                          icon: Icons.apartment,
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Landmark
-                        _buildTextField(
-                          controller: _landmarkController,
-                          label: 'Landmark',
-                          hint: 'Nearby landmark (Optional)',
-                          icon: Icons.place,
-                        ),
-                        const SizedBox(height: 16),
-
-                        // City and Pincode in a row
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: _buildTextField(
-                                controller: _cityController,
-                                label: 'City *',
-                                hint: 'City name',
-                                icon: Icons.location_city,
-                                validator: (value) {
-                                  if (_skipAddress) return null;
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Enter city';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildTextField(
-                                controller: _pincodeController,
-                                label: 'Pincode *',
-                                hint: '6 digits',
-                                icon: Icons.pin_drop,
-                                keyboardType: TextInputType.number,
-                                validator: (value) {
-                                  if (_skipAddress) return null;
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Required';
-                                  }
-                                  if (value.trim().length != 6) {
-                                    return 'Invalid';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Address validation warning
-                        if (_location == null)
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.orange.shade200),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.warning_amber_rounded,
-                                  color: Colors.orange.shade700,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Please capture your location for accurate service delivery',
-                                    style: TextStyle(
-                                      color: Colors.orange.shade900,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
 
                       const SizedBox(height: 32),
 
@@ -555,7 +365,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  /// Build text field
+  /// Build text field (for name and phone only now)
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,

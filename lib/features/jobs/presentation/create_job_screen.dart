@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/features/jobs/presentation/widgets/create_job_widgets.dart';
 import 'package:voicesewa_client/shared/models/address_model.dart';
 import 'package:voicesewa_client/features/jobs/providers/client_provider.dart';
 import 'package:voicesewa_client/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_client/shared/data/services_data.dart';
+import 'package:voicesewa_client/shared/widgets/address_form.dart';
 
 class CreateJobScreen extends ConsumerStatefulWidget {
   final Services? preselectedService;
@@ -20,7 +22,7 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
 
-  // For new address
+  // Address form controllers (for new address)
   final _line1Controller = TextEditingController();
   final _line2Controller = TextEditingController();
   final _landmarkController = TextEditingController();
@@ -29,9 +31,11 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
 
   Services? _selectedService;
   Address? _selectedAddress;
-  DateTime? _scheduledDate; // ✅ When client wants the job done
+  DateTime? _scheduledDate;
   bool _isLoading = false;
   bool _showAddNewAddress = false;
+  GeoPoint? _newAddressLocation; // Track location for new address
+  bool _hasAutoSelectedAddress = false; // Track if we've auto-selected
 
   @override
   void initState() {
@@ -50,7 +54,20 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
     super.dispose();
   }
 
-  // ✅ Date picker for when client wants the job done
+  /// ✅ Auto-select first address when addresses load (only if service is preselected)
+  void _autoSelectFirstAddress(List<Address> addresses) {
+    if (widget.preselectedService != null &&
+        !_hasAutoSelectedAddress &&
+        addresses.isNotEmpty &&
+        _selectedAddress == null) {
+      setState(() {
+        _selectedAddress = addresses.first;
+        _hasAutoSelectedAddress = true;
+      });
+      print('✅ Auto-selected first address: ${addresses.first.shortAddress}');
+    }
+  }
+
   Future<void> _selectScheduledDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -78,6 +95,46 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
       setState(() {
         _scheduledDate = picked;
       });
+    }
+  }
+
+  /// ✅ Save new address to client's Firestore collection
+  Future<Address?> _saveNewAddressToClient(Address address) async {
+    try {
+      print('💾 Saving new address to client collection...');
+
+      final clientActions = ref.read(clientActionsProvider);
+      await clientActions.addAddress(address);
+
+      print('✅ Address saved to client collection');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Address saved for future use'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      return address;
+    } catch (e) {
+      print('❌ Error saving address to client: $e');
+
+      // Still return the address so job creation can continue
+      // Show warning but don't block the flow
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Address not saved for future: $e'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      return address;
     }
   }
 
@@ -114,15 +171,30 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
         return;
       }
 
-      // Create new address
+      // Check if location is captured for new address
+      if (_newAddressLocation == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please capture location for the address'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Create new address with captured location
       addressToUse = Address(
-        location: const GeoPoint(0, 0), // TODO: Get actual location
+        location: _newAddressLocation!,
         line1: _line1Controller.text.trim(),
         line2: _line2Controller.text.trim(),
         landmark: _landmarkController.text.trim(),
         pincode: _pincodeController.text.trim(),
         city: _cityController.text.trim(),
       );
+
+      // ✅ AUTO-SAVE: Save the new address to client collection
+      // This happens before job creation
+      addressToUse = await _saveNewAddressToClient(addressToUse);
     } else if (_selectedAddress == null) {
       ScaffoldMessenger.of(
         context,
@@ -134,21 +206,34 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
 
     try {
       final actions = ref.read(jobActionsProvider);
-      final jobId = await actions.createJob(
-        serviceType: _selectedService!,
-        description: _descriptionController.text.trim(),
-        address: addressToUse!,
-        scheduledAt: _scheduledDate!, // ✅ Client sets scheduled date
-      );
+
+      final jobId = await actions
+          .createJob(
+            serviceType: _selectedService!,
+            description: _descriptionController.text.trim(),
+            address: addressToUse!,
+            scheduledAt: _scheduledDate!,
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              print('⏰ Job creation timed out - job queued locally');
+              return '';
+            },
+          );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Job created successfully!'),
+          SnackBar(
+            content: Text(
+              _showAddNewAddress
+                  ? 'Job created and address saved!'
+                  : 'Job created successfully!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context, jobId);
+        Navigator.pop(context, jobId.isNotEmpty ? jobId : null);
       }
     } catch (e) {
       if (mounted) {
@@ -191,319 +276,125 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
               ],
             ),
           ),
-          data: (savedAddresses) => SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Service Selection
-                  Text(
-                    'Select Service',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<Services>(
-                    isExpanded: true,
-                    value: _selectedService,
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.business_center),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    items: Services.values.map((service) {
-                      final data = ServicesData.services[service]!;
-                      return DropdownMenuItem(
-                        value: service,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(data[1] as IconData, color: data[0] as Color),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                data[2] as String,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (value) =>
-                        setState(() => _selectedService = value),
-                    validator: (value) =>
-                        value == null ? 'Please select a service' : null,
-                  ),
-                  const SizedBox(height: 24),
+          data: (savedAddresses) {
+            // ✅ Auto-select first address when data loads
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _autoSelectFirstAddress(savedAddresses);
+            });
 
-                  // Description
-                  Text(
-                    'Job Description',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText:
-                          'Describe your job requirements in detail... (min 10 characters)',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter a description';
-                      }
-                      if (value.trim().length < 10) {
-                        return 'Description must be at least 10 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-
-                  // ✅ Scheduled Date Selection (REQUIRED)
-                  Text(
-                    'When do you want this job done? *',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: _selectScheduledDate,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: _scheduledDate != null
-                              ? ColorConstants.seed
-                              : Colors.grey.shade400,
-                          width: _scheduledDate != null ? 2 : 1,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        color: _scheduledDate != null
-                            ? ColorConstants.seed.withOpacity(0.05)
-                            : null,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            color: _scheduledDate != null
-                                ? ColorConstants.seed
-                                : Colors.grey,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _scheduledDate != null
-                                  ? '${_scheduledDate!.day}/${_scheduledDate!.month}/${_scheduledDate!.year}'
-                                  : 'Tap to select date',
-                              style: TextStyle(
-                                color: _scheduledDate != null
-                                    ? Colors.black87
-                                    : Colors.grey,
-                                fontWeight: _scheduledDate != null
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                          if (_scheduledDate != null)
-                            IconButton(
-                              icon: const Icon(Icons.clear, size: 20),
-                              onPressed: () =>
-                                  setState(() => _scheduledDate = null),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Workers will see this date and confirm availability in their quotations.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Address Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        'Job Location',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                      // Service Selector - Dropdown
+                      ServiceDropdown(
+                        selectedService: _selectedService,
+                        onServiceSelected: (service) {
+                          setState(() => _selectedService = service);
+                        },
                       ),
-                      if (savedAddresses.isNotEmpty)
-                        TextButton.icon(
-                          onPressed: () {
+                      const SizedBox(height: 24),
+
+                      // Job Description
+                      JobDescriptionField(controller: _descriptionController),
+                      const SizedBox(height: 24),
+
+                      // Scheduled Date
+                      ScheduledDatePicker(
+                        selectedDate: _scheduledDate,
+                        onTap: _selectScheduledDate,
+                        onClear: () => setState(() => _scheduledDate = null),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Address Selection
+                      AddressSelectionSection(
+                        savedAddresses: savedAddresses,
+                        selectedAddress: _selectedAddress,
+                        showAddNewAddress: _showAddNewAddress,
+                        onAddressSelected: (address) {
+                          setState(() => _selectedAddress = address);
+                        },
+                        onToggleAddNew: () {
+                          setState(() {
+                            _showAddNewAddress = !_showAddNewAddress;
+                            if (_showAddNewAddress) {
+                              _selectedAddress = null;
+                              _newAddressLocation = null; // Reset location
+                            }
+                          });
+                        },
+                      ),
+
+                      // New Address Form (if showing)
+                      if (_showAddNewAddress) ...[
+                        const SizedBox(height: 12),
+
+                        // ✅ Info card about auto-save
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.blue.shade700,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'This address will be saved to your profile for future use',
+                                  style: TextStyle(
+                                    color: Colors.blue.shade900,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        AddressFormWidget(
+                          line1Controller: _line1Controller,
+                          line2Controller: _line2Controller,
+                          landmarkController: _landmarkController,
+                          cityController: _cityController,
+                          pincodeController: _pincodeController,
+                          location: _newAddressLocation,
+                          onLocationCaptured: (location) {
                             setState(() {
-                              _showAddNewAddress = !_showAddNewAddress;
-                              if (_showAddNewAddress) _selectedAddress = null;
+                              _newAddressLocation = location;
                             });
                           },
-                          icon: Icon(
-                            _showAddNewAddress ? Icons.list : Icons.add,
-                            size: 18,
-                          ),
-                          label: Text(
-                            _showAddNewAddress ? 'Select Saved' : 'Add New',
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  if (!_showAddNewAddress && savedAddresses.isNotEmpty) ...[
-                    // Saved addresses dropdown
-                    DropdownButtonFormField<Address>(
-                      isExpanded: true,
-                      value: _selectedAddress,
-                      decoration: InputDecoration(
-                        labelText: 'Select Address',
-                        prefixIcon: const Icon(Icons.location_on),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      items: savedAddresses.map((address) {
-                        return DropdownMenuItem(
-                          value: address,
-                          child: Text(
-                            '${address.line1}, ${address.city}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) =>
-                          setState(() => _selectedAddress = value),
-                    ),
-                    if (_selectedAddress != null) ...[
-                      const SizedBox(height: 12),
-                      Card(
-                        color: Colors.green.shade50,
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Text(_selectedAddress!.fullAddress),
-                        ),
-                      ),
-                    ],
-                  ] else ...[
-                    // New address form
-                    TextFormField(
-                      controller: _line1Controller,
-                      decoration: InputDecoration(
-                        labelText: 'Address Line 1 *',
-                        prefixIcon: const Icon(Icons.home),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _line2Controller,
-                      decoration: InputDecoration(
-                        labelText: 'Address Line 2',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _landmarkController,
-                      decoration: InputDecoration(
-                        labelText: 'Landmark',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _pincodeController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              labelText: 'Pincode *',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _cityController,
-                            decoration: InputDecoration(
-                              labelText: 'City *',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
+                          showLocationCapture: true, // Enable GPS capture
+                          showValidationWarnings: true, // Show warnings
+                          isRequired: true,
                         ),
                       ],
-                    ),
-                  ],
 
-                  const SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
-                  // Submit Button
-                  FilledButton(
-                    onPressed: _isLoading ? null : _submitJob,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: ColorConstants.seed,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      // Submit Button
+                      SubmitJobButton(
+                        isLoading: _isLoading,
+                        onPressed: _submitJob,
                       ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'Submit Job Request',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

@@ -5,14 +5,9 @@ import 'package:voicesewa_client/app/routes.dart';
 import '../extensions/context_extensions.dart';
 
 class AppConstants {
-
   static Map<NavTab, List<dynamic>> pages(BuildContext context) {
     return {
-      NavTab.home: [
-        Icon(Icons.home),
-        context.loc.homeTitle,
-        RoutePaths.home,
-      ],
+      NavTab.home: [Icon(Icons.home), context.loc.homeTitle, RoutePaths.home],
       NavTab.search: [
         Icon(Icons.search),
         context.loc.searchTitle,
@@ -26,7 +21,7 @@ class AppConstants {
       NavTab.history: [
         Icon(Icons.history),
         context.loc.historyTitle,
-        RoutePaths.history,
+        RoutePaths.myRequests,
       ],
       NavTab.settings: [
         Icon(Icons.settings),

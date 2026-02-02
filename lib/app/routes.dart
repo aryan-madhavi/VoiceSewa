@@ -3,7 +3,9 @@ import 'package:voicesewa_client/core/widgets/feedback/coming_soon_page.dart';
 import 'package:voicesewa_client/features/auth/presentation/profile_form_screen.dart';
 import 'package:voicesewa_client/features/history/presentation/requests_page.dart';
 import 'package:voicesewa_client/features/home/presentation/home_page.dart';
+import 'package:voicesewa_client/features/jobs/presentation/book_again_screen.dart';
 import 'package:voicesewa_client/features/jobs/presentation/create_job_screen.dart';
+import 'package:voicesewa_client/features/jobs/presentation/my_request_screen.dart';
 import 'package:voicesewa_client/features/search/presentation/workers_page.dart';
 import 'package:voicesewa_client/features/settings/presentation/settings_page.dart';
 import 'package:voicesewa_client/features/settings/presentation/support_page.dart';
@@ -25,6 +27,8 @@ class RoutePaths {
   static const String comingSoon = '/comingSoonPage';
   static const String syncDebug = '/sync-debug';
   static const String createJob = '/create-job';
+  static const String myRequests = '/my-requests';
+  static const String bookAgain = '/book-again';
 }
 
 /// Global route configuration
@@ -39,6 +43,8 @@ class AppRoutes {
     RoutePaths.profileSetup: (context) => const ProfileSetupScreen(),
     RoutePaths.comingSoon: (context) => const ComingSoonPage(),
     RoutePaths.createJob: (context) => const CreateJobScreen(),
+    RoutePaths.myRequests: (context) => const MyRequestsPage(),
+    RoutePaths.bookAgain: (context) => const BookAgainPage(),
     // RoutePaths.syncDebug: (context) => const SyncDebugPage(),
   };
 }
