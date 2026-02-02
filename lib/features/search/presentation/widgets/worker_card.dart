@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
-import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/worker_model.dart';
 import 'package:voicesewa_client/features/search/presentation/widgets/worker_details_sheet.dart';
 
@@ -43,7 +42,7 @@ class WorkerCard extends StatelessWidget {
               // --- Profile Photo ---
               ClipRRect(
                 borderRadius: BorderRadius.circular(40),
-                child: worker.photoUrl.isNotEmpty
+                child: (worker.photoUrl.isNotEmpty)
                     ? Image.network(
                         worker.photoUrl,
                         width: 70,
@@ -127,34 +126,6 @@ class WorkerCard extends StatelessWidget {
 
                     const SizedBox(height: 6),
 
-                    /* // Skills (show up to 3)
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: worker.skills!
-                          .take(3)
-                          .map(
-                            (skill) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                skill,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ), */
-
                     const SizedBox(height: 6),
 
                     // Experience + Availability
@@ -164,7 +135,7 @@ class WorkerCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '${worker.experience} ${context.loc.yrsExperience}',
+                            '${worker.experience} yrs experience',
                             style: const TextStyle(
                               fontSize: 10,
                               color: Colors.black54,
@@ -175,22 +146,22 @@ class WorkerCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              worker.available!
+                              worker.available == true
                                   ? Icons.circle
                                   : Icons.circle_outlined,
-                              color: worker.available!
+                              color: worker.available == true
                                   ? Colors.green
                                   : Colors.red,
                               size: 12,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              worker.available! ?
-                              context.loc.available // 'Available'
-                                  : context.loc.unavailable, //'Unavailable',
+                              worker.available == true
+                                  ? 'Available'
+                                  : 'Unavailable',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: worker.available!
+                                color: worker.available == true
                                     ? Colors.green
                                     : Colors.red,
                               ),
@@ -206,7 +177,7 @@ class WorkerCard extends StatelessWidget {
               // --- Voice Button ---
               IconButton(
                 onPressed: onPlayVoice,
-                tooltip: context.loc.playVoiceIntro,  //"Play voice intro",
+                tooltip: "Play voice intro",
                 icon: const Icon(
                   Icons.play_circle_fill,
                   color: ColorConstants.seed,

@@ -50,3 +50,6 @@ dart pub global activate flutterfire_cli
 
    Follow the prompts to select your Firebase project, platforms, and apps. This generates `firebase_options.dart` with the required config for initializing Firebase.
 
+## ADD
+
+### GOOGLE_MAPS_API_KEY= in andriod/local.properties

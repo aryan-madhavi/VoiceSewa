@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
-import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/worker_model.dart';
 
 class WorkerDetailsSheet extends StatelessWidget {
@@ -43,7 +42,7 @@ class WorkerDetailsSheet extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(40),
-                  child: worker.photoUrl.isNotEmpty
+                  child: (worker.photoUrl.isNotEmpty)
                       ? Image.network(
                           worker.photoUrl,
                           width: 80,
@@ -54,7 +53,11 @@ class WorkerDetailsSheet extends StatelessWidget {
                           width: 80,
                           height: 80,
                           color: Colors.grey.shade200,
-                          child: const Icon(Icons.person, size: 40, color: Colors.grey),
+                          child: const Icon(
+                            Icons.person,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
                         ),
                 ),
                 const SizedBox(width: 14),
@@ -75,7 +78,11 @@ class WorkerDetailsSheet extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           if (worker.verified)
-                            const Icon(Icons.verified, color: Colors.blueAccent, size: 20),
+                            const Icon(
+                              Icons.verified,
+                              color: Colors.blueAccent,
+                              size: 20,
+                            ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -84,8 +91,15 @@ class WorkerDetailsSheet extends StatelessWidget {
                           const Icon(Icons.star, color: Colors.amber, size: 16),
                           Text(' ${worker.rating.toStringAsFixed(1)}'),
                           const SizedBox(width: 10),
-                          const Icon(Icons.location_on, color: Colors.grey, size: 16),
-                          Text(worker.distance, style: const TextStyle(color: Colors.grey)),
+                          const Icon(
+                            Icons.location_on,
+                            color: Colors.grey,
+                            size: 16,
+                          ),
+                          Text(
+                            worker.distance,
+                            style: const TextStyle(color: Colors.grey),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -101,8 +115,11 @@ class WorkerDetailsSheet extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: onPlayVoice,
-                  icon: const Icon(Icons.play_circle_fill,
-                      size: 40, color: ColorConstants.seed),
+                  icon: const Icon(
+                    Icons.play_circle_fill,
+                    size: 40,
+                    color: ColorConstants.seed,
+                  ),
                 ),
               ],
             ),
@@ -115,23 +132,28 @@ class WorkerDetailsSheet extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${worker.experience} ${context.loc.yrsExperience}',
+                  '${worker.experience} yrs experience',
                   style: const TextStyle(fontSize: 14, color: Colors.black87),
                 ),
                 Row(
                   children: [
                     Icon(
-                      worker.available! ? Icons.circle : Icons.circle_outlined,
-                      color: worker.available! ? Colors.green : Colors.red,
+                      worker.available == true
+                          ? Icons.circle
+                          : Icons.circle_outlined,
+                      color: worker.available == true
+                          ? Colors.green
+                          : Colors.red,
                       size: 10,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      worker.available! ? context.loc.available //'Available'
-                          : context.loc.unavailable, //'Unavailable',
+                      worker.available == true ? 'Available' : 'Unavailable',
                       style: TextStyle(
                         fontSize: 13,
-                        color: worker.available! ? Colors.green : Colors.red,
+                        color: worker.available == true
+                            ? Colors.green
+                            : Colors.red,
                       ),
                     ),
                   ],
@@ -145,11 +167,10 @@ class WorkerDetailsSheet extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                context.loc.skills, //'Skills',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                'Skills',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
             ),
             const SizedBox(height: 8),
@@ -157,13 +178,15 @@ class WorkerDetailsSheet extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 6,
-              children: worker.skills!
-                  .map((skill) => Chip(
-                        label: Text(skill),
-                        backgroundColor: Colors.grey.shade200,
-                        labelStyle: const TextStyle(color: Colors.black87),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      ))
+              children: (worker.skills ?? [])
+                  .map(
+                    (skill) => Chip(
+                      label: Text(skill),
+                      backgroundColor: Colors.grey.shade200,
+                      labelStyle: const TextStyle(color: Colors.black87),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                  )
                   .toList(),
             ),
 
@@ -171,10 +194,12 @@ class WorkerDetailsSheet extends StatelessWidget {
             const Divider(),
 
             // --- Voice Intro ---
-            if (worker.voiceText.isNotEmpty)
+            if (worker.voiceText != null && worker.voiceText!.isNotEmpty)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 12,
+                ),
                 decoration: BoxDecoration(
                   color: ColorConstants.seed.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -185,7 +210,7 @@ class WorkerDetailsSheet extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        worker.voiceText,
+                        worker.voiceText!,
                         style: const TextStyle(color: Colors.black87),
                       ),
                     ),
@@ -204,11 +229,12 @@ class WorkerDetailsSheet extends StatelessWidget {
                   backgroundColor: ColorConstants.seed,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 icon: const Icon(Icons.calendar_today, color: Colors.white),
-                label: Text(
-                  context.loc.bookNow, //'Book Now',
+                label: const Text(
+                  'Book Now',
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
