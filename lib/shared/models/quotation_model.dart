@@ -100,8 +100,32 @@ class Quotation {
     };
   }
 
-  /// Create from Firestore Map
+  /// ✅ FIXED: Create from Firestore Map with proper null timestamp handling
   factory Quotation.fromMap(String id, Map<String, dynamic> map) {
+    // ✅ Safe timestamp parser that handles null (offline mode)
+    DateTime parseTimestamp(dynamic value) {
+      if (value == null) {
+        // Offline mode: FieldValue.serverTimestamp() returns null
+        print('⚠️ created_at is null (offline mode), using DateTime.now()');
+        return DateTime.now();
+      }
+      if (value is Timestamp) {
+        return value.toDate();
+      }
+      if (value is DateTime) {
+        return value;
+      }
+      // Fallback
+      print('⚠️ Unknown timestamp type: ${value.runtimeType}');
+      return DateTime.now();
+    }
+
+    // ✅ Safe optional timestamp parser
+    DateTime? parseOptionalTimestamp(dynamic value) {
+      if (value == null) return null;
+      return parseTimestamp(value);
+    }
+
     return Quotation(
       id: id,
       workerUid: map['worker_uid'] as String,
@@ -117,23 +141,13 @@ class Quotation {
       status: QuotationStatus.fromString(
         map['status'] as String? ?? 'submitted',
       ),
-      createdAt: (map['created_at'] as Timestamp).toDate(),
-      updatedAt: map['updated_at'] != null
-          ? (map['updated_at'] as Timestamp).toDate()
-          : null,
+      createdAt: parseTimestamp(map['created_at']), // ✅ Safe parsing
+      updatedAt: parseOptionalTimestamp(map['updated_at']), // ✅ Safe parsing
       viewedByClient: map['viewed_by_client'] as bool? ?? false,
-      viewedAt: map['viewed_at'] != null
-          ? (map['viewed_at'] as Timestamp).toDate()
-          : null,
-      acceptedAt: map['accepted_at'] != null
-          ? (map['accepted_at'] as Timestamp).toDate()
-          : null,
-      rejectedAt: map['rejected_at'] != null
-          ? (map['rejected_at'] as Timestamp).toDate()
-          : null,
-      withdrawnAt: map['withdrawn_at'] != null
-          ? (map['withdrawn_at'] as Timestamp).toDate()
-          : null,
+      viewedAt: parseOptionalTimestamp(map['viewed_at']),
+      acceptedAt: parseOptionalTimestamp(map['accepted_at']),
+      rejectedAt: parseOptionalTimestamp(map['rejected_at']),
+      withdrawnAt: parseOptionalTimestamp(map['withdrawn_at']),
       rejectionReason: map['rejection_reason'] as String?,
       withdrawalReason: map['withdrawal_reason'] as String?,
       autoRejected: map['auto_rejected'] as bool? ?? false,

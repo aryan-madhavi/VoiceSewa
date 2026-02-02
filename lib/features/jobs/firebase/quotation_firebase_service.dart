@@ -9,7 +9,7 @@ class QuotationFirebaseService {
   static const String _quotationsSubcollection = 'quotations';
 
   QuotationFirebaseService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance {
+    : _firestore = firestore ?? FirebaseFirestore.instance {
     // Enable offline persistence
     _firestore.settings = const Settings(
       persistenceEnabled: true,
@@ -18,7 +18,9 @@ class QuotationFirebaseService {
   }
 
   /// Get quotations subcollection reference for a job
-  CollectionReference<Map<String, dynamic>> _quotationsCollection(String jobId) {
+  CollectionReference<Map<String, dynamic>> _quotationsCollection(
+    String jobId,
+  ) {
     return _firestore
         .collection(_jobsCollection)
         .doc(jobId)
@@ -26,7 +28,7 @@ class QuotationFirebaseService {
   }
 
   /// Create/Submit a quotation
-  /// Works offline - will sync when online
+  /// ✅ FIXED: Works offline - uses DateTime.now() instead of serverTimestamp
   Future<String> createQuotation(String jobId, Quotation quotation) async {
     try {
       print('💾 Creating quotation for job: $jobId');
@@ -47,7 +49,10 @@ class QuotationFirebaseService {
   /// Helper to update job status to 'quoted' when first quotation is received
   Future<void> _updateJobStatusIfRequested(String jobId) async {
     try {
-      final jobDoc = await _firestore.collection(_jobsCollection).doc(jobId).get();
+      final jobDoc = await _firestore
+          .collection(_jobsCollection)
+          .doc(jobId)
+          .get();
 
       if (jobDoc.exists && jobDoc.data()?['status'] == 'requested') {
         await _firestore.collection(_jobsCollection).doc(jobId).update({
@@ -65,28 +70,34 @@ class QuotationFirebaseService {
       print('📖 Fetching quotation: $quotationId');
 
       // Try cache first
-      final cacheSnapshot = await _quotationsCollection(jobId)
-          .doc(quotationId)
-          .get(const GetOptions(source: Source.cache));
+      final cacheSnapshot = await _quotationsCollection(
+        jobId,
+      ).doc(quotationId).get(const GetOptions(source: Source.cache));
 
       if (cacheSnapshot.exists) {
         print('✅ Quotation found in cache');
         final quotation = Quotation.fromMap(quotationId, cacheSnapshot.data()!);
 
         // Fetch from server in background
-        _quotationsCollection(jobId).doc(quotationId).get().then((serverSnapshot) {
-          if (serverSnapshot.exists) {
-            print('🔄 Quotation updated from server');
-          }
-        }).catchError((e) {
-          print('⚠️ Server fetch failed (offline): $e');
-        });
+        _quotationsCollection(jobId)
+            .doc(quotationId)
+            .get()
+            .then((serverSnapshot) {
+              if (serverSnapshot.exists) {
+                print('🔄 Quotation updated from server');
+              }
+            })
+            .catchError((e) {
+              print('⚠️ Server fetch failed (offline): $e');
+            });
 
         return quotation;
       }
 
       // Not in cache, try server
-      final serverSnapshot = await _quotationsCollection(jobId).doc(quotationId).get();
+      final serverSnapshot = await _quotationsCollection(
+        jobId,
+      ).doc(quotationId).get();
 
       if (serverSnapshot.exists) {
         print('✅ Quotation fetched from server');
@@ -103,7 +114,9 @@ class QuotationFirebaseService {
 
   /// Stream quotation updates in real-time
   Stream<Quotation?> watchQuotation(String jobId, String quotationId) {
-    return _quotationsCollection(jobId).doc(quotationId).snapshots().map((snapshot) {
+    return _quotationsCollection(jobId).doc(quotationId).snapshots().map((
+      snapshot,
+    ) {
       if (snapshot.exists) {
         return Quotation.fromMap(quotationId, snapshot.data()!);
       }
@@ -116,9 +129,9 @@ class QuotationFirebaseService {
     try {
       print('📖 Fetching quotations for job: $jobId');
 
-      final snapshot = await _quotationsCollection(jobId)
-          .orderBy('created_at', descending: true)
-          .get();
+      final snapshot = await _quotationsCollection(
+        jobId,
+      ).orderBy('created_at', descending: true).get();
 
       final quotations = snapshot.docs
           .map((doc) => Quotation.fromMap(doc.id, doc.data()))
@@ -134,10 +147,9 @@ class QuotationFirebaseService {
 
   /// Stream all quotations for a job in real-time
   Stream<List<Quotation>> watchJobQuotations(String jobId) {
-    return _quotationsCollection(jobId)
-        .orderBy('created_at', descending: true)
-        .snapshots()
-        .map((snapshot) {
+    return _quotationsCollection(
+      jobId,
+    ).orderBy('created_at', descending: true).snapshots().map((snapshot) {
       return snapshot.docs
           .map((doc) => Quotation.fromMap(doc.id, doc.data()))
           .toList();
@@ -170,14 +182,17 @@ class QuotationFirebaseService {
   }
 
   /// Accept a quotation
+  /// ✅ FIXED: Uses DateTime.now() instead of serverTimestamp
   Future<void> acceptQuotation(String jobId, String quotationId) async {
     try {
       print('📝 Accepting quotation: $quotationId');
 
+      final now = DateTime.now();
+
       await _quotationsCollection(jobId).doc(quotationId).update({
         'status': QuotationStatus.accepted.value,
-        'accepted_at': Timestamp.fromDate(DateTime.now()),
-        'updated_at': Timestamp.fromDate(DateTime.now()),
+        'accepted_at': Timestamp.fromDate(now), // ✅ Use DateTime.now()
+        'updated_at': Timestamp.fromDate(now), // ✅ Use DateTime.now()
       });
 
       // Auto-reject all other submitted quotations
@@ -191,23 +206,25 @@ class QuotationFirebaseService {
   }
 
   /// Auto-reject other submitted quotations when one is accepted
+  /// ✅ FIXED: Uses DateTime.now() instead of serverTimestamp
   Future<void> _autoRejectOtherQuotations(
     String jobId,
     String acceptedQuotationId,
   ) async {
     try {
-      final snapshot = await _quotationsCollection(jobId)
-          .where('status', isEqualTo: QuotationStatus.submitted.value)
-          .get();
+      final snapshot = await _quotationsCollection(
+        jobId,
+      ).where('status', isEqualTo: QuotationStatus.submitted.value).get();
 
       final batch = _firestore.batch();
+      final now = DateTime.now();
 
       for (final doc in snapshot.docs) {
         if (doc.id != acceptedQuotationId) {
           batch.update(doc.reference, {
             'status': QuotationStatus.rejected.value,
-            'rejected_at': Timestamp.fromDate(DateTime.now()),
-            'updated_at': Timestamp.fromDate(DateTime.now()),
+            'rejected_at': Timestamp.fromDate(now), // ✅ Use DateTime.now()
+            'updated_at': Timestamp.fromDate(now), // ✅ Use DateTime.now()
             'auto_rejected': true,
           });
         }
@@ -221,6 +238,7 @@ class QuotationFirebaseService {
   }
 
   /// Reject a quotation
+  /// ✅ FIXED: Uses DateTime.now() instead of serverTimestamp
   Future<void> rejectQuotation(
     String jobId,
     String quotationId,
@@ -229,11 +247,13 @@ class QuotationFirebaseService {
     try {
       print('📝 Rejecting quotation: $quotationId');
 
+      final now = DateTime.now();
+
       await _quotationsCollection(jobId).doc(quotationId).update({
         'status': QuotationStatus.rejected.value,
-        'rejected_at': Timestamp.fromDate(DateTime.now()),
+        'rejected_at': Timestamp.fromDate(now), // ✅ Use DateTime.now()
         'rejection_reason': reason,
-        'updated_at': Timestamp.fromDate(DateTime.now()),
+        'updated_at': Timestamp.fromDate(now), // ✅ Use DateTime.now()
       });
 
       print('✅ Quotation rejected');
@@ -244,6 +264,7 @@ class QuotationFirebaseService {
   }
 
   /// Withdraw a quotation (by worker)
+  /// ✅ FIXED: Uses DateTime.now() instead of serverTimestamp
   Future<void> withdrawQuotation(
     String jobId,
     String quotationId,
@@ -252,11 +273,13 @@ class QuotationFirebaseService {
     try {
       print('📝 Withdrawing quotation: $quotationId');
 
+      final now = DateTime.now();
+
       await _quotationsCollection(jobId).doc(quotationId).update({
         'status': QuotationStatus.withdrawn.value,
-        'withdrawn_at': Timestamp.fromDate(DateTime.now()),
+        'withdrawn_at': Timestamp.fromDate(now), // ✅ Use DateTime.now()
         'withdrawal_reason': reason,
-        'updated_at': Timestamp.fromDate(DateTime.now()),
+        'updated_at': Timestamp.fromDate(now), // ✅ Use DateTime.now()
       });
 
       print('✅ Quotation withdrawn');
@@ -267,11 +290,14 @@ class QuotationFirebaseService {
   }
 
   /// Mark quotation as viewed by client
+  /// ✅ FIXED: Uses DateTime.now() instead of serverTimestamp
   Future<void> markAsViewed(String jobId, String quotationId) async {
     try {
+      final now = DateTime.now();
+
       await _quotationsCollection(jobId).doc(quotationId).update({
         'viewed_by_client': true,
-        'viewed_at': Timestamp.fromDate(DateTime.now()),
+        'viewed_at': Timestamp.fromDate(now), // ✅ Use DateTime.now()
       });
     } catch (e) {
       print('⚠️ Error marking quotation as viewed: $e');

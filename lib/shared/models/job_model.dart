@@ -38,8 +38,8 @@ enum JobStatus {
 /// Job model based on Firestore schema
 /// Core fields from schema:
 /// - service_type, description, address, client_uid, created_at, status
-/// - finalized_quotation (optional), scheduled_at (optional)
-/// 
+/// - finalized_quotation (optional), scheduled_at (optional - set by client)
+///
 /// Extended fields for UI (denormalized from quotation when finalized):
 /// - workerName, workerRating (cached from accepted quotation)
 class Job {
@@ -50,9 +50,13 @@ class Job {
   final String clientUid;
   final DateTime createdAt;
   final JobStatus status;
-  final String? finalizedQuotationId; // Reference ID to accepted quotation
+
+  /// When the job should happen - set by CLIENT during creation
   final DateTime? scheduledAt;
-  
+
+  /// Reference to accepted quotation - set ONLY when client accepts a quotation
+  final String? finalizedQuotationId;
+
   // ✅ Denormalized fields from quotation (for UI convenience)
   // These are fetched from the quotation subcollection when needed
   final String? workerName;
@@ -66,8 +70,8 @@ class Job {
     required this.clientUid,
     required this.createdAt,
     required this.status,
-    this.finalizedQuotationId,
-    this.scheduledAt,
+    this.scheduledAt, // ✅ Client sets this when creating job
+    this.finalizedQuotationId, // ❌ null during creation, set when accepting quotation
     this.workerName,
     this.workerRating,
   });
@@ -85,22 +89,22 @@ class Job {
       'status': status.value,
     };
 
-    // Optional fields - only add if not null
-    if (finalizedQuotationId != null) {
-      // This should be a DocumentReference in real usage
-      map['finalized_quotation'] = finalizedQuotationId;
-    }
-
+    // ✅ Add scheduled_at if client specified when they want the job
     if (scheduledAt != null) {
       map['scheduled_at'] = Timestamp.fromDate(scheduledAt!);
+    }
+
+    // ❌ finalized_quotation should NOT be set during creation
+    // It's ONLY set when client accepts a quotation
+    // During job creation, this will always be null
+    if (finalizedQuotationId != null) {
+      map['finalized_quotation'] = finalizedQuotationId;
     }
 
     return map;
   }
 
   /// Create from Firestore Map
-  /// Note: This only creates from job document data
-  /// To get workerName/workerRating, use fromMapWithQuotation
   factory Job.fromMap(String id, Map<String, dynamic> map) {
     // Handle finalized_quotation which can be DocumentReference or String
     String? finalizedQuotId;
@@ -122,10 +126,10 @@ class Job {
       clientUid: map['client_uid'] as String,
       createdAt: (map['created_at'] as Timestamp).toDate(),
       status: JobStatus.fromString(map['status'] as String? ?? 'requested'),
-      finalizedQuotationId: finalizedQuotId,
       scheduledAt: map['scheduled_at'] != null
           ? (map['scheduled_at'] as Timestamp).toDate()
           : null,
+      finalizedQuotationId: finalizedQuotId,
       // Worker info not in job document - must be fetched separately
       workerName: null,
       workerRating: null,
@@ -245,8 +249,8 @@ class Job {
     String? clientUid,
     DateTime? createdAt,
     JobStatus? status,
-    String? finalizedQuotationId,
     DateTime? scheduledAt,
+    String? finalizedQuotationId,
     String? workerName,
     double? workerRating,
   }) {
@@ -258,8 +262,8 @@ class Job {
       clientUid: clientUid ?? this.clientUid,
       createdAt: createdAt ?? this.createdAt,
       status: status ?? this.status,
-      finalizedQuotationId: finalizedQuotationId ?? this.finalizedQuotationId,
       scheduledAt: scheduledAt ?? this.scheduledAt,
+      finalizedQuotationId: finalizedQuotationId ?? this.finalizedQuotationId,
       workerName: workerName ?? this.workerName,
       workerRating: workerRating ?? this.workerRating,
     );

@@ -1,5 +1,4 @@
 import 'package:voicesewa_client/features/jobs/firebase/job_firebase_service.dart';
-
 import 'package:voicesewa_client/shared/data/services_data.dart';
 import 'package:voicesewa_client/shared/models/address_model.dart';
 import 'package:voicesewa_client/shared/models/job_model.dart';
@@ -11,14 +10,16 @@ class JobRepository {
   JobRepository(this._firebaseService);
 
   /// Create a new job with validation
+  /// ✅ scheduledAt is REQUIRED - client must specify when they want the job
   Future<String> createJob({
     required Services serviceType,
     required String description,
     required Address address,
     required String clientUid,
+    required DateTime scheduledAt, // ✅ REQUIRED: When client wants the job
   }) async {
     // Validate input
-    _validateJobCreation(description, address);
+    _validateJobCreation(description, address, scheduledAt);
 
     final job = Job(
       id: '', // Will be set by Firestore
@@ -28,12 +29,22 @@ class JobRepository {
       clientUid: clientUid,
       createdAt: DateTime.now(),
       status: JobStatus.requested,
+      scheduledAt: scheduledAt, // ✅ Set when client wants the job
+      // ❌ finalized_quotation is NULL during creation
+      // It's ONLY set when client accepts a quotation
+      finalizedQuotationId: null,
+      workerName: null,
+      workerRating: null,
     );
 
     return await _firebaseService.createJob(job);
   }
 
-  void _validateJobCreation(String description, Address address) {
+  void _validateJobCreation(
+    String description,
+    Address address,
+    DateTime scheduledAt,
+  ) {
     if (description.trim().isEmpty) {
       throw ArgumentError('Job description cannot be empty');
     }
@@ -48,6 +59,19 @@ class JobRepository {
 
     if (address.pincode.length < 5) {
       throw ArgumentError('Invalid pincode');
+    }
+
+    // ✅ Validate scheduled date
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduled = DateTime(
+      scheduledAt.year,
+      scheduledAt.month,
+      scheduledAt.day,
+    );
+
+    if (scheduled.isBefore(today)) {
+      throw ArgumentError('Scheduled date cannot be in the past');
     }
   }
 

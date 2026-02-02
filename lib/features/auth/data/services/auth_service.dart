@@ -1,23 +1,28 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/features/auth/services/fcm_service.dart';
 import 'package:voicesewa_client/shared/models/client_model.dart';
 import '../firebase/client_firebase_repository.dart';
 
-/// Authentication service - handles Firebase Auth + Firestore profile management
+
+/// Authentication service - handles Firebase Auth + Firestore profile management + FCM
 /// No SQLite dependencies - everything is Firebase-based
 class AuthService {
   final WidgetRef ref;
   final FirebaseAuth _auth;
   final ClientFirebaseRepository _clientRepo;
+  final FCMService _fcmService;
 
   AuthService(
     this.ref, {
     FirebaseAuth? auth,
     ClientFirebaseRepository? clientRepo,
-  })  : _auth = auth ?? FirebaseAuth.instance,
-        _clientRepo = clientRepo ?? ClientFirebaseRepository();
+    FCMService? fcmService,
+  }) : _auth = auth ?? FirebaseAuth.instance,
+       _clientRepo = clientRepo ?? ClientFirebaseRepository(),
+       _fcmService = fcmService ?? FCMService();
 
-  /// Handle user login with Firebase Auth
+  /// Handle user login with Firebase Auth + FCM initialization
   Future<String?> login({
     required String email,
     required String password,
@@ -30,9 +35,12 @@ class AuthService {
         email: email.trim(),
         password: password,
       );
-      
+
       print('✅ Firebase authentication successful');
       print('   UID: ${userCredential.user?.uid}');
+
+      // Initialize FCM and get/update token for this user
+      await _initializeFCMForUser(userCredential.user!.uid);
 
       return null; // Success
     } on FirebaseAuthException catch (e) {
@@ -58,7 +66,7 @@ class AuthService {
         email: email.trim(),
         password: password,
       );
-      
+
       print('✅ Firebase registration successful');
       print('   UID: ${userCredential.user?.uid}');
 
@@ -66,9 +74,13 @@ class AuthService {
       await userCredential.user?.updateDisplayName(username.trim());
       print('✅ Display name updated');
 
+      // 3. Initialize FCM (token will be saved when profile is created)
+      final hasPermission = await _fcmService.initialize();
+      print('🔔 FCM initialized: $hasPermission');
+
       // Note: Profile creation happens in ProfileSetupScreen
-      // We just create the auth account here
-      
+      // FCM token will be saved there
+
       return null; // Success
     } on FirebaseAuthException catch (e) {
       print('❌ Firebase registration error: ${e.code}');
@@ -76,6 +88,62 @@ class AuthService {
     } catch (e) {
       print('❌ Registration error: $e');
       return 'Unexpected error: ${e.toString()}';
+    }
+  }
+
+  /// Initialize FCM for logged-in user
+  /// Gets FCM token and updates it in Firestore profile
+  Future<void> _initializeFCMForUser(String uid) async {
+    try {
+      print('🔔 Initializing FCM for user: $uid');
+
+      // Initialize FCM and request permissions
+      final hasPermission = await _fcmService.initialize();
+
+      if (!hasPermission) {
+        print('⚠️ FCM permissions denied - skipping token update');
+        return;
+      }
+
+      // Get FCM token
+      final token = await _fcmService.getToken();
+
+      if (token == null) {
+        print('⚠️ Failed to get FCM token');
+        return;
+      }
+
+      // Check if profile exists
+      final profile = await _clientRepo.getProfile(uid);
+
+      if (profile == null) {
+        print(
+          'ℹ️ No profile yet - FCM token will be saved during profile creation',
+        );
+        return;
+      }
+
+      // Update FCM token in Firestore if it changed
+      if (profile.fcmToken != token) {
+        await _clientRepo.updateFcmToken(uid, token);
+        print('✅ FCM token updated in Firestore');
+      } else {
+        print('ℹ️ FCM token unchanged');
+      }
+
+      // Subscribe to default client topics
+      // await _fcmService.subscribeToDefaultClientTopics();
+
+      // Subscribe to location-based topics if user has address
+      if (profile.hasAddresses && profile.primaryAddress != null) {
+        final address = profile.primaryAddress!;
+        // await _fcmService.subscribeToLocationTopics(city: address.city);
+      }
+
+      print('✅ FCM setup complete for user');
+    } catch (e) {
+      print('❌ Error initializing FCM: $e');
+      // Don't throw - FCM is not critical for login
     }
   }
 
@@ -153,10 +221,10 @@ class AuthService {
         email: user.email!,
         password: currentPassword,
       );
-      
+
       await user.reauthenticateWithCredential(credential);
       await user.updatePassword(newPassword);
-      
+
       print('✅ Password updated successfully');
       return null; // Success
     } on FirebaseAuthException catch (e) {
@@ -181,15 +249,15 @@ class AuthService {
         email: user.email!,
         password: password,
       );
-      
+
       await user.reauthenticateWithCredential(credential);
-      
+
       // Delete Firestore profile first
       await _clientRepo.deleteProfile(user.uid);
-      
+
       // Then delete Firebase Auth account
       await user.delete();
-      
+
       print('✅ Account deleted successfully');
       return null; // Success
     } on FirebaseAuthException catch (e) {
@@ -229,7 +297,7 @@ class AuthService {
         return 'Invalid email address';
       case 'network-request-failed':
         return 'Network error. Please check your connection';
-      
+
       // Password reset errors
       case 'expired-action-code':
         return 'Reset link has expired';

@@ -25,34 +25,27 @@ class JobFirebaseService {
       _firestore.collection(_clientsCollection);
 
   /// Create a new job and update client's requested array
-  /// Works offline - will sync when online
-  /// Only creates fields that exist in the schema
+  /// ✅ FIXED: Works offline - uses DateTime.now() instead of serverTimestamp
   Future<String> createJob(Job job) async {
     try {
       print('🆕 Creating job: ${job.serviceName}');
       print('👤 Client UID: ${job.clientUid}');
+      print('📅 Scheduled for: ${job.scheduledAt}');
 
-      // Prepare job data according to schema - ONLY required fields
+      // ✅ Use DateTime.now() for offline support
+      final now = DateTime.now();
+
+      // Prepare job data according to schema
       final jobData = <String, dynamic>{
         'service_type': job.serviceType.name,
         'description': job.description,
         'address': job.address.toMap(),
         'client_uid': job.clientUid,
-        'created_at': FieldValue.serverTimestamp(),
+        'created_at': Timestamp.fromDate(now), // ✅ Use DateTime.now()
         'status': job.status.value,
-        // Optional fields from schema - only add if they exist
       };
 
-      // Optional fields - only add if not null
-      if (job.finalizedQuotationId != null) {
-        // Store as DocumentReference
-        final quotationRef = _jobsRef
-            .doc('temp') // Will be replaced with actual jobId
-            .collection('quotations')
-            .doc(job.finalizedQuotationId);
-        jobData['finalized_quotation'] = quotationRef;
-      }
-
+      // ✅ Add scheduled_at if client specified when they want the job
       if (job.scheduledAt != null) {
         jobData['scheduled_at'] = Timestamp.fromDate(job.scheduledAt!);
       }
@@ -66,9 +59,7 @@ class JobFirebaseService {
       // Update client's services.requested array
       try {
         await _clientsRef.doc(job.clientUid).update({
-          'services.requested': FieldValue.arrayUnion([
-            docRef,
-          ]), // ✅ Add DocumentReference
+          'services.requested': FieldValue.arrayUnion([docRef]),
         });
         print('✅ Client requested array updated');
       } catch (e) {
@@ -85,7 +76,6 @@ class JobFirebaseService {
   }
 
   /// Get job by ID
-  /// Returns cached data if available
   Future<Job?> getJob(String jobId) async {
     try {
       print('📖 Fetching job: $jobId');
@@ -220,7 +210,6 @@ class JobFirebaseService {
   }
 
   /// Update job status
-  /// Works offline - will sync when online
   Future<void> updateJobStatus(
     String jobId,
     JobStatus newStatus, {
@@ -244,8 +233,8 @@ class JobFirebaseService {
     }
   }
 
-  /// Finalize quotation (accept a quotation)
-  /// This updates the job with worker details and changes status to scheduled
+  /// ✅ THIS is the ONLY place where finalized_quotation should be set
+  /// Called when client accepts a quotation
   Future<void> finalizeQuotation(
     String jobId,
     String quotationId,
@@ -265,9 +254,9 @@ class JobFirebaseService {
           .collection('quotations')
           .doc(quotationId);
 
-      // Update job with finalized quotation reference and scheduled time
+      // ✅ Update job with finalized quotation reference
       await _jobsRef.doc(jobId).update({
-        'finalized_quotation': quotationRef, // ✅ Store as DocumentReference
+        'finalized_quotation': quotationRef,
         'status': JobStatus.scheduled.value,
         'scheduled_at': Timestamp.fromDate(scheduledAt),
       });
@@ -296,7 +285,7 @@ class JobFirebaseService {
     }
   }
 
-  /// Cancel job - Not in schema but commonly needed
+  /// Cancel job
   Future<void> cancelJob(String jobId, String reason) async {
     try {
       print('🔄 Cancelling job $jobId');

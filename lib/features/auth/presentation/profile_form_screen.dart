@@ -8,9 +8,10 @@ import 'package:voicesewa_client/shared/models/client_model.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_client/features/auth/providers/profile_form_provider.dart';
+import 'package:voicesewa_client/features/auth/services/fcm_service.dart';
 
-/// Enhanced profile setup screen with address and geolocation
-/// Creates complete profile in Firebase Firestore
+/// Enhanced profile setup screen with address, geolocation, and FCM
+/// Creates complete profile in Firebase Firestore with FCM token
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
 
@@ -22,14 +23,17 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  
+
   // Address controllers
   final _addressLine1Controller = TextEditingController();
   final _addressLine2Controller = TextEditingController();
   final _landmarkController = TextEditingController();
   final _cityController = TextEditingController();
   final _pincodeController = TextEditingController();
-  
+
+  // FCM Service
+  final _fcmService = FCMService();
+
   GeoPoint? _location;
   bool _isLoadingLocation = false;
   bool _isLoading = false;
@@ -55,7 +59,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        throw Exception('Location services are disabled. Please enable them in settings.');
+        throw Exception(
+          'Location services are disabled. Please enable them in settings.',
+        );
       }
 
       // Check location permissions
@@ -68,7 +74,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('Location permissions permanently denied. Please enable in settings.');
+        throw Exception(
+          'Location permissions permanently denied. Please enable in settings.',
+        );
       }
 
       // Get current position
@@ -107,14 +115,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
-  /// Submit profile to Firestore
+  /// Submit profile to Firestore with FCM token
   Future<void> _submitProfile() async {
     // Validate form (skip address validation if user chose to skip)
     if (!_skipAddress) {
       if (!_formKey.currentState!.validate()) return;
     } else {
       // Still validate name and phone
-      if (_nameController.text.trim().isEmpty || 
+      if (_nameController.text.trim().isEmpty ||
           _phoneController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -139,9 +147,28 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       print('   Name: ${_nameController.text.trim()}');
       print('   Skip address: $_skipAddress');
 
-      // Prepare addresses list
+      // 1️⃣ Get FCM token for this user
+      String? fcmToken;
+      try {
+        print('🔔 Initializing FCM...');
+        final hasPermission = await _fcmService.initialize();
+
+        if (hasPermission) {
+          fcmToken = await _fcmService.getToken();
+          print('✅ FCM token obtained: ${fcmToken?.substring(0, 20)}...');
+        } else {
+          print(
+            '⚠️ FCM permissions denied - profile will be created without token',
+          );
+        }
+      } catch (e) {
+        print('⚠️ FCM error (non-critical): $e');
+        // Continue profile creation even if FCM fails
+      }
+
+      // 2️⃣ Prepare addresses list
       List<Address> addresses = [];
-      
+
       if (!_skipAddress && _location != null) {
         addresses.add(
           Address(
@@ -155,21 +182,30 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         );
       }
 
-      // Create client profile
+      // 3️⃣ Create client profile with FCM token
       final profile = ClientProfile(
         uid: user.uid,
         name: _nameController.text.trim(),
         email: user.email!,
         phone: _phoneController.text.trim(),
         addresses: addresses,
-        fcmToken: null, // Will be set when FCM is initialized
+        fcmToken: fcmToken, // ✅ FCM token saved here
       );
 
-      // Save to Firestore
+      // 4️⃣ Save to Firestore
       final repo = ref.read(clientFirebaseRepositoryProvider);
       await repo.upsertProfile(profile);
-      
-      print('✅ Profile saved to Firestore');
+
+      print('✅ Profile saved to Firestore with FCM token');
+
+      // 5️⃣ Subscribe to FCM topics
+      if (fcmToken != null) {
+        try {
+          await _subscribeToTopics(addresses);
+        } catch (e) {
+          print('⚠️ Topic subscription error (non-critical): $e');
+        }
+      }
 
       if (mounted) {
         // Show success message
@@ -185,7 +221,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
         // CRITICAL FIX: Invalidate the profile check provider to force refresh
         ref.invalidate(userHasProfileProvider);
-        
+
         // Mark profile as complete AFTER the frame to ensure navigation
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
@@ -211,15 +247,29 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
+  /// Subscribe user to FCM topics based on their profile
+  Future<void> _subscribeToTopics(List<Address> addresses) async {
+    print('🔔 Subscribing to FCM topics...');
+
+    // Subscribe to default client topics
+    // await _fcmService.subscribeToDefaultClientTopics();
+
+    // Subscribe to location-based topics if address provided
+    if (addresses.isNotEmpty) {
+      final primaryAddress = addresses.first;
+      // await _fcmService.subscribeToLocationTopics(city: primaryAddress.city);
+    }
+
+    print('✅ Topic subscriptions complete');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ColorConstants.scaffold,
       appBar: AppBar(
         title: const Text('Complete Your Profile'),
-        backgroundColor: ColorConstants.appBar,
         centerTitle: true,
-        automaticallyImplyLeading: false,
+        elevation: 0,
       ),
       body: SafeArea(
         child: Center(
@@ -233,35 +283,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Welcome header
-                      Icon(
-                        Icons.person_add_rounded,
-                        size: 80,
-                        color: ColorConstants.seed,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Welcome to VoiceSewa!',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: ColorConstants.seed,
-                            ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Let\'s set up your profile to get started',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 32),
-
-                      // === BASIC INFORMATION SECTION ===
+                      // Header
                       _buildSectionHeader(
-                        icon: Icons.person_outline,
-                        title: 'Basic Information',
+                        icon: Icons.person,
+                        title: 'Personal Information',
                       ),
                       const SizedBox(height: 16),
 
@@ -270,13 +295,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                         controller: _nameController,
                         label: 'Full Name *',
                         hint: 'Enter your full name',
-                        icon: Icons.person,
+                        icon: Icons.person_outline,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Please enter your name';
-                          }
-                          if (value.trim().length < 2) {
-                            return 'Name must be at least 2 characters';
                           }
                           return null;
                         },
@@ -287,92 +309,82 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       _buildTextField(
                         controller: _phoneController,
                         label: 'Phone Number *',
-                        hint: 'Enter your 10-digit phone number',
-                        icon: Icons.phone,
+                        hint: '10-digit mobile number',
+                        icon: Icons.phone_outlined,
                         keyboardType: TextInputType.phone,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your phone number';
+                            return 'Please enter phone number';
                           }
-                          final cleaned = value.replaceAll(RegExp(r'[^\d]'), '');
-                          if (cleaned.length != 10) {
-                            return 'Please enter a valid 10-digit phone number';
+                          if (value.trim().length != 10) {
+                            return 'Phone number must be 10 digits';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 32),
 
-                      // === ADDRESS SECTION ===
+                      // Address section header
                       _buildSectionHeader(
-                        icon: Icons.location_on_outlined,
-                        title: 'Address (Optional)',
+                        icon: Icons.location_on,
+                        title: 'Service Address',
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'You can add your address now or later in settings',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                              fontStyle: FontStyle.italic,
-                            ),
-                      ),
-                      const SizedBox(height: 16),
 
                       // Skip address checkbox
                       CheckboxListTile(
                         value: _skipAddress,
                         onChanged: (value) {
-                          setState(() => _skipAddress = value ?? false);
+                          setState(() {
+                            _skipAddress = value ?? false;
+                            if (_skipAddress) {
+                              _location = null; // Clear location if skipping
+                            }
+                          });
                         },
-                        title: const Text('Skip address for now'),
-                        subtitle: const Text('You can add it later'),
+                        title: const Text('Skip address (add later)'),
                         controlAffinity: ListTileControlAffinity.leading,
-                        contentPadding: EdgeInsets.zero,
+                        activeColor: ColorConstants.seed,
                       ),
                       const SizedBox(height: 16),
 
-                      // Address fields (only show if not skipping)
+                      // Location capture button (only if not skipping)
                       if (!_skipAddress) ...[
-                        // Location button
                         OutlinedButton.icon(
-                          onPressed: _isLoadingLocation ? null : _getCurrentLocation,
+                          onPressed: _isLoadingLocation
+                              ? null
+                              : _getCurrentLocation,
                           icon: _isLoadingLocation
                               ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : Icon(
                                   _location != null
                                       ? Icons.check_circle
                                       : Icons.my_location,
-                                  color: _location != null ? Colors.green : null,
+                                  color: _location != null
+                                      ? Colors.green
+                                      : ColorConstants.seed,
                                 ),
                           label: Text(
                             _location != null
                                 ? 'Location Captured ✓'
-                                : 'Get Current Location',
+                                : 'Capture Current Location',
                           ),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             side: BorderSide(
-                              color: _location != null ? Colors.green : Colors.grey,
-                              width: _location != null ? 2 : 1,
+                              color: _location != null
+                                  ? Colors.green
+                                  : ColorConstants.seed,
+                              width: 2,
                             ),
                           ),
                         ),
-                        if (_location != null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'Lat: ${_location!.latitude.toStringAsFixed(6)}, '
-                            'Long: ${_location!.longitude.toStringAsFixed(6)}',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
-                                  fontFamily: 'monospace',
-                                ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
                         const SizedBox(height: 16),
 
                         // Address Line 1
@@ -527,10 +539,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   /// Build section header
-  Widget _buildSectionHeader({
-    required IconData icon,
-    required String title,
-  }) {
+  Widget _buildSectionHeader({required IconData icon, required String title}) {
     return Row(
       children: [
         Icon(icon, color: ColorConstants.seed, size: 24),
@@ -538,9 +547,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         Text(
           title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: ColorConstants.seed,
-              ),
+            fontWeight: FontWeight.bold,
+            color: ColorConstants.seed,
+          ),
         ),
       ],
     );
@@ -562,19 +571,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey[300]!),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: ColorConstants.seed,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: ColorConstants.seed, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

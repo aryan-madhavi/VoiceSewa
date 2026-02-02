@@ -82,10 +82,12 @@ class JobActions {
   JobActions(this._repository, this._ref);
 
   /// Create a new job
+  /// ✅ scheduledAt is when the client wants the job done (REQUIRED)
   Future<String> createJob({
     required Services serviceType,
     required String description,
     required Address address,
+    required DateTime scheduledAt, // ✅ REQUIRED: When client wants job done
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -93,12 +95,14 @@ class JobActions {
     }
 
     print('🆕 Creating job for user UID: ${user.uid}');
+    print('📅 Scheduled for: ${scheduledAt.toIso8601String()}');
 
     final jobId = await _repository.createJob(
       serviceType: serviceType,
       description: description,
       address: address,
-      clientUid: user.uid, // ✅ Using UID
+      clientUid: user.uid,
+      scheduledAt: scheduledAt, // ✅ Client sets when they want it done
     );
 
     // Invalidate caches to refresh UI

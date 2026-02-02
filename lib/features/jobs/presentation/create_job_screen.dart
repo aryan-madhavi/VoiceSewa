@@ -29,6 +29,7 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
 
   Services? _selectedService;
   Address? _selectedAddress;
+  DateTime? _scheduledDate; // ✅ When client wants the job done
   bool _isLoading = false;
   bool _showAddNewAddress = false;
 
@@ -49,12 +50,53 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
     super.dispose();
   }
 
+  // ✅ Date picker for when client wants the job done
+  Future<void> _selectScheduledDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate:
+          _scheduledDate ?? DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'When do you want this job done?',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: ColorConstants.seed,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _scheduledDate) {
+      setState(() {
+        _scheduledDate = picked;
+      });
+    }
+  }
+
   Future<void> _submitJob() async {
     if (!_formKey.currentState!.validate()) return;
+
     if (_selectedService == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please select a service')));
+      return;
+    }
+
+    if (_scheduledDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select when you want the job done'),
+        ),
+      );
       return;
     }
 
@@ -96,6 +138,7 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
         serviceType: _selectedService!,
         description: _descriptionController.text.trim(),
         address: addressToUse!,
+        scheduledAt: _scheduledDate!, // ✅ Client sets scheduled date
       );
 
       if (mounted) {
@@ -122,7 +165,6 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch the async provider properly
     final savedAddressesAsync = ref.watch(clientAddressesProvider);
 
     return Scaffold(
@@ -133,11 +175,7 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
       ),
       body: SafeArea(
         child: savedAddressesAsync.when(
-          // Loading state
-          loading: () => const Center(
-            child: CircularProgressIndicator(),
-          ),
-          // Error state
+          loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -147,15 +185,12 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                 Text('Error loading addresses: $error'),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {
-                    ref.invalidate(clientAddressesProvider);
-                  },
+                  onPressed: () => ref.invalidate(clientAddressesProvider),
                   child: const Text('Retry'),
                 ),
               ],
             ),
           ),
-          // Data loaded successfully
           data: (savedAddresses) => SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Form(
@@ -167,8 +202,8 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                   Text(
                     'Select Service',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<Services>(
@@ -199,27 +234,27 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                         ),
                       );
                     }).toList(),
-                    onChanged: (value) {
-                      setState(() => _selectedService = value);
-                    },
+                    onChanged: (value) =>
+                        setState(() => _selectedService = value),
                     validator: (value) =>
                         value == null ? 'Please select a service' : null,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
                   // Description
                   Text(
                     'Job Description',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _descriptionController,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      hintText: 'Describe what needs to be done...',
+                      hintText:
+                          'Describe your job requirements in detail... (min 10 characters)',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -236,60 +271,117 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Address Section Header with Toggle
+                  // ✅ Scheduled Date Selection (REQUIRED)
+                  Text(
+                    'When do you want this job done? *',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: _selectScheduledDate,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: _scheduledDate != null
+                              ? ColorConstants.seed
+                              : Colors.grey.shade400,
+                          width: _scheduledDate != null ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        color: _scheduledDate != null
+                            ? ColorConstants.seed.withOpacity(0.05)
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            color: _scheduledDate != null
+                                ? ColorConstants.seed
+                                : Colors.grey,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _scheduledDate != null
+                                  ? '${_scheduledDate!.day}/${_scheduledDate!.month}/${_scheduledDate!.year}'
+                                  : 'Tap to select date',
+                              style: TextStyle(
+                                color: _scheduledDate != null
+                                    ? Colors.black87
+                                    : Colors.grey,
+                                fontWeight: _scheduledDate != null
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          if (_scheduledDate != null)
+                            IconButton(
+                              icon: const Icon(Icons.clear, size: 20),
+                              onPressed: () =>
+                                  setState(() => _scheduledDate = null),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Workers will see this date and confirm availability in their quotations.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Address Section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Job Address',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        'Job Location',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       if (savedAddresses.isNotEmpty)
-                        SegmentedButton<bool>(
-                          segments: const [
-                            ButtonSegment(
-                              value: false,
-                              label: Text('Saved'),
-                              icon: Icon(Icons.bookmark, size: 16),
-                            ),
-                            ButtonSegment(
-                              value: true,
-                              label: Text('New'),
-                              icon: Icon(Icons.add, size: 16),
-                            ),
-                          ],
-                          selected: {_showAddNewAddress},
-                          onSelectionChanged: (Set<bool> selected) {
+                        TextButton.icon(
+                          onPressed: () {
                             setState(() {
-                              _showAddNewAddress = selected.first;
-                              if (_showAddNewAddress) {
-                                _selectedAddress = null;
-                              }
+                              _showAddNewAddress = !_showAddNewAddress;
+                              if (_showAddNewAddress) _selectedAddress = null;
                             });
                           },
+                          icon: Icon(
+                            _showAddNewAddress ? Icons.list : Icons.add,
+                            size: 18,
+                          ),
+                          label: Text(
+                            _showAddNewAddress ? 'Select Saved' : 'Add New',
+                            style: const TextStyle(fontSize: 13),
+                          ),
                         ),
                     ],
                   ),
                   const SizedBox(height: 8),
 
-                  // Show saved addresses dropdown OR new address form
                   if (!_showAddNewAddress && savedAddresses.isNotEmpty) ...[
-                    // Dropdown for saved addresses
+                    // Saved addresses dropdown
                     DropdownButtonFormField<Address>(
                       isExpanded: true,
                       value: _selectedAddress,
-                      isDense: true,
-                      menuMaxHeight: 300,
                       decoration: InputDecoration(
                         labelText: 'Select Address',
                         prefixIcon: const Icon(Icons.location_on),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -297,79 +389,27 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                       items: savedAddresses.map((address) {
                         return DropdownMenuItem(
                           value: address,
-                          child: Row(
-                            children: [
-                              const Icon(Icons.location_on, size: 18, color: Colors.grey),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  '${address.line1}, ${address.city}',
-                                  style: const TextStyle(fontSize: 14),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            '${address.line1}, ${address.city}',
+                            overflow: TextOverflow.ellipsis,
                           ),
                         );
                       }).toList(),
-                      onChanged: (value) {
-                        setState(() => _selectedAddress = value);
-                      },
+                      onChanged: (value) =>
+                          setState(() => _selectedAddress = value),
                     ),
-
-                    // Show selected address details
                     if (_selectedAddress != null) ...[
                       const SizedBox(height: 12),
                       Card(
                         color: Colors.green.shade50,
                         child: Padding(
                           padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.location_on,
-                                    size: 16,
-                                    color: Colors.green.shade700,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Text(
-                                    'Selected Address',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _selectedAddress!.fullAddress,
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ],
-                          ),
+                          child: Text(_selectedAddress!.fullAddress),
                         ),
                       ),
                     ],
                   ] else ...[
                     // New address form
-                    if (savedAddresses.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'No saved addresses. Please add one below.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-
                     TextFormField(
                       controller: _line1Controller,
                       decoration: InputDecoration(
@@ -381,31 +421,26 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-
                     TextFormField(
                       controller: _line2Controller,
                       decoration: InputDecoration(
                         labelText: 'Address Line 2',
-                        prefixIcon: const Icon(Icons.home_outlined),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
                     const SizedBox(height: 12),
-
                     TextFormField(
                       controller: _landmarkController,
                       decoration: InputDecoration(
                         labelText: 'Landmark',
-                        prefixIcon: const Icon(Icons.place),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
                     const SizedBox(height: 12),
-
                     Row(
                       children: [
                         Expanded(
@@ -414,7 +449,6 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               labelText: 'Pincode *',
-                              prefixIcon: const Icon(Icons.pin_drop),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -427,7 +461,6 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                             controller: _cityController,
                             decoration: InputDecoration(
                               labelText: 'City *',
-                              prefixIcon: const Icon(Icons.location_city),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),

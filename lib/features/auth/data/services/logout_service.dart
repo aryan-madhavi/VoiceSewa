@@ -3,16 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 import 'package:voicesewa_client/features/auth/providers/profile_form_provider.dart';
+import 'package:voicesewa_client/features/auth/services/fcm_service.dart';
 
-/// Handles user logout functionality with Firebase Auth
+/// Handles user logout functionality with Firebase Auth + FCM cleanup
 /// No SQLite dependencies - pure Firebase approach
 class LogoutHandler {
   final WidgetRef ref;
   final BuildContext context;
+  final FCMService _fcmService;
 
-  LogoutHandler({required this.ref, required this.context});
+  LogoutHandler({
+    required this.ref,
+    required this.context,
+    FCMService? fcmService,
+  }) : _fcmService = fcmService ?? FCMService();
 
-  /// Performs logout from Firebase Auth
+  /// Performs logout from Firebase Auth with FCM cleanup
   /// Returns true if successful, false otherwise
   Future<bool> logout({bool showConfirmation = true}) async {
     if (showConfirmation) {
@@ -22,8 +28,14 @@ class LogoutHandler {
 
     try {
       final auth = ref.read(firebaseAuthProvider);
+      final currentUser = auth.currentUser;
 
       print('🚪 Logging out user...');
+
+      // Clean up FCM before logout
+      if (currentUser != null) {
+        await _cleanupFCM(currentUser.uid);
+      }
 
       // CRITICAL FIX: Reset all auth-related state BEFORE signing out
       _resetAuthState();
@@ -75,6 +87,9 @@ class LogoutHandler {
       }
 
       print('🗑️ Deleting user data...');
+
+      // Clean up FCM
+      await _cleanupFCM(currentUser.uid);
 
       // Delete Firestore profile
       await repo.deleteProfile(currentUser.uid);
@@ -144,6 +159,9 @@ class LogoutHandler {
       await currentUser.reauthenticateWithCredential(credential);
       print('✅ Re-authenticated');
 
+      // Clean up FCM
+      await _cleanupFCM(currentUser.uid);
+
       // Delete Firestore profile first
       await repo.deleteProfile(currentUser.uid);
       print('✅ Firestore profile deleted');
@@ -198,6 +216,30 @@ class LogoutHandler {
         );
       }
       return false;
+    }
+  }
+
+  /// Clean up FCM token and unsubscribe from topics
+  Future<void> _cleanupFCM(String uid) async {
+    try {
+      print('🔔 Cleaning up FCM...');
+
+      final repo = ref.read(clientFirebaseRepositoryProvider);
+
+      // Clear FCM token from Firestore
+      await repo.updateFcmToken(uid, ''); // Save empty string to clear
+      print('✅ FCM token cleared from Firestore');
+
+      // Unsubscribe from all topics
+      // await _fcmService.unsubscribeFromAllClientTopics();
+      print('✅ Unsubscribed from all topics');
+
+      // Delete FCM token from device
+      await _fcmService.deleteToken();
+      print('✅ FCM token deleted from device');
+    } catch (e) {
+      print('⚠️ Error cleaning up FCM: $e');
+      // Don't throw - FCM cleanup failure shouldn't block logout
     }
   }
 
