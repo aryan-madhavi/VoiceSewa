@@ -134,10 +134,12 @@ class _MyRequestsPageState extends ConsumerState<MyRequestsPage>
 
     return Scaffold(
       backgroundColor: ColorConstants.scaffold,
-      appBar: canPop ? AppBar(
-        title: const Text('My Requests'),
-        backgroundColor: ColorConstants.appBar,
-      ): null,
+      appBar: canPop
+          ? AppBar(
+              title: const Text('My Requests'),
+              backgroundColor: ColorConstants.appBar,
+            )
+          : null,
       body: jobsAsync.when(
         data: (allJobs) {
           // Separate active and completed jobs
@@ -358,12 +360,32 @@ class _DynamicJobFilterBar extends ConsumerWidget {
   }
 }
 
-// ==================== JOB CARD (MATCHING job_card.dart DESIGN) ====================
+// ==================== JOB CARD (WITH CONDITIONAL BUTTONS & AMOUNT) ====================
 
 class _JobCard extends StatelessWidget {
   final Job job;
 
   const _JobCard({required this.job});
+
+  // ✅ Check if amount should be displayed (only for jobs with accepted quotation)
+  bool get _shouldShowAmount {
+    return job.isScheduled || job.isInProgress || job.isCompleted;
+  }
+
+  // ✅ Check if rating row should be displayed
+  bool get _shouldShowRating {
+    return job.isScheduled || job.isInProgress || job.isCompleted;
+  }
+
+  // ✅ Get amount to display
+  String get _displayAmount {
+    // TODO: Fetch actual cost from finalized quotation
+    // For now, return placeholder
+    if (_shouldShowAmount && job.finalizedQuotationId != null) {
+      return '2500'; // Placeholder - will be fetched from quotation
+    }
+    return '—';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -456,91 +478,94 @@ class _JobCard extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            // Your rating and amount
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.star, size: 16, color: Colors.amber),
-                    SizedBox(width: 4),
-                    Text(
-                      'Your Rating: —',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 13,
+            // ✅ Rating and amount - Only show for scheduled/in_progress/completed
+            if (_shouldShowRating)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.star, size: 16, color: Colors.amber),
+                      SizedBox(width: 4),
+                      Text(
+                        'Your Rating: —',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                Text(
-                  '₹${_getMockAmount(job)}',
-                  style: const TextStyle(
-                    color: Colors.green,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
+                    ],
                   ),
-                ),
-              ],
-            ),
+                  Text(
+                    '₹$_displayAmount',
+                    style: TextStyle(
+                      color: _shouldShowAmount ? Colors.green : Colors.grey,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
 
             const Divider(height: 20, color: Colors.grey),
 
-            // Action buttons
+            // ✅ Action buttons - Conditional based on status
             Center(
               child: Wrap(
                 alignment: WrapAlignment.spaceAround,
                 spacing: 8.0,
                 runSpacing: 0.0,
                 children: [
-                  // Book Again button
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CreateJobScreen(
-                            preselectedService: job.serviceType,
+                  // ✅ Book Again - Only show for completed/cancelled
+                  if (job.isCompleted || job.isCancelled)
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CreateJobScreen(
+                              preselectedService: job.serviceType,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.refresh, size: 16),
-                    label: const Text(
-                      'Book Again',
-                      style: TextStyle(fontSize: 13),
+                        );
+                      },
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text(
+                        'Book Again',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: ColorConstants.seed,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        minimumSize: const Size(0, 36),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                     ),
-                    style: TextButton.styleFrom(
-                      foregroundColor: ColorConstants.seed,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      minimumSize: const Size(0, 36),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
 
-                  // Invoice button
-                  TextButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Invoice download coming soon'),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.download, size: 16),
-                    label: const Text(
-                      'Invoice',
-                      style: TextStyle(fontSize: 13),
+                  // ✅ Invoice - Only show for completed (NOT for cancelled)
+                  if (job.isCompleted)
+                    TextButton.icon(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Invoice download coming soon'),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.download, size: 16),
+                      label: const Text(
+                        'Invoice',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.black87,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        minimumSize: const Size(0, 36),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                     ),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.black87,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      minimumSize: const Size(0, 36),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
 
-                  // Details button
+                  // ✅ Details - Always visible
                   TextButton.icon(
                     onPressed: () {
                       Navigator.push(
@@ -569,11 +594,6 @@ class _JobCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _getMockAmount(Job job) {
-    // Mock amounts for demo - replace with actual amount from job
-    return '1000';
   }
 }
 
