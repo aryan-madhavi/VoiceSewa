@@ -95,6 +95,8 @@ jobs - collection
       quo-uuid - document
       {
         worker_uid: string,
+        worker_name: string,
+        wroker_rating: number,
         estimated_cost: string,
         estimated_time: string,
         description: string,
