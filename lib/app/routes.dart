@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/widgets/feedback/coming_soon_page.dart';
 import 'package:voicesewa_client/features/auth/presentation/profile_form_screen.dart';
-import 'package:voicesewa_client/features/history/presentation/requests_page.dart';
 import 'package:voicesewa_client/features/home/presentation/home_page.dart';
 import 'package:voicesewa_client/features/jobs/presentation/book_again_screen.dart';
 import 'package:voicesewa_client/features/jobs/presentation/create_job_screen.dart';
-import 'package:voicesewa_client/features/jobs/presentation/my_request_screen.dart';
+import 'package:voicesewa_client/features/history/presentation/my_request_screen.dart';
 import 'package:voicesewa_client/features/search/presentation/workers_page.dart';
 import 'package:voicesewa_client/features/settings/presentation/settings_page.dart';
 import 'package:voicesewa_client/features/settings/presentation/support_page.dart';
@@ -36,7 +35,6 @@ class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
     RoutePaths.home: (context) => const HomePage(),
     RoutePaths.search: (context) => const SuggestedWorkersPage(),
-    RoutePaths.history: (context) => const RequestPage(),
     RoutePaths.settings: (context) => const SettingsPage(),
     RoutePaths.support: (context) => const SupportPage(),
     RoutePaths.voicebot: (context) => const VoiceBotPage(),

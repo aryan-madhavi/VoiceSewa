@@ -1,5 +1,5 @@
 import 'package:voicesewa_client/features/jobs/firebase/job_firebase_service.dart';
-import 'package:voicesewa_client/features/jobs/firebase/quotation_firebase_service.dart';
+import 'package:voicesewa_client/features/quotations/firebase/quotation_firebase_service.dart';
 import 'package:voicesewa_client/shared/models/quotation_model.dart';
 
 /// Repository for quotation operations with business logic

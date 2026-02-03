@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
 import 'package:voicesewa_client/shared/models/quotation_model.dart';
-import 'package:voicesewa_client/features/jobs/statusQueue/quotation_status_data.dart';
+import 'package:voicesewa_client/features/quotations/statusQueue/quotation_status_data.dart';
 
 /// Worker info header with avatar, name, rating, and status
 class QuotationWorkerHeader extends StatelessWidget {

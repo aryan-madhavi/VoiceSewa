@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/features/jobs/firebase/quotation_firebase_service.dart';
+import 'package:voicesewa_client/features/quotations/firebase/quotation_firebase_service.dart';
 import 'package:voicesewa_client/shared/models/quotation_model.dart';
 import 'package:voicesewa_client/features/jobs/providers/job_provider.dart';
-import 'package:voicesewa_client/features/jobs/repository/quotation_repository.dart';
+import 'package:voicesewa_client/features/quotations/repository/quotation_repository.dart';
 
 // ==================== SERVICE & REPOSITORY PROVIDERS ====================
 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
-import 'package:voicesewa_client/features/jobs/presentation/widgets/quotation_widgets.dart';
+import 'package:voicesewa_client/features/quotations/prsentation/widgets/quotation_widgets.dart';
 import 'package:voicesewa_client/shared/models/quotation_model.dart';
-import 'package:voicesewa_client/features/jobs/providers/quotation_provider.dart';
+import 'package:voicesewa_client/features/quotations/providers/quotation_provider.dart';
 
 class QuotationsScreen extends ConsumerWidget {
   final String jobId;

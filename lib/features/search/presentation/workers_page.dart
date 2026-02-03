@@ -230,7 +230,7 @@ class _SuggestedWorkersPageState extends ConsumerState<SuggestedWorkersPage> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Suggested Workers'), elevation: 0),
+      // appBar: AppBar(title: const Text('Suggested Workers'), elevation: 0),
       body: Column(
         children: [
           // 🗺️ Google Map View (Top Half)

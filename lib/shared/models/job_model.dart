@@ -61,6 +61,7 @@ class Job {
   // These are fetched from the quotation subcollection when needed
   final String? workerName;
   final double? workerRating;
+  final String? finalizedQuotationCost; // Cost from accepted quotation
 
   Job({
     required this.id,
@@ -70,10 +71,11 @@ class Job {
     required this.clientUid,
     required this.createdAt,
     required this.status,
-    this.scheduledAt, // ✅ Client sets this when creating job
-    this.finalizedQuotationId, // ❌ null during creation, set when accepting quotation
+    this.scheduledAt,
+    this.finalizedQuotationId,
     this.workerName,
     this.workerRating,
+    this.finalizedQuotationCost,
   });
 
   /// Convert to Firestore Map - only schema fields
@@ -133,6 +135,7 @@ class Job {
       // Worker info not in job document - must be fetched separately
       workerName: null,
       workerRating: null,
+      finalizedQuotationCost: null,
     );
   }
 
@@ -253,6 +256,7 @@ class Job {
     String? finalizedQuotationId,
     String? workerName,
     double? workerRating,
+    String? finalizedQuotationCost,
   }) {
     return Job(
       id: id ?? this.id,
@@ -266,6 +270,8 @@ class Job {
       finalizedQuotationId: finalizedQuotationId ?? this.finalizedQuotationId,
       workerName: workerName ?? this.workerName,
       workerRating: workerRating ?? this.workerRating,
+      finalizedQuotationCost:
+          finalizedQuotationCost ?? this.finalizedQuotationCost,
     );
   }
 
