@@ -89,7 +89,10 @@ jobs - collection
       created_at: timestamp,
       status: string,
       finalized_quotation: reference<quo-uuid>,
+      finalized_quotation_amount: number,
       scheduled_at: timestamp,
+      worker_name: String,
+      worker_rating: number,
     }
     quotations - collection
       quo-uuid - document
