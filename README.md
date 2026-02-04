@@ -1,10 +1,8 @@
-
-# VoiceSewa 
+# VoiceSewa
 
 Multilingual Voice-Assisted Job Connection Platform for Blue-Collar Services
 
 ## API Documentation
-
 
 **[VoiceSewa API Documentation](https://docs.google.com/document/d/1rFZrZsstU4p5H9iGZwPMKSOur0DzXBaIUGbHPFCjgMI/edit?usp=sharing)**
 
@@ -89,12 +87,17 @@ jobs - collection
       created_at: timestamp,
       status: string,
       finalized_quotation: reference<quo-uuid>,
+      finalized_quotation_amount: number,
       scheduled_at: timestamp,
+      worker_name: String,
+      worker_rating: number,
     }
     quotations - collection
       quo-uuid - document
       {
         worker_uid: string,
+        worker_name: string,
+        wroker_rating: number,
         estimated_cost: string,
         estimated_time: string,
         description: string,
