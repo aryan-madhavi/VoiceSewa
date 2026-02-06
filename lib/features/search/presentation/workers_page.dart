@@ -158,56 +158,59 @@ class _SuggestedWorkersPageState extends ConsumerState<SuggestedWorkersPage> {
           builder: (context, ref, _) {
             final selectedProfession = ref.watch(selectedProfessionProvider);
 
-            return Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Filter by Profession',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+            return SingleChildScrollView(
+              physics: ScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Filter by Profession',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  // All Services option
-                  ListTile(
-                    leading: const Icon(Icons.select_all),
-                    title: const Text('All Services'),
-                    trailing: selectedProfession == null
-                        ? const Icon(Icons.check, color: ColorConstants.seed)
-                        : null,
-                    onTap: () {
-                      ref.read(selectedProfessionProvider.notifier).state =
-                          null;
-                      Navigator.pop(context);
-                    },
-                  ),
-                  const Divider(),
-                  // Individual services
-                  ...Services.values.map((service) {
-                    final isSelected = selectedProfession == service;
-                    final serviceData = ServicesData.services[service]!;
-                    final color = serviceData[0] as Color;
-                    final icon = serviceData[1] as IconData;
-                    final label = serviceData[2] as String;
-
-                    return ListTile(
-                      leading: Icon(icon, color: color),
-                      title: Text(label),
-                      trailing: isSelected
+                    const SizedBox(height: 16),
+                    // All Services option
+                    ListTile(
+                      leading: const Icon(Icons.select_all),
+                      title: const Text('All Services'),
+                      trailing: selectedProfession == null
                           ? const Icon(Icons.check, color: ColorConstants.seed)
                           : null,
                       onTap: () {
                         ref.read(selectedProfessionProvider.notifier).state =
-                            service;
+                            null;
                         Navigator.pop(context);
                       },
-                    );
-                  }).toList(),
-                  const SizedBox(height: 20),
-                ],
+                    ),
+                    const Divider(),
+                    // Individual services
+                    ...Services.values.map((service) {
+                      final isSelected = selectedProfession == service;
+                      final serviceData = ServicesData.services[service]!;
+                      final color = serviceData[0] as Color;
+                      final icon = serviceData[1] as IconData;
+                      final label = serviceData[2] as String;
+              
+                      return ListTile(
+                        leading: Icon(icon, color: color),
+                        title: Text(label),
+                        trailing: isSelected
+                            ? const Icon(Icons.check, color: ColorConstants.seed)
+                            : null,
+                        onTap: () {
+                          ref.read(selectedProfessionProvider.notifier).state =
+                              service;
+                          Navigator.pop(context);
+                        },
+                      );
+                    }).toList(),
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             );
           },
