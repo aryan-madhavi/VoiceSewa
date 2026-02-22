@@ -82,7 +82,7 @@ jobs - collection
       },
       client_uid: string,
       created_at: timestamp,
-      status: string,
+      status: "requested" | "quoted" | "scheduled" | "inProgress" | "completed" | "cancelled" | "rescheduled",
       finalized_quotation: reference<quo-uuid>,
       finalized_quotation_amount: number,
       scheduled_at: timestamp,
