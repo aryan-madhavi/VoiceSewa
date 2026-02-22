@@ -1,167 +1,246 @@
 import 'package:flutter/material.dart';
+import 'package:voicesewa_worker/core/constants/color_constants.dart';
+import 'package:voicesewa_worker/core/constants/helper_function.dart';
+import 'package:voicesewa_worker/features/jobs/presentation/job_details_page.dart';
+import 'package:voicesewa_worker/shared/models/job_model.dart';
 
-import '../../../../core/constants/color_constants.dart';
-import '../../../../core/constants/helper_function.dart';
-import '../../../../core/constants/static_data.dart';
-import '../../../../core/extensions/context_extensions.dart';
+enum JobTabType { incoming, ongoing, completed }
 
 class MyJobCard extends StatelessWidget {
-  final Job job;
+  final JobModel job;
+  final JobTabType tabType;
 
-  const MyJobCard({super.key, required this.job});
+  const MyJobCard({super.key, required this.job, required this.tabType});
 
   @override
   Widget build(BuildContext context) {
-    Color statusColor;
-    String statusText;
-    switch (job.status){
-      case JobStatus.ongoing:
-        statusColor = ColorConstants.primaryBlue;
-        statusText = context.loc.ongoing;  //"Ongoing";
-      case JobStatus.pending:
-        statusColor = Colors.orange;
-        statusText = context.loc.pending;//"Pending";
-      case JobStatus.completed:
-        statusColor = Colors.green;
-        statusText = context.loc.completed; //"Completed";
-      break;
-    }
+    final color = job.statusColor;
 
-    return Card(
-      elevation: 3,
-      shadowColor: Colors.black12,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(22, 16, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      job.title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: ColorConstants.textDark,
-                      ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4,),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        statusText,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: statusColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 4,),
-
-                Text(
-                  "${context.loc.client}: ${job.clientName}",
-                  style: const TextStyle(
-                    color: ColorConstants.textGrey,
-                    fontSize: 13,
-                  ),
-                ),
-
-                const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(height: 1),
-                ),
-
-                myJobBuildIconText(Icons.location_on_outlined, job.location),
-
-                const SizedBox(height: 8,),
-
-                myJobBuildIconText(Icons.access_time, job.time),
-
-                const SizedBox(height: 8,),
-
-                myJobBuildIconText(Icons.payment_outlined, job.price, isBold: true),
-
-                const SizedBox(height: 20,),
-
-                if (job.status == JobStatus.completed)
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                        onPressed: (){},
-                        child: Text(
-                          context.loc.viewReceipt, // "View Receipt"
-                        ),
-                    ),
-                  )
-                else ...[
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Card(
+        elevation: 2,
+        shadowColor: Colors.black12,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 16, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Header row ───────────────────────────────────────────
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.call, size: 18,),
-                            onPressed: (){},
-                            label: Text(
-                              context.loc.call, // "Call"
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: ColorConstants.textDark,
-                              padding: const EdgeInsets.symmetric(vertical: 12,),
-                            ),
-                          ),
+                      // Service icon + name
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: job.serviceColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(job.serviceIcon, size: 18, color: job.serviceColor),
                       ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              job.serviceName,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: ColorConstants.textDark,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Job #${job.jobId.substring(0, 6).toUpperCase()}',
+                              style: const TextStyle(
+                                color: ColorConstants.textGrey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _StatusBadge(label: job.statusLabel, color: color),
                     ],
                   ),
 
-                  if (job.status == JobStatus.ongoing) ...[
-                    const SizedBox(height: 12,),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                          onPressed: (){},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00BFA5),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            context.loc.markAsCompleted, // "Mark As Completed",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                          ),
-                      ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: Divider(height: 1),
+                  ),
+
+                  // ── Info rows ─────────────────────────────────────────────
+                  myJobBuildIconText(
+                    Icons.location_on_outlined,
+                    job.address.displayAddress.isNotEmpty
+                        ? job.address.displayAddress
+                        : 'Location not specified',
+                  ),
+                  const SizedBox(height: 6),
+                  myJobBuildIconText(
+                    Icons.calendar_today_outlined,
+                    job.createdAt != null
+                        ? _formatDate(job.createdAt!)
+                        : 'Date unknown',
+                  ),
+                  if (job.finalizedQuotationAmount != null) ...[
+                    const SizedBox(height: 6),
+                    myJobBuildIconText(
+                      Icons.payments_outlined,
+                      '₹${job.finalizedQuotationAmount!.toStringAsFixed(0)}',
+                      isBold: true,
                     ),
                   ],
+
+                  const SizedBox(height: 14),
+
+                  // ── Action button ─────────────────────────────────────────
+                  _buildAction(context),
                 ],
-              ],
+              ),
             ),
+
+            // ── Left accent bar ───────────────────────────────────────────
+            Positioned(
+              left: 0, top: 0, bottom: 0,
+              width: 5,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAction(BuildContext context) {
+    switch (tabType) {
+      case JobTabType.incoming:
+      case JobTabType.ongoing:
+        return _ActionButton(
+          label: 'View Details',
+          icon: Icons.remove_red_eye_outlined,
+          color: ColorConstants.primaryBlue,
+          onTap: () => _openDetails(context),
+        );
+      case JobTabType.completed:
+        return _ActionButton(
+          label: 'View Receipt',
+          icon: Icons.receipt_long_outlined,
+          color: Colors.green,
+          outlined: true,
+          onTap: () => _openDetails(context),
+        );
+    }
+  }
+
+  void _openDetails(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => JobDetailPage(job: job, tabType: tabType),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    final now  = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inDays == 0) return 'Today';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7)  return '${diff.inDays} days ago';
+    const m = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${dt.day} ${m[dt.month]}, ${dt.year}';
+  }
+}
+
+// ── Shared widgets ─────────────────────────────────────────────────────────
+
+class _StatusBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _StatusBadge({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final bool outlined;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    this.outlined = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(8));
+    final padding = const EdgeInsets.symmetric(vertical: 10);
+
+    if (outlined) {
+      return SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          icon: Icon(icon, size: 16),
+          label: Text(label),
+          onPressed: onTap,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: color,
+            side: BorderSide(color: color),
+            padding: padding,
+            shape: shape,
           ),
-          
-          Positioned(
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: 6,
-            child: Container(color: statusColor,),
-          )
-        ],
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: Icon(icon, size: 16),
+        label: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: padding,
+          elevation: 0,
+          shape: shape,
+        ),
       ),
     );
   }

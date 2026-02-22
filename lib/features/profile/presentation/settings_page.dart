@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_worker/core/database/app_database.dart';
 import 'package:voicesewa_worker/features/auth/data/services/logout_service.dart';
 import '../../../core/extensions/context_extensions.dart';
 import 'widgets/preferences_section.dart';
 import 'widgets/account_section.dart';
-import 'widgets/sync_section.dart';
 import 'widgets/session_section.dart';
 import 'widgets/danger_zone_section.dart';
 
@@ -69,7 +67,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final userId = WorkerDatabase.currentUserId;
+    // final userId = WorkerDatabase.currentUserId;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -102,7 +100,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           const SizedBox(height: 30),
 
           // Sync Section
-          if (userId != null) SyncSection(userId: userId),
+          // if (userId != null) SyncSection(userId: userId),
 
           const SizedBox(height: 30),
 

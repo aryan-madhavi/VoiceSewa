@@ -1,9 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_worker/features/profile/data/repositories/worker_profile_repository.dart';
 
 class FCMService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  final WorkerProfileRepository _profileRepo;
+
+  FCMService(this._profileRepo);
 
   // Get FCM token
   Future<String?> getToken() async {
@@ -18,6 +23,55 @@ class FCMService {
     } catch (e) {
       print('Error getting FCM token: $e');
       return null;
+    }
+  }
+
+  /// Request notification permission, fetch the FCM token, save it to
+  /// Firestore under the worker's document, and listen for token rotations.
+  Future<void> requestPermissionAndSave(String uid) async {
+    try {
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
+      print('🔔 Notification permission: ${settings.authorizationStatus}');
+
+      final granted =
+          settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional;
+
+      if (!granted) {
+        print('⚠️ Notification permission not granted — skipping token save');
+        return;
+      }
+
+      final token = await _messaging.getToken();
+      if (token != null) {
+        await _profileRepo.updateFcmToken(uid, token);
+        print('✅ FCM token saved for uid: $uid');
+      }
+
+      // Keep token fresh — FCM rotates tokens occasionally
+      _messaging.onTokenRefresh.listen((newToken) async {
+        print('🔄 FCM token refreshed — updating Firestore');
+        await _profileRepo.updateFcmToken(uid, newToken);
+      });
+    } catch (e) {
+      print('❌ FCM requestPermissionAndSave error: $e');
+    }
+  }
+
+  /// Clear the FCM token from Firestore on logout so other users
+  /// on the same device don't receive this worker's notifications.
+  Future<void> clearToken(String uid) async {
+    try {
+      await _profileRepo.updateFcmToken(uid, '');
+      await _messaging.deleteToken();
+      print('🧹 FCM token cleared for uid: $uid');
+    } catch (e) {
+      print('❌ FCM clearToken error: $e');
     }
   }
 
@@ -220,7 +274,10 @@ class FCMService {
 }
 
 // Provider for FCM Service
-final fcmServiceProvider = Provider<FCMService>((ref) => FCMService());
+final fcmServiceProvider = Provider<FCMService>((ref) {
+  final profileRepo = WorkerProfileRepository();
+  return FCMService(profileRepo);
+});
 
 // Provider for FCM token
 final fcmTokenProvider = FutureProvider<String?>((ref) async {

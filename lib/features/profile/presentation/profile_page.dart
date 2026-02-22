@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_worker/features/auth/provider/logout_provider.dart';
+import 'package:voicesewa_worker/features/auth/providers/logout_provider.dart';
 import 'package:voicesewa_worker/features/profile/presentation/bank_details_page.dart';
 import 'package:voicesewa_worker/features/profile/presentation/settings_page.dart';
 import 'package:voicesewa_worker/features/profile/presentation/support_and_help_page.dart';

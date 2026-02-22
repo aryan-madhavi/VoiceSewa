@@ -1,36 +1,27 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:voicesewa_worker/core/database/app_database.dart';
-import 'package:voicesewa_worker/core/providers/database_provider.dart';
-import 'package:voicesewa_worker/features/auth/data/database/auth_repository.dart';
-import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
+import 'package:voicesewa_worker/core/services/fcm_service.dart';
+import 'package:voicesewa_worker/features/auth/data/repositories/auth_repository.dart';
 
 enum SessionStatus { loading, loggedIn, loggedOut }
 
 class SessionState {
   final SessionStatus status;
-  final Map<String, dynamic>? user;
+  final User? user;
   final String? errorMessage;
-  final bool isNewUser;
 
-  SessionState({
-    required this.status,
-    this.user,
-    this.errorMessage,
-    this.isNewUser = false,
-  });
+  const SessionState({required this.status, this.user, this.errorMessage});
 
   SessionState copyWith({
     SessionStatus? status,
-    Map<String, dynamic>? user,
+    User? user,
     String? errorMessage,
-    bool? isNewUser,
   }) {
     return SessionState(
       status: status ?? this.status,
       user: user ?? this.user,
-      errorMessage: errorMessage ?? this.errorMessage,
-      isNewUser: isNewUser ?? this.isNewUser,
+      errorMessage: errorMessage,
     );
   }
 }
@@ -40,45 +31,26 @@ class SessionNotifier extends StateNotifier<SessionState> {
   final Ref _ref;
 
   SessionNotifier(this._authRepository, this._ref)
-    : super(SessionState(status: SessionStatus.loading)) {
-    _checkSession();
+    : super(const SessionState(status: SessionStatus.loading)) {
+    _init();
   }
 
-  Future<void> _checkSession() async {
-    print('🔍 Checking user session...');
-
-    final isLoggedIn = await _authRepository.isUserLoggedIn();
-
-    if (isLoggedIn) {
-      final user = await _authRepository.getCurrentUser();
-
-      // --- FIX START: Initialize Database on Auto-Login ---
-      if (user != null && user['email'] != null) {
-        print(
-          '🗄️ Initializing database for existing session: ${user['email']}',
-        );
-        WorkerDatabase.instanceForUser(user['email']);
-        await WorkerDatabase.instance.database; // Ensure DB is ready
+  void _init() {
+    // Firebase Auth persists sessions natively.
+    // Listen to auth state — fires immediately with current user or null.
+    _authRepository.authStateChanges.listen((user) {
+      if (user != null) {
+        print('✅ Firebase session active: ${user.email}');
+        state = SessionState(status: SessionStatus.loggedIn, user: user);
+      } else {
+        print('⚠️ No active Firebase session');
+        state = const SessionState(status: SessionStatus.loggedOut);
       }
-      // --- FIX END ---
-
-      print('✅ User is logged in: ${user?['email']}');
-
-      // This is an existing session (auto-login), so NOT a new user
-      state = SessionState(
-        status: SessionStatus.loggedIn,
-        user: user,
-        isNewUser: false, // Returning user
-      );
-    } else {
-      print('⚠️ No active session found');
-      state = SessionState(status: SessionStatus.loggedOut);
-    }
+    });
   }
 
   Future<void> login(String email, String password) async {
-    print('🔑 Attempting login for: $email');
-    state = state.copyWith(status: SessionStatus.loading);
+    state = state.copyWith(status: SessionStatus.loading, errorMessage: null);
 
     final result = await _authRepository.login(
       email: email,
@@ -86,21 +58,10 @@ class SessionNotifier extends StateNotifier<SessionState> {
     );
 
     if (result.success) {
-      // --- FIX START: Initialize Database on Login ---
-      print('🗄️ Initializing database for user: $email');
-      WorkerDatabase.instanceForUser(email);
-      await WorkerDatabase.instance.database; // Ensure DB is ready
-      // --- FIX END ---
-
-      final user = await _authRepository.getCurrentUser();
-      print('✅ Login successful for: ${user?['email']}');
-
-      // Login = returning user, NOT new
-      state = SessionState(
-        status: SessionStatus.loggedIn,
-        user: user,
-        isNewUser: false, // Returning user logging in
-      );
+      print('✅ Login successful: ${result.user?.email}');
+      // authStateChanges listener will update state automatically,
+      // but we set it here too for immediate UI response.
+      state = SessionState(status: SessionStatus.loggedIn, user: result.user);
     } else {
       print('❌ Login failed: ${result.message}');
       state = SessionState(
@@ -111,8 +72,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
   }
 
   Future<void> register(String email, String username, String password) async {
-    print('📝 Attempting registration for: $email');
-    state = state.copyWith(status: SessionStatus.loading);
+    state = state.copyWith(status: SessionStatus.loading, errorMessage: null);
 
     final result = await _authRepository.register(
       email: email,
@@ -121,21 +81,8 @@ class SessionNotifier extends StateNotifier<SessionState> {
     );
 
     if (result.success) {
-      // --- FIX START: Initialize Database on Register ---
-      print('🗄️ Initializing database for new user: $email');
-      WorkerDatabase.instanceForUser(email);
-      await WorkerDatabase.instance.database; // Ensure DB is ready
-      // --- FIX END ---
-
-      final user = await _authRepository.getCurrentUser();
-      print('✅ Registration successful for: ${user?['email']}');
-
-      // Registration = NEW USER who needs to complete profile
-      state = SessionState(
-        status: SessionStatus.loggedIn,
-        user: user,
-        isNewUser: true, // 🔥 KEY FIX: This is a new user!
-      );
+      print('✅ Registration successful: ${result.user?.email}');
+      state = SessionState(status: SessionStatus.loggedIn, user: result.user);
     } else {
       print('❌ Registration failed: ${result.message}');
       state = SessionState(
@@ -146,28 +93,22 @@ class SessionNotifier extends StateNotifier<SessionState> {
   }
 
   Future<void> logout() async {
-    final userId = WorkerDatabase.currentUserId;
-    print('🚪 Logging out user: $userId');
+    print('🚪 Logging out...');
 
-    await _authRepository.logout();
-
-    if (userId != null) {
-      print('🧹 Cleaning up database for user: $userId');
-      await WorkerDatabase.closeUserDatabase(userId);
-      print('✅ Database closed successfully');
+    // Clear FCM token from Firestore before signing out
+    final uid = _authRepository.currentUser?.uid;
+    if (uid != null) {
+      await _ref.read(fcmServiceProvider).clearToken(uid);
     }
 
-    // Force Riverpod to forget the old database connection
-    _ref.invalidate(sqfliteDatabaseProvider);
-
-    // Also clear any cached profile data
-    _ref.invalidate(profileCompletionProvider);
-    _ref.invalidate(workerProfileProvider);
-
+    await _authRepository.logout();
+    // authStateChanges listener fires and sets loggedOut automatically.
+    state = const SessionState(status: SessionStatus.loggedOut);
     print('✅ Logout complete');
-    state = SessionState(status: SessionStatus.loggedOut);
   }
 }
+
+// ── Providers ──────────────────────────────────────────────────────────────
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
@@ -175,6 +116,6 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 
 final sessionNotifierProvider =
     StateNotifierProvider<SessionNotifier, SessionState>((ref) {
-      final authRepository = ref.watch(authRepositoryProvider);
-      return SessionNotifier(authRepository, ref);
+      final repo = ref.watch(authRepositoryProvider);
+      return SessionNotifier(repo, ref);
     });

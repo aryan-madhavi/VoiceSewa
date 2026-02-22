@@ -1,11 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:voicesewa_worker/core/constants/app_constants.dart';
-import 'package:voicesewa_worker/core/database/app_database.dart';
-import 'package:voicesewa_worker/core/database/tables/worker_profile_table.dart';
-import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 import 'package:voicesewa_worker/core/providers/language_provider.dart';
+import 'package:voicesewa_worker/features/auth/providers/profile_form_provider.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
+import 'package:voicesewa_worker/shared/data/service_data.dart';
+import 'package:voicesewa_worker/shared/models/worker_model.dart';
 
 class WorkerProfileFormPage extends ConsumerStatefulWidget {
   const WorkerProfileFormPage({super.key});
@@ -17,113 +21,176 @@ class WorkerProfileFormPage extends ConsumerStatefulWidget {
 
 class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
   final _formKey = GlobalKey<FormState>();
+
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _bioController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _pincodeController = TextEditingController();
 
   String? _selectedLanguage;
   String? _selectedSkillCategory;
   bool _isLoading = false;
+
+  GeoPoint? _geoPoint;
+  bool _isFetchingLocation = false;
+  String? _locationStatusMessage;
 
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
     _bioController.dispose();
+    _cityController.dispose();
+    _pincodeController.dispose();
     super.dispose();
   }
+
+  // ── Geolocation ───────────────────────────────────────────────────────────
+
+  Future<void> _detectLocation() async {
+    setState(() {
+      _isFetchingLocation = true;
+      _locationStatusMessage = null;
+    });
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(
+          () => _locationStatusMessage =
+              'Location services are disabled. Please enable them in settings.',
+        );
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(
+            () => _locationStatusMessage = 'Location permission denied.',
+          );
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        setState(
+          () => _locationStatusMessage =
+              'Location permission permanently denied. Please enable it in app settings.',
+        );
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      setState(() {
+        _geoPoint = GeoPoint(position.latitude, position.longitude);
+        _locationStatusMessage = '✅ Location captured';
+      });
+
+      // Reverse geocode to prefill city and pincode
+      try {
+        final placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+        if (placemarks.isNotEmpty && mounted) {
+          final place = placemarks.first;
+          final city = place.locality?.isNotEmpty == true
+              ? place.locality!
+              : (place.subAdministrativeArea ?? '');
+          final pincode = place.postalCode ?? '';
+          setState(() {
+            if (city.isNotEmpty) _cityController.text = city;
+            if (pincode.isNotEmpty) _pincodeController.text = pincode;
+          });
+        }
+      } catch (_) {
+        // Reverse geocoding failed — user can still fill manually
+      }
+    } catch (e) {
+      setState(() => _locationStatusMessage = 'Failed to get location: $e');
+    } finally {
+      if (mounted) setState(() => _isFetchingLocation = false);
+    }
+  }
+
+  // ── Submit ────────────────────────────────────────────────────────────────
 
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Get userId from WorkerDatabase (which gets it from FirebaseAuth)
-    final userId = WorkerDatabase.currentUserId;
-
-    if (userId == null || userId.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Error: User ID not found'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) {
+      _showSnackBar(
+        'Error: Not signed in. Please restart the app.',
+        Colors.red,
+      );
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      // Create profile object
-      final profile = WorkerProfile(
-        workerId: userId,
+      final worker = WorkerModel(
+        workerId: firebaseUser.uid,
         name: _nameController.text.trim(),
+        email: firebaseUser.email ?? '',
         phone: _phoneController.text.trim(),
-        language: _selectedLanguage!,
-        skillCategory: _selectedSkillCategory!,
         bio: _bioController.text.trim().isEmpty
             ? null
             : _bioController.text.trim(),
-        updatedAt: DateTime.now().millisecondsSinceEpoch,
+        skills: [_selectedSkillCategory!],
+        address: WorkerAddress(
+          location: _geoPoint,
+          city: _cityController.text.trim(),
+          pincode: _pincodeController.text.trim(),
+        ),
       );
 
-      // Save profile using the saveWorkerProfileProvider
       final saveProfile = ref.read(saveWorkerProfileProvider);
-      final success = await saveProfile(profile);
+      final success = await saveProfile(worker);
 
       if (!mounted) return;
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile created successfully! 🎉'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-
-        // Invalidate providers to trigger AppGate to re-check profile
-        ref.invalidate(profileCompletionProvider);
         ref.read(localeProvider.notifier).changeLanguage(_selectedLanguage!);
-
-
-        // Navigation will be handled automatically by AppGate
+        ref.read(profileCompletionProvider.notifier).markComplete();
+        _showSnackBar('Profile created successfully! 🎉', Colors.green);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to save profile. Please try again.'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        _showSnackBar('Failed to save profile. Please try again.', Colors.red);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (mounted) _showSnackBar('Error: ${e.toString()}', Colors.red);
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
-    final loc = context.loc;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: const Text('Complete Your Profile'),
-        automaticallyImplyLeading:
-            false, // Prevent back button on first-time setup
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0,
       ),
@@ -135,159 +202,316 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header
                 const Text(
                   'Welcome! 👋',
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Let\'s set up your worker profile to get started',
+                  "Let's set up your worker profile to get started",
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 32),
 
-                // Name Field
+                // ── Basic Info ──────────────────────────────────────────────
+                _sectionHeader('Basic Information', Icons.person_outline),
+                const SizedBox(height: 16),
+
                 TextFormField(
                   controller: _nameController,
                   enabled: !_isLoading,
-                  decoration: InputDecoration(
-                    labelText: 'Full Name',
-                    hintText: 'Enter your full name',
-                    prefixIcon: const Icon(Icons.person_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                  decoration: _inputDecoration(
+                    'Full Name',
+                    'Enter your full name',
+                    Icons.person_outline,
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty)
                       return 'Please enter your name';
-                    }
-                    if (value.trim().length < 2) {
+                    if (v.trim().length < 2)
                       return 'Name must be at least 2 characters';
-                    }
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                // Phone Field
                 TextFormField(
                   controller: _phoneController,
                   enabled: !_isLoading,
                   keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: 'Phone Number',
-                    hintText: 'Enter your phone number',
-                    prefixIcon: const Icon(Icons.phone_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                  decoration: _inputDecoration(
+                    'Phone Number',
+                    'Enter your phone number',
+                    Icons.phone_outlined,
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty)
                       return 'Please enter your phone number';
-                    }
-                    if (value.trim().length < 10) {
+                    if (v.trim().length < 10)
                       return 'Please enter a valid phone number';
-                    }
                     return null;
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                // Language Dropdown
                 DropdownButtonFormField<String>(
                   value: _selectedLanguage,
-                  decoration: InputDecoration(
-                    labelText: 'Preferred Language',
-                    prefixIcon: const Icon(Icons.language_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
+                  decoration: _inputDecoration(
+                    'Preferred Language',
+                    '',
+                    Icons.language_outlined,
                   ),
-                  items: AppConstants.supportedLanguages.map((lang) {
-                    return DropdownMenuItem(
-                      value: lang.code,
-                      child: Text(lang.displayName),
-                    );
-                  }).toList(),
-                  onChanged: _isLoading
-                      ? null
-                      : (value) {
-                          setState(() => _selectedLanguage = value);
-                        },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select a language';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Skill Category Dropdown
-                DropdownButtonFormField<String>(
-                  value: _selectedSkillCategory,
-                  decoration: InputDecoration(
-                    labelText: 'Primary Skill',
-                    prefixIcon: const Icon(Icons.work_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                  items: AppConstants.skillCategories.entries
-                      .expand(
-                        (entry) => entry.value.map(
-                          (skill) => DropdownMenuItem(
-                            value: skill,
-                            child: Text(skill),
-                          ),
+                  items: AppConstants.supportedLanguages
+                      .map(
+                        (lang) => DropdownMenuItem(
+                          value: lang.code,
+                          child: Text(lang.displayName),
                         ),
                       )
                       .toList(),
                   onChanged: _isLoading
                       ? null
-                      : (value) {
-                          setState(() => _selectedSkillCategory = value);
-                        },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select your primary skill';
-                    }
-                    return null;
-                  },
+                      : (v) => setState(() => _selectedLanguage = v),
+                  validator: (v) => (v == null || v.isEmpty)
+                      ? 'Please select a language'
+                      : null,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // Bio Field (Optional)
+                // ── Primary Skill ────────────────────────────────────────────
+                _sectionHeader('Your Skill', Icons.work_outline),
+                const SizedBox(height: 8),
+                Text(
+                  'Select the primary service you offer',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 12),
+
+                // Skill validation wrapper
+                FormField<String>(
+                  initialValue: _selectedSkillCategory,
+                  validator: (_) =>
+                      (_selectedSkillCategory == null ||
+                          _selectedSkillCategory!.isEmpty)
+                      ? 'Please select your primary skill'
+                      : null,
+                  builder: (field) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 2.8,
+                        children: ServicesData.services.entries.map((entry) {
+                          final color = ServicesData.colorOf(entry.key);
+                          final icon = ServicesData.iconOf(entry.key);
+                          final name = ServicesData.nameOf(entry.key);
+                          final isSelected = _selectedSkillCategory == name;
+
+                          return GestureDetector(
+                            onTap: _isLoading
+                                ? null
+                                : () => setState(() {
+                                    _selectedSkillCategory = name;
+                                    field.didChange(name);
+                                  }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? color.withOpacity(0.12)
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? color
+                                      : Colors.grey.shade300,
+                                  width: isSelected ? 2 : 1,
+                                ),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    icon,
+                                    size: 18,
+                                    color: isSelected ? color : Colors.grey,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      name,
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color: isSelected
+                                            ? color
+                                            : Colors.grey.shade700,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      if (field.hasError) ...[
+                        const SizedBox(height: 6),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12),
+                          child: Text(
+                            field.errorText!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(field.context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
                 TextFormField(
                   controller: _bioController,
                   enabled: !_isLoading,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    labelText: 'Bio (Optional)',
-                    hintText: 'Tell us about your experience...',
-                    prefixIcon: const Icon(Icons.description_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    alignLabelWithHint: true,
+                  maxLines: 3,
+                  decoration: _inputDecoration(
+                    'Bio (Optional)',
+                    'Tell us about your experience...',
+                    Icons.description_outlined,
+                    alignLabel: true,
                   ),
                 ),
                 const SizedBox(height: 32),
 
-                // Submit Button
+                // ── Location ────────────────────────────────────────────────
+                _sectionHeader('Your Location', Icons.location_on_outlined),
+                const SizedBox(height: 4),
+                Text(
+                  'Used to match you with nearby jobs.',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+
+                OutlinedButton.icon(
+                  onPressed: (_isLoading || _isFetchingLocation)
+                      ? null
+                      : _detectLocation,
+                  icon: _isFetchingLocation
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          _geoPoint != null
+                              ? Icons.check_circle_outline
+                              : Icons.my_location,
+                          color: _geoPoint != null ? Colors.green : null,
+                        ),
+                  label: Text(
+                    _isFetchingLocation
+                        ? 'Capturing location...'
+                        : _geoPoint != null
+                        ? 'Location captured — tap to update'
+                        : 'Capture My Location',
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    foregroundColor: _geoPoint != null ? Colors.green : null,
+                    side: BorderSide(
+                      color: _geoPoint != null ? Colors.green : Colors.grey,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+
+                if (_locationStatusMessage != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        _locationStatusMessage!.startsWith('✅')
+                            ? Icons.check_circle_outline
+                            : Icons.info_outline,
+                        size: 16,
+                        color: _locationStatusMessage!.startsWith('✅')
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _locationStatusMessage!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _locationStatusMessage!.startsWith('✅')
+                                ? Colors.green[700]
+                                : Colors.orange[800],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 16),
+
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: TextFormField(
+                        controller: _cityController,
+                        enabled: !_isLoading,
+                        decoration: _inputDecoration(
+                          'City',
+                          'e.g. Mumbai',
+                          Icons.location_city_outlined,
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Please enter your city'
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        controller: _pincodeController,
+                        enabled: !_isLoading,
+                        keyboardType: TextInputType.number,
+                        decoration: _inputDecoration(
+                          'Pincode',
+                          '400001',
+                          Icons.pin_outlined,
+                        ),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return 'Required';
+                          if (v.trim().length != 6) return 'Invalid pincode';
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // ── Submit ───────────────────────────────────────────────────
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleSubmit,
                   style: ElevatedButton.styleFrom(
@@ -318,10 +542,8 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                           ),
                         ),
                 ),
-
                 const SizedBox(height: 20),
 
-                // Info Card
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -350,11 +572,48 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _sectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.blue[700]),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue[700],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: Divider(color: Colors.blue[100])),
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration(
+    String label,
+    String hint,
+    IconData icon, {
+    bool alignLabel = false,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint.isEmpty ? null : hint,
+      prefixIcon: Icon(icon),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      filled: true,
+      fillColor: Colors.white,
+      alignLabelWithHint: alignLabel,
     );
   }
 }
