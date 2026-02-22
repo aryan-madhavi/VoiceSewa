@@ -92,10 +92,12 @@ class Job {
   final String location;
   final String time;
   final JobStatus status;
+  final String clientId;
 
   Job({
     required this.id,
     required this.title,
+    required this.clientId,
     required this.clientName,
     required this.price,
     required this.location,
@@ -107,6 +109,7 @@ final List<Job> myJobsData = [
   Job(
     id: '101',
     title: 'AC Repair & Service',
+    clientId: "test_client_rahul_001",
     clientName: 'Rahul Sharma',
     price: '₹1,500',
     location: 'Lodha Amara, Kolshet Road, Thane',
@@ -116,6 +119,7 @@ final List<Job> myJobsData = [
   Job(
     id: '102',
     title: 'Plumbing Inspection',
+    clientId: "test_client_anjali_002",
     clientName: 'Anjali Desai',
     price: '₹850',
     location: 'Hiranandani Estate, GB Road, Thane',
@@ -125,6 +129,7 @@ final List<Job> myJobsData = [
   Job(
     id: '103',
     title: 'House Deep Cleaning',
+    clientId: "test_client_vikram_003",
     clientName: 'Vikram Singh',
     price: '₹2,200',
     location: 'Vasant Vihar, Pokhran Road 2, Thane',
@@ -134,6 +139,7 @@ final List<Job> myJobsData = [
   Job(
     id: '104',
     title: 'Fan Installation',
+    clientId: 'test_client_meera_004',
     clientName: 'Meera Kapoor',
     price: '₹400',
     location: 'Manpada, Thane West',

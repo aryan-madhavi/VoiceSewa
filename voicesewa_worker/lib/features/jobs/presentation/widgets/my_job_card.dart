@@ -1,10 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:voicesewa_worker/features/jobs/presentation/contact_msg_page.dart';
-
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:voicesewa_worker/features/jobs/presentation/contact_msg_page.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/constants/color_constants.dart';
 import '../../../../core/constants/helper_function.dart';
 import '../../../../core/constants/static_data.dart';
 import '../../../../core/extensions/context_extensions.dart';
+import '../../providers/chat_provider.dart';
+import '../chat_detail_page.dart';
 
 class MyJobCard extends StatefulWidget {
   final Job job;
@@ -117,24 +121,59 @@ class _MyJobCardState extends State<MyJobCard> {
                   Row(
                     children: [
                       Expanded(
-                          child: OutlinedButton.icon(
-                            // icon: const Icon(Icons.call, size: 18,),
-                            icon: const Icon(Icons.person, size: 18,),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const ContactMsgPage()),
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.person, size: 18,),
+                          onPressed: () async {
+                            final currentUser = FirebaseAuth.instance.currentUser;
+                            if (currentUser == null) return;
+
+                            final myId = currentUser.uid;
+                            // TODO: Delete Worker Here and its Ternary Operator once data is dynamic and connected to db
+                            final myName = currentUser.displayName ?? 'Worker';
+                            final clientId = widget.job.clientId;
+                            final clientName = widget.job.clientName;
+
+                            // Get chat provider
+                            final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+
+                            try {
+                              // Initiate chat and get unique Room ID
+                              final roomId = await chatProvider.initiateChatWithClient(
+                                myId: myId,
+                                myName: myName,
+                                clientId: clientId,
+                                clientName: clientName,
                               );
-                            },
-                            label: Text(
-                              // context.loc.call, // "Call"
-                              context.loc.contact, // "Contact"
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: ColorConstants.textDark,
-                              padding: const EdgeInsets.symmetric(vertical: 12,),
-                            ),
+
+                              // Chat Detail Page Navigation
+                              if (context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatDetailPage(
+                                      roomId: roomId,
+                                      receiverName: clientName,
+                                      receiverId: clientId,
+                                    ),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("Could not start chat: $e")),
+                                );
+                              }
+                            }
+                          },
+                          label: Text(
+                            context.loc.contact,
                           ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: ColorConstants.textDark,
+                            padding: const EdgeInsets.symmetric(vertical: 12,),
+                          ),
+                        ),
                       ),
                     ],
                   ),
