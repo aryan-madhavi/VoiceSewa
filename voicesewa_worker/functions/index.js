@@ -1,34 +1,44 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+const { setGlobalOptions } = require("firebase-functions/v2");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const logger = require("firebase-functions/logger");
+const admin = require("firebase-admin");
+const { Translate } = require("@google-cloud/translate").v2;
 
-const {setGlobalOptions} = require("firebase-functions");
-// const {onRequest} = require("firebase-functions/https");
-// const logger = require("firebase-functions/logger");
+setGlobalOptions({ maxInstances: 10, region: "europe-west1"});
+admin.initializeApp();
+const translate = new Translate();
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+const LANG_MAP = {
+  'en': 'engMsg',
+  'hi': 'hinMsg',
+  'gu': 'gujMsg',
+  'mr': 'marMsg'
+};
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+exports.autoTranslateMessage = onDocumentCreated("chat_rooms/{roomId}/messages/{messageId}", async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) return;
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+  const data = snapshot.data();
+  const originalText = data.originalMsg;
+  if (!originalText) return;
 
-exports.notifyWorkersOnNewServiceRequest = require('./notifyWorkersOnNewServiceRequest');
+  const sourceLangCode = data.detectedLanguage || 'en';
+  let updates = {
+    [`translatedLanguages.${LANG_MAP[sourceLangCode]}`]: originalText
+  };
+
+  const targetCodes = ['en', 'hi', 'gu', 'mr'];
+  const translationPromises = targetCodes.map(async (targetCode) => {
+    if (targetCode === sourceLangCode) return;
+    try {
+      const [translatedText] = await translate.translate(originalText, targetCode);
+      updates[`translatedLanguages.${LANG_MAP[targetCode]}`] = translatedText;
+    } catch (err) {
+      logger.error(`Translation error to ${targetCode}:`, err);
+    }
+  });
+
+  await Promise.all(translationPromises);
+  return snapshot.ref.update(updates);
+});

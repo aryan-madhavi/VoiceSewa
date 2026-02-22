@@ -31,7 +31,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     // TODO: Get this from your User Provider/Settings
     // For now, let's assume the current user wants to see 'en' (English)
     // or 'hi' (Hindi). You can make this dynamic later.
-    const String myPreferredLang = 'en';
+    const String myPreferredLang = 'hi';
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.receiverName)),
