@@ -77,9 +77,6 @@ jobs - collection
       description: string,
       address: {
         location: geopoint,
-        line1: string,
-        line2: string,
-        landmark: string,
         pincode: string,
         city: string
       },
