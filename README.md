@@ -55,9 +55,6 @@ workers - collection
       skills: [string],
       address: {
         location: geopoint,
-        line1: string,
-        line2: string,
-        landmark: string,
         pincode: string,
         city: string
       },
@@ -102,6 +99,12 @@ jobs - collection
         notes: string,
         created_at: timestamp
       } | null,
+      started_at: timestamp | null,
+        worker_feedback: {
+       rating: number,
+       comment: string,
+       created_at: timestamp
+     } | null
       
     }
     quotations - collection
