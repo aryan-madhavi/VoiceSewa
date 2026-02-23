@@ -52,9 +52,21 @@ class _JobDetailsContent extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Service Information Card
+          // Service Info Card (includes worker name/rating when assigned)
           ServiceInfoCard(job: job),
           const SizedBox(height: 16),
+
+          // ✅ In-Progress banner — shown only when job is inProgress
+          if (job.isInProgress) ...[
+            JobInProgressBanner(job: job),
+            const SizedBox(height: 16),
+          ],
+
+          // ✅ OTP Card — shown only when job is scheduled (not inProgress)
+          if (job.isScheduled && job.otp != null) ...[
+            JobOtpCard(otp: job.otp!),
+            const SizedBox(height: 16),
+          ],
 
           // Job Description Card
           JobDescriptionCard(description: job.description),
@@ -70,6 +82,12 @@ class _JobDetailsContent extends ConsumerWidget {
             scheduledDate: job.formattedScheduledDate,
           ),
           const SizedBox(height: 16),
+
+          // ✅ Bill Card — always shown after job is completed
+          if (job.isCompleted) ...[
+            JobBillCard(bill: job.bill),
+            const SizedBox(height: 16),
+          ],
 
           // Action Buttons
           unviewedCountAsync.when(
@@ -119,11 +137,9 @@ class _JobDetailsContent extends ConsumerWidget {
           FilledButton(
             onPressed: () async {
               Navigator.pop(context);
-
               try {
                 final actions = ref.read(jobActionsProvider);
                 await actions.cancelJob(jobId, 'Cancelled by client');
-
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Job cancelled')),
@@ -131,9 +147,9 @@ class _JobDetailsContent extends ConsumerWidget {
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e')),
+                  );
                 }
               }
             },
@@ -186,11 +202,9 @@ class _JobDetailsContent extends ConsumerWidget {
           FilledButton(
             onPressed: () async {
               Navigator.pop(context);
-
               try {
                 final actions = ref.read(jobActionsProvider);
                 await actions.rescheduleJob(jobId, selectedDate);
-
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Job rescheduled')),
@@ -198,9 +212,9 @@ class _JobDetailsContent extends ConsumerWidget {
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e')),
+                  );
                 }
               }
             },

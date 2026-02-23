@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
 import 'package:voicesewa_client/shared/models/job_model.dart';
 
@@ -27,6 +28,38 @@ class ServiceInfoCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             StatusBadge(label: job.statusLabel, color: job.statusColor),
+            // ✅ Worker info shown when assigned
+            if (job.hasWorker) ...[
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.person, size: 18, color: Colors.black54),
+                  const SizedBox(width: 6),
+                  Text(
+                    job.workerName!,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                  if (job.workerRating != null) ...[
+                    const SizedBox(width: 10),
+                    const Icon(Icons.star, size: 16, color: Colors.amber),
+                    const SizedBox(width: 3),
+                    Text(
+                      job.workerRating!.toStringAsFixed(1),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: Colors.amber,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -53,6 +86,430 @@ class StatusBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(color: color, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+}
+
+/// ✅ OTP Card — shown only when job is scheduled (not inProgress)
+/// Client shares this 4-digit code with the worker to start the job.
+class JobOtpCard extends StatelessWidget {
+  final String otp;
+
+  const JobOtpCard({super.key, required this.otp});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.orange.shade50,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.orange.shade300, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.lock_outline, color: Colors.orange.shade700),
+                const SizedBox(width: 8),
+                Text(
+                  'Job Start OTP',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.orange.shade800,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // OTP digits display
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: otp.split('').map((digit) {
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  width: 52,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.orange.shade400, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.orange.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      digit,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange.shade800,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Share this code with your worker to begin the job',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.orange.shade700),
+            ),
+            const SizedBox(height: 8),
+            // Copy button
+            TextButton.icon(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: otp));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('OTP copied to clipboard'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.copy, size: 16),
+              label: const Text('Copy OTP'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.orange.shade800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// ✅ In-Progress banner — shown when job status is inProgress
+class JobInProgressBanner extends StatelessWidget {
+  final Job job;
+
+  const JobInProgressBanner({super.key, required this.job});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.amber.shade50,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.amber.shade400, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.engineering,
+                color: Colors.amber.shade800,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Job is In Progress',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Colors.amber.shade900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    job.workerName != null
+                        ? '${job.workerName} is currently working on your request'
+                        : 'Your worker is currently on the job',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.amber.shade800,
+                    ),
+                  ),
+                  if (job.formattedStartedDate != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Started: ${job.formattedStartedDate}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.amber.shade700,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// ✅ Bill Card — shown when job is completed.
+/// Displays bill items and total if bill exists, otherwise shows "No bill yet".
+class JobBillCard extends StatelessWidget {
+  final JobBill? bill;
+
+  const JobBillCard({super.key, this.bill});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (bill == null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.receipt_long, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Bill',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.hourglass_empty,
+                      size: 40,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No bill yet',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'The worker hasn\'t submitted a bill yet',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.receipt_long, color: ColorConstants.seed),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Bill',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  bill!.createdAt.day.toString().padLeft(2, '0') +
+                      '/' +
+                      bill!.createdAt.month.toString().padLeft(2, '0') +
+                      '/' +
+                      bill!.createdAt.year.toString(),
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Bill items
+            if (bill!.items.isNotEmpty) ...[
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  children: [
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            flex: 3,
+                            child: Text(
+                              'Item',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ),
+                          const Expanded(
+                            child: Text(
+                              'Qty',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ),
+                          const Expanded(
+                            child: Text(
+                              'Price',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ),
+                          const Expanded(
+                            child: Text(
+                              'Total',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    ...bill!.items.map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                item.name,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                item.quantity.toString(),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                '₹${item.unitPrice.toStringAsFixed(0)}',
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                '₹${item.total.toStringAsFixed(0)}',
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            // Notes
+            if (bill!.notes.isNotEmpty) ...[
+              Text(
+                'Notes: ${bill!.notes}',
+                style: const TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+              const SizedBox(height: 12),
+            ],
+            // Total
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Total Amount',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  Text(
+                    '₹${bill!.totalAmount.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -206,7 +663,7 @@ class JobActionButtons extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // View Quotations Button
+        // View Quotations button
         if (job.isQuoted ||
             job.isScheduled ||
             job.isInProgress ||
@@ -225,7 +682,7 @@ class JobActionButtons extends StatelessWidget {
             ),
           ),
 
-        // Cancel Button
+        // Cancel button
         if (job.canBeCancelled) ...[
           const SizedBox(height: 8),
           OutlinedButton.icon(
@@ -239,7 +696,7 @@ class JobActionButtons extends StatelessWidget {
           ),
         ],
 
-        // Reschedule Button
+        // Reschedule button
         if (job.canBeRescheduled) ...[
           const SizedBox(height: 8),
           OutlinedButton.icon(

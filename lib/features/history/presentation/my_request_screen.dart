@@ -332,13 +332,12 @@ class _JobCard extends StatelessWidget {
   }
 
   bool get _shouldShowAmount {
-    return job.finalizedQuotationCost != null &&
-        job.finalizedQuotationCost!.isNotEmpty;
+    return job.finalizedQuotationAmount != null;
   }
 
   String get _displayAmount {
     if (_shouldShowAmount) {
-      return job.finalizedQuotationCost!;
+      return job.finalizedQuotationAmount!.toStringAsFixed(0);
     }
     return '—';
   }
@@ -513,26 +512,26 @@ class _JobCard extends StatelessWidget {
 
                     // Invoice - Only for completed
                     if (job.isCompleted)
-                      TextButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Invoice download coming soon'),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.download, size: 16),
-                        label: const Text(
-                          'Invoice',
-                          style: TextStyle(fontSize: 13),
-                        ),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.black87,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          minimumSize: const Size(0, 36),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                      ),
+                      // TextButton.icon(
+                      //   onPressed: () {
+                      //     ScaffoldMessenger.of(context).showSnackBar(
+                      //       const SnackBar(
+                      //         content: Text('Invoice download coming soon'),
+                      //       ),
+                      //     );
+                      //   },
+                      //   icon: const Icon(Icons.download, size: 16),
+                      //   label: const Text(
+                      //     'Invoice',
+                      //     style: TextStyle(fontSize: 13),
+                      //   ),
+                      //   style: TextButton.styleFrom(
+                      //     foregroundColor: Colors.black87,
+                      //     padding: const EdgeInsets.symmetric(horizontal: 4),
+                      //     minimumSize: const Size(0, 36),
+                      //     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      //   ),
+                      // ),
 
                     // Details - Always visible
                     TextButton.icon(

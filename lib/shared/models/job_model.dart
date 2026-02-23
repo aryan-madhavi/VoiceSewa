@@ -25,6 +25,7 @@ enum JobStatus {
   static JobStatus fromString(String status) {
     switch (status.toLowerCase()) {
       case 'in_progress':
+      case 'inprogress': // ✅ handles camelCase written by worker app
         return JobStatus.inProgress;
       default:
         return JobStatus.values.firstWhere(
@@ -35,33 +36,120 @@ enum JobStatus {
   }
 }
 
-/// Job model based on Firestore schema
-/// Core fields from schema:
-/// - service_type, description, address, client_uid, created_at, status
-/// - finalized_quotation (optional), scheduled_at (optional - set by client)
-///
-/// Extended fields for UI (denormalized from quotation when finalized):
-/// - workerName, workerRating (cached from accepted quotation)
+// ==================== HELPERS ====================
+
+/// Safe double parser — handles String or num from Firestore
+double? _parseDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
+}
+
+// ==================== SUB-MODELS ====================
+
+/// Bill item model matching Firestore schema
+class BillItem {
+  final String name;
+  final int quantity;
+  final double unitPrice;
+
+  BillItem({required this.name, required this.quantity, required this.unitPrice});
+
+  double get total => quantity * unitPrice;
+
+  factory BillItem.fromMap(Map<String, dynamic> map) {
+    return BillItem(
+      name: map['name'] as String? ?? '',
+      quantity: (map['quantity'] as num?)?.toInt() ?? 1,
+      unitPrice: _parseDouble(map['unit_price']) ?? 0.0,
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'quantity': quantity,
+        'unit_price': unitPrice,
+      };
+}
+
+/// Bill model matching Firestore schema
+class JobBill {
+  final List<BillItem> items;
+  final double totalAmount;
+  final String notes;
+  final DateTime createdAt;
+
+  JobBill({required this.items, required this.totalAmount, required this.notes, required this.createdAt});
+
+  factory JobBill.fromMap(Map<String, dynamic> map) {
+    return JobBill(
+      items: (map['items'] as List<dynamic>?)
+              ?.map((e) => BillItem.fromMap(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      totalAmount: _parseDouble(map['total_amount']) ?? 0.0,
+      notes: map['notes'] as String? ?? '',
+      createdAt: map['created_at'] != null
+          ? (map['created_at'] as Timestamp).toDate()
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'items': items.map((i) => i.toMap()).toList(),
+        'total_amount': totalAmount,
+        'notes': notes,
+        'created_at': Timestamp.fromDate(createdAt),
+      };
+}
+
+/// Feedback model — used for both worker_feedback and client_feedback
+class JobFeedback {
+  final double rating;
+  final String comment;
+  final DateTime createdAt;
+
+  JobFeedback({required this.rating, required this.comment, required this.createdAt});
+
+  factory JobFeedback.fromMap(Map<String, dynamic> map) {
+    return JobFeedback(
+      rating: _parseDouble(map['rating']) ?? 0.0,
+      comment: map['comment'] as String? ?? '',
+      createdAt: map['created_at'] != null
+          ? (map['created_at'] as Timestamp).toDate()
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'rating': rating,
+        'comment': comment,
+        'created_at': Timestamp.fromDate(createdAt),
+      };
+}
+
+// ==================== JOB MODEL ====================
+
 class Job {
-  final String id; // job-uuid
+  final String id;
   final Services serviceType;
   final String description;
   final Address address;
   final String clientUid;
   final DateTime createdAt;
   final JobStatus status;
-
-  /// When the job should happen - set by CLIENT during creation
   final DateTime? scheduledAt;
-
-  /// Reference to accepted quotation - set ONLY when client accepts a quotation
   final String? finalizedQuotationId;
-
-  // ✅ Denormalized fields from quotation (for UI convenience)
-  // These are fetched from the quotation subcollection when needed
+  final double? finalizedQuotationAmount;
   final String? workerName;
   final double? workerRating;
-  final String? finalizedQuotationCost; // Cost from accepted quotation
+  final String? clientPhone;
+  final String? otp;
+  final JobBill? bill;
+  final DateTime? startedAt;
+  final JobFeedback? workerFeedback;
+  final JobFeedback? clientFeedback;
 
   Job({
     required this.id,
@@ -73,14 +161,17 @@ class Job {
     required this.status,
     this.scheduledAt,
     this.finalizedQuotationId,
+    this.finalizedQuotationAmount,
     this.workerName,
     this.workerRating,
-    this.finalizedQuotationCost,
+    this.clientPhone,
+    this.otp,
+    this.bill,
+    this.startedAt,
+    this.workerFeedback,
+    this.clientFeedback,
   });
 
-  /// Convert to Firestore Map - only schema fields
-  /// Note: workerName and workerRating are NOT stored in job document
-  /// They come from the quotation subcollection
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
       'service_type': serviceType.name,
@@ -90,25 +181,21 @@ class Job {
       'created_at': Timestamp.fromDate(createdAt),
       'status': status.value,
     };
-
-    // ✅ Add scheduled_at if client specified when they want the job
-    if (scheduledAt != null) {
-      map['scheduled_at'] = Timestamp.fromDate(scheduledAt!);
-    }
-
-    // ❌ finalized_quotation should NOT be set during creation
-    // It's ONLY set when client accepts a quotation
-    // During job creation, this will always be null
-    if (finalizedQuotationId != null) {
-      map['finalized_quotation'] = finalizedQuotationId;
-    }
-
+    if (scheduledAt != null) map['scheduled_at'] = Timestamp.fromDate(scheduledAt!);
+    if (finalizedQuotationId != null) map['finalized_quotation'] = finalizedQuotationId;
+    if (finalizedQuotationAmount != null) map['finalized_quotation_amount'] = finalizedQuotationAmount;
+    if (workerName != null) map['worker_name'] = workerName;
+    if (workerRating != null) map['worker_rating'] = workerRating;
+    if (clientPhone != null) map['client_phone'] = clientPhone;
+    if (otp != null) map['otp'] = otp;
+    if (bill != null) map['bill'] = bill!.toMap();
+    if (startedAt != null) map['started_at'] = Timestamp.fromDate(startedAt!);
+    if (workerFeedback != null) map['worker_feedback'] = workerFeedback!.toMap();
+    if (clientFeedback != null) map['client_feedback'] = clientFeedback!.toMap();
     return map;
   }
 
-  /// Create from Firestore Map
   factory Job.fromMap(String id, Map<String, dynamic> map) {
-    // Handle finalized_quotation which can be DocumentReference or String
     String? finalizedQuotId;
     final finalizedQuot = map['finalized_quotation'];
     if (finalizedQuot is DocumentReference) {
@@ -128,24 +215,24 @@ class Job {
       clientUid: map['client_uid'] as String,
       createdAt: (map['created_at'] as Timestamp).toDate(),
       status: JobStatus.fromString(map['status'] as String? ?? 'requested'),
-      scheduledAt: map['scheduled_at'] != null
-          ? (map['scheduled_at'] as Timestamp).toDate()
-          : null,
+      scheduledAt: map['scheduled_at'] != null ? (map['scheduled_at'] as Timestamp).toDate() : null,
       finalizedQuotationId: finalizedQuotId,
-      // Worker info not in job document - must be fetched separately
-      workerName: null,
-      workerRating: null,
-      finalizedQuotationCost: null,
+      finalizedQuotationAmount: _parseDouble(map['finalized_quotation_amount']),
+      workerName: map['worker_name'] as String?,
+      workerRating: _parseDouble(map['worker_rating']),
+      clientPhone: map['client_phone'] as String?,
+      otp: map['otp'] as String?,
+      bill: map['bill'] != null ? JobBill.fromMap(map['bill'] as Map<String, dynamic>) : null,
+      startedAt: map['started_at'] != null ? (map['started_at'] as Timestamp).toDate() : null,
+      workerFeedback: map['worker_feedback'] != null ? JobFeedback.fromMap(map['worker_feedback'] as Map<String, dynamic>) : null,
+      clientFeedback: map['client_feedback'] != null ? JobFeedback.fromMap(map['client_feedback'] as Map<String, dynamic>) : null,
     );
   }
 
-  /// Service details from ServicesData
   Color get serviceColor => ServicesData.services[serviceType]![0] as Color;
-  IconData get serviceIcon =>
-      ServicesData.services[serviceType]![1] as IconData;
+  IconData get serviceIcon => ServicesData.services[serviceType]![1] as IconData;
   String get serviceName => ServicesData.services[serviceType]![2] as String;
 
-  /// Status checks
   bool get isRequested => status == JobStatus.requested;
   bool get isQuoted => status == JobStatus.quoted;
   bool get isScheduled => status == JobStatus.scheduled;
@@ -154,109 +241,56 @@ class Job {
   bool get isCancelled => status == JobStatus.cancelled;
   bool get isRescheduled => status == JobStatus.rescheduled;
 
-  /// Can be cancelled (not in_progress or completed)
   bool get canBeCancelled =>
       status == JobStatus.requested ||
       status == JobStatus.quoted ||
       status == JobStatus.scheduled;
 
-  /// Can be rescheduled (only from in_progress)
-  bool get canBeRescheduled => status == JobStatus.inProgress;
+  // ✅ FIXED: Reschedule only allowed when job is scheduled (not inProgress)
+  bool get canBeRescheduled => status == JobStatus.scheduled;
 
-  /// Has assigned worker (if finalized quotation exists)
-  bool get hasWorker => finalizedQuotationId != null;
+  bool get hasWorker => workerName != null && workerName!.isNotEmpty;
 
-  /// Status color for UI
   Color get statusColor {
     switch (status) {
-      case JobStatus.requested:
-        return Colors.blue;
-      case JobStatus.quoted:
-        return Colors.purple;
-      case JobStatus.scheduled:
-        return Colors.orange;
-      case JobStatus.inProgress:
-        return Colors.amber;
-      case JobStatus.completed:
-        return Colors.green;
-      case JobStatus.cancelled:
-        return Colors.red;
-      case JobStatus.rescheduled:
-        return Colors.teal;
+      case JobStatus.requested: return Colors.blue;
+      case JobStatus.quoted: return Colors.purple;
+      case JobStatus.scheduled: return Colors.orange;
+      case JobStatus.inProgress: return Colors.amber;
+      case JobStatus.completed: return Colors.green;
+      case JobStatus.cancelled: return Colors.red;
+      case JobStatus.rescheduled: return Colors.teal;
     }
   }
 
-  /// Status label for UI
   String get statusLabel {
     switch (status) {
-      case JobStatus.requested:
-        return 'Requested';
-      case JobStatus.quoted:
-        return 'Quotations Received';
-      case JobStatus.scheduled:
-        return 'Scheduled';
-      case JobStatus.inProgress:
-        return 'In Progress';
-      case JobStatus.completed:
-        return 'Completed';
-      case JobStatus.cancelled:
-        return 'Cancelled';
-      case JobStatus.rescheduled:
-        return 'Rescheduled';
+      case JobStatus.requested: return 'Requested';
+      case JobStatus.quoted: return 'Quotations Received';
+      case JobStatus.scheduled: return 'Scheduled';
+      case JobStatus.inProgress: return 'In Progress';
+      case JobStatus.completed: return 'Completed';
+      case JobStatus.cancelled: return 'Cancelled';
+      case JobStatus.rescheduled: return 'Rescheduled';
     }
   }
 
-  /// Formatted date
-  String get formattedCreatedDate {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${createdAt.day} ${months[createdAt.month - 1]} ${createdAt.year}';
-  }
+  String get formattedCreatedDate => _formatDate(createdAt);
+  String? get formattedScheduledDate => scheduledAt != null ? _formatDate(scheduledAt!) : null;
+  String? get formattedStartedDate => startedAt != null ? _formatDate(startedAt!) : null;
 
-  String? get formattedScheduledDate {
-    if (scheduledAt == null) return null;
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${scheduledAt!.day} ${months[scheduledAt!.month - 1]} ${scheduledAt!.year}';
+  String _formatDate(DateTime date) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   Job copyWith({
-    String? id,
-    Services? serviceType,
-    String? description,
-    Address? address,
-    String? clientUid,
-    DateTime? createdAt,
-    JobStatus? status,
-    DateTime? scheduledAt,
-    String? finalizedQuotationId,
-    String? workerName,
-    double? workerRating,
-    String? finalizedQuotationCost,
+    String? id, Services? serviceType, String? description, Address? address,
+    String? clientUid, DateTime? createdAt, JobStatus? status, DateTime? scheduledAt,
+    String? finalizedQuotationId, double? finalizedQuotationAmount,
+    String? workerName, double? workerRating, String? clientPhone,
+    String? otp, JobBill? bill, DateTime? startedAt,
+    JobFeedback? workerFeedback, JobFeedback? clientFeedback,
   }) {
     return Job(
       id: id ?? this.id,
@@ -268,22 +302,24 @@ class Job {
       status: status ?? this.status,
       scheduledAt: scheduledAt ?? this.scheduledAt,
       finalizedQuotationId: finalizedQuotationId ?? this.finalizedQuotationId,
+      finalizedQuotationAmount: finalizedQuotationAmount ?? this.finalizedQuotationAmount,
       workerName: workerName ?? this.workerName,
       workerRating: workerRating ?? this.workerRating,
-      finalizedQuotationCost:
-          finalizedQuotationCost ?? this.finalizedQuotationCost,
+      clientPhone: clientPhone ?? this.clientPhone,
+      otp: otp ?? this.otp,
+      bill: bill ?? this.bill,
+      startedAt: startedAt ?? this.startedAt,
+      workerFeedback: workerFeedback ?? this.workerFeedback,
+      clientFeedback: clientFeedback ?? this.clientFeedback,
     );
   }
 
   @override
-  String toString() {
-    return 'Job(id: $id, service: $serviceName, status: $statusLabel)';
-  }
+  String toString() => 'Job(id: $id, service: $serviceName, status: $statusLabel)';
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-
     return other is Job && other.id == id;
   }
 

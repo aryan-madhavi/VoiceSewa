@@ -29,7 +29,11 @@ class QuotationRepository {
     return _quotationService.watchQuotation(jobId, quotationId);
   }
 
-  /// Accept quotation with validation
+  /// Accept quotation with validation.
+  ///
+  /// The [scheduledAt] date is fetched from the job's own [scheduled_at] field
+  /// (set by the client during job creation). Date comparison uses date-only
+  /// (no time component) so that today's date is always valid.
   Future<void> acceptQuotation(
     String jobId,
     String quotationId,
@@ -47,14 +51,28 @@ class QuotationRepository {
       );
     }
 
-    if (scheduledAt.isBefore(DateTime.now())) {
-      throw ArgumentError('Cannot schedule in the past');
+    // ✅ Compare date-only (strip time) so today's date is always allowed.
+    // The scheduledAt comes from the job document (set during job creation),
+    // not from the quotation accept dialog.
+    final now = DateTime.now();
+    final todayOnly = DateTime(now.year, now.month, now.day);
+    final scheduledOnly = DateTime(
+      scheduledAt.year,
+      scheduledAt.month,
+      scheduledAt.day,
+    );
+
+    if (scheduledOnly.isBefore(todayOnly)) {
+      throw ArgumentError(
+        'Scheduled date cannot be in the past. '
+        'Please update the job scheduled date first.',
+      );
     }
 
     // Accept the quotation
     await _quotationService.acceptQuotation(jobId, quotationId);
 
-    // Update job with worker details
+    // Update job with worker details + generate OTP
     await _jobService.finalizeQuotation(
       jobId,
       quotationId,
@@ -76,7 +94,6 @@ class QuotationRepository {
     if (reason.trim().isEmpty) {
       throw ArgumentError('Rejection reason is required');
     }
-
     await _quotationService.rejectQuotation(jobId, quotationId, reason.trim());
   }
 
