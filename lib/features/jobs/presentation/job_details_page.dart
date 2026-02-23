@@ -227,7 +227,10 @@ class _AcceptRejectGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final quotationAsync = ref.watch(myQuotationProvider(job.jobId));
+    final _workerUid = ref.watch(currentWorkerUidProvider);
+    final quotationAsync = ref.watch(
+      myQuotationProvider((job.jobId, _workerUid)),
+    );
     final hasQuotation = quotationAsync.value != null;
 
     if (hasQuotation) return const SizedBox.shrink();

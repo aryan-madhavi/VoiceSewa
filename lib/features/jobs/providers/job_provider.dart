@@ -212,14 +212,16 @@ final withdrawQuotationProvider =
     });
 
 // ── Worker's quotation for a job ──────────────────────────────────────────
+// Family key is (jobId, workerUid) — NOT just jobId — so Worker A and
+// Worker B never share the same cached result for the same job.
 
 final myQuotationProvider = FutureProvider.autoDispose
-    .family<QuotationModel?, String>((ref, jobId) async {
-      final uid = ref.watch(currentWorkerUidProvider);
-      if (uid.isEmpty) return null;
+    .family<QuotationModel?, (String, String)>((ref, args) async {
+      final (jobId, workerUid) = args;
+      if (jobId.isEmpty || workerUid.isEmpty) return null;
       return ref
           .watch(jobRepositoryProvider)
-          .fetchMyQuotation(jobId: jobId, workerUid: uid);
+          .fetchMyQuotation(jobId: jobId, workerUid: workerUid);
     });
 
 // ── Decline incoming job ──────────────────────────────────────────────────

@@ -60,7 +60,9 @@ class JobRepository {
   // Any time one job doc changes, the full merged list is re-emitted.
   // Uses only dart:async — no rxdart needed.
 
-  Stream<List<JobModel?>> _combineJobStreams(List<Stream<JobModel?>> streams) {
+  Stream<List<JobModel?>> _combineJobStreams(
+    List<Stream<JobModel?>> streams,
+  ) {
     if (streams.isEmpty) return Stream.value([]);
     if (streams.length == 1) return streams.first.map((j) => [j]);
 
@@ -140,9 +142,7 @@ class JobRepository {
         if ((entry.value as List).isNotEmpty) matchingServices.add(entry.key);
       }
       if (matchingServices.isEmpty) {
-        print(
-          '⚠️ fetchIncomingJobs — no matching services for skills: $workerSkills',
-        );
+        print('⚠️ fetchIncomingJobs — no matching services for skills: $workerSkills');
         return [];
       }
 
@@ -158,15 +158,30 @@ class JobRepository {
         jobsMap['applied'] ?? [],
       );
 
-      // 1. Query requested jobs per service — server-first, cache fallback
-      final serviceQueries = matchingServices.map((service) {
-        return _getQuery(
-          _jobs
-              .where('service_type', isEqualTo: service.name)
-              .where('status', isEqualTo: 'requested')
-              .limit(limitPerService),
-        );
-      });
+      // IDs of jobs this worker has already quoted on.
+      // Used below to decide whether to show a job as "open" or "quoted".
+      final appliedIds = appliedRefs.map((r) => r.id).toSet();
+
+      // 1. Query both 'requested' AND 'quoted' jobs per service in parallel.
+      //
+      // WHY both statuses:
+      //   'requested' → no worker has quoted yet.
+      //   'quoted'    → at least one OTHER worker has quoted (client sees replies),
+      //                 but the job is still open for more workers to quote on.
+      //
+      // We fetch both so Worker B can still see and apply to a job that
+      // Worker A has already quoted on.
+      const openStatuses = ['requested', 'quoted'];
+      final serviceQueries = [
+        for (final service in matchingServices)
+          for (final status in openStatuses)
+            _getQuery(
+              _jobs
+                  .where('service_type', isEqualTo: service.name)
+                  .where('status', isEqualTo: status)
+                  .limit(limitPerService),
+            ),
+      ];
 
       final serviceSnaps = await Future.wait(serviceQueries);
 
@@ -177,24 +192,45 @@ class JobRepository {
         for (final doc in snap.docs) {
           if (seen.contains(doc.id)) continue;
           if (declinedIds.contains(doc.id)) continue;
-          final job = JobModel.fromDoc(doc);
+
+          JobModel job = JobModel.fromDoc(doc);
           final loc = job.address.location;
           if (loc == null) continue;
           if (_distanceKm(workerLocation, loc) > radiusKm) continue;
-          seen.add(doc.id);
+
+          // ── Display override ──────────────────────────────────────────────
+          // If Firestore status == 'quoted' but THIS worker hasn't applied yet,
+          // show it locally as 'requested' (open/new) so:
+          //   • It appears under the "New" chip, not "Quoted"
+          //   • The worker knows it's still available to quote on
+          //   • The client app is unaffected — Firestore is never touched
+          //
+          // If THIS worker HAS applied → keep status as 'quoted' so it shows
+          // correctly under their "Quoted" chip.
+          if (job.status == JobStatusType.quoted &&
+              !appliedIds.contains(job.jobId)) {
+            job = job.copyWith(status: JobStatusType.requested);
+          }
+
+          seen.add(job.jobId);
           results.add(job);
         }
       }
 
-      // 2. Fetch applied (quoted) jobs — server-first for fresh status
+      // 2. Fetch this worker's own applied (quoted) jobs — server-first.
+      // These are jobs where the worker HAS submitted a quotation.
+      // We keep their real 'quoted' status so they show under the "Quoted" chip.
       if (appliedRefs.isNotEmpty) {
         final appliedDocs = await Future.wait(appliedRefs.map(_getDoc));
         for (final doc in appliedDocs) {
           if (!doc.exists) continue;
           final job = JobModel.fromDoc(doc);
-          if (job.status == JobStatusType.quoted && !seen.contains(job.jobId)) {
+          // Only add if not already in results (dedup) and still open
+          if (!seen.contains(job.jobId) &&
+              (job.status == JobStatusType.quoted ||
+               job.status == JobStatusType.requested)) {
             seen.add(job.jobId);
-            results.add(job);
+            results.add(job); // real status kept — worker knows they quoted
           }
         }
       }
@@ -207,7 +243,7 @@ class JobRepository {
 
       print(
         '✅ fetchIncomingJobs — ${results.length} jobs '
-        '(${results.where((j) => j.isQuoted).length} quoted)',
+        '(${results.where((j) => j.isQuoted).length} quoted by this worker)',
       );
       return results;
     } catch (e, st) {
@@ -246,13 +282,14 @@ class JobRepository {
     return _watchWorkerJobRefs(
       workerUid: workerUid,
       refsKey: 'confirmed',
-      filter: (jobs) =>
-          jobs.where((j) => ongoingStatuses.contains(j.status.value)).toList()
-            ..sort((a, b) {
-              final aDate = a.scheduledAt ?? a.createdAt ?? DateTime(0);
-              final bDate = b.scheduledAt ?? b.createdAt ?? DateTime(0);
-              return bDate.compareTo(aDate);
-            }),
+      filter: (jobs) => jobs
+          .where((j) => ongoingStatuses.contains(j.status.value))
+          .toList()
+        ..sort((a, b) {
+          final aDate = a.scheduledAt ?? a.createdAt ?? DateTime(0);
+          final bDate = b.scheduledAt ?? b.createdAt ?? DateTime(0);
+          return bDate.compareTo(aDate);
+        }),
     );
   }
 
@@ -265,13 +302,14 @@ class JobRepository {
       workerUid: workerUid,
       refsKey: 'completed',
       pageSize: _completedPageSize,
-      filter: (jobs) =>
-          jobs.where((j) => j.status == JobStatusType.completed).toList()
-            ..sort((a, b) {
-              final aDate = a.createdAt ?? DateTime(0);
-              final bDate = b.createdAt ?? DateTime(0);
-              return bDate.compareTo(aDate);
-            }),
+      filter: (jobs) => jobs
+          .where((j) => j.status == JobStatusType.completed)
+          .toList()
+        ..sort((a, b) {
+          final aDate = a.createdAt ?? DateTime(0);
+          final bDate = b.createdAt ?? DateTime(0);
+          return bDate.compareTo(aDate);
+        }),
     );
   }
 
@@ -351,73 +389,70 @@ class JobRepository {
       jobSubs.clear();
     }
 
-    workerSub = _workers
-        .doc(workerUid)
-        .snapshots()
-        .listen(
-          (workerSnap) {
-            // Worker doc changed — cancel old job listeners and start fresh
-            cancelJobSubs();
+    workerSub = _workers.doc(workerUid).snapshots().listen(
+      (workerSnap) {
+        // Worker doc changed — cancel old job listeners and start fresh
+        cancelJobSubs();
 
-            if (!workerSnap.exists) {
-              if (!outerController.isClosed) outerController.add([]);
-              return;
-            }
+        if (!workerSnap.exists) {
+          if (!outerController.isClosed) outerController.add([]);
+          return;
+        }
 
-            final data = workerSnap.data() as Map<String, dynamic>;
-            var refs = List<DocumentReference>.from(
-              (data['jobs'] as Map<String, dynamic>?)?[refsKey] ?? [],
-            );
-
-            if (refs.isEmpty) {
-              if (!outerController.isClosed) outerController.add([]);
-              return;
-            }
-
-            // Apply pagination if needed (completed jobs)
-            if (pageSize != null && refs.length > pageSize) {
-              refs = refs.sublist(refs.length - pageSize);
-            }
-
-            // latest[i] holds the most recent snapshot for each ref
-            final latest = List<JobModel?>.filled(refs.length, null);
-            final received = List<bool>.filled(refs.length, false);
-            int receivedCount = 0;
-
-            for (int i = 0; i < refs.length; i++) {
-              final index = i;
-              final sub = refs[index].snapshots().listen(
-                (docSnap) {
-                  if (!docSnap.exists) {
-                    latest[index] = null;
-                  } else {
-                    latest[index] = JobModel.fromDoc(docSnap);
-                  }
-
-                  if (!received[index]) {
-                    received[index] = true;
-                    receivedCount++;
-                  }
-
-                  // Only emit once every job has produced its first snapshot
-                  if (receivedCount == refs.length) {
-                    final jobs = latest.whereType<JobModel>().toList();
-                    if (!outerController.isClosed) {
-                      outerController.add(filter(jobs));
-                    }
-                  }
-                },
-                onError: (e) {
-                  if (!outerController.isClosed) outerController.addError(e);
-                },
-              );
-              jobSubs.add(sub);
-            }
-          },
-          onError: (e) {
-            if (!outerController.isClosed) outerController.addError(e);
-          },
+        final data = workerSnap.data() as Map<String, dynamic>;
+        var refs = List<DocumentReference>.from(
+          (data['jobs'] as Map<String, dynamic>?)?[refsKey] ?? [],
         );
+
+        if (refs.isEmpty) {
+          if (!outerController.isClosed) outerController.add([]);
+          return;
+        }
+
+        // Apply pagination if needed (completed jobs)
+        if (pageSize != null && refs.length > pageSize) {
+          refs = refs.sublist(refs.length - pageSize);
+        }
+
+        // latest[i] holds the most recent snapshot for each ref
+        final latest = List<JobModel?>.filled(refs.length, null);
+        final received = List<bool>.filled(refs.length, false);
+        int receivedCount = 0;
+
+        for (int i = 0; i < refs.length; i++) {
+          final index = i;
+          final sub = refs[index].snapshots().listen(
+            (docSnap) {
+              if (!docSnap.exists) {
+                latest[index] = null;
+              } else {
+                latest[index] = JobModel.fromDoc(docSnap);
+              }
+
+              if (!received[index]) {
+                received[index] = true;
+                receivedCount++;
+              }
+
+              // Only emit once every job has produced its first snapshot
+              if (receivedCount == refs.length) {
+                final jobs = latest.whereType<JobModel>().toList();
+                if (!outerController.isClosed) {
+                  outerController.add(filter(jobs));
+                }
+              }
+            },
+            onError: (e) {
+              if (!outerController.isClosed) outerController.addError(e);
+            },
+          );
+          jobSubs.add(sub);
+        }
+      },
+      onError: (e) {
+        if (!outerController.isClosed) outerController.addError(e);
+      },
+    );
 
     outerController.onCancel = () {
       workerSub?.cancel();
@@ -456,7 +491,10 @@ class JobRepository {
       final jobRef = _jobs.doc(jobId);
       final quoRef = jobRef.collection('quotations').doc();
       batch.set(quoRef, quotation.toMap());
-      batch.update(jobRef, {'status': 'quoted'});
+      // ✅ Do NOT change job status here — it must stay 'requested' so other
+      // workers can still discover and apply to this job.
+      // Status only changes to 'scheduled' when the CLIENT accepts a quotation
+      // (handled by the client app's finalizeQuotation).
       batch.update(_workers.doc(workerUid), {
         'jobs.applied': FieldValue.arrayUnion([jobRef]),
       });

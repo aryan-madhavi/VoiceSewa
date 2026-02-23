@@ -22,7 +22,10 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
 
   @override
   Widget build(BuildContext context) {
-    final existingQuotation = ref.watch(myQuotationProvider(widget.jobId));
+    final _workerUid = ref.watch(currentWorkerUidProvider);
+    final existingQuotation = ref.watch(
+      myQuotationProvider((widget.jobId, _workerUid)),
+    );
 
     return existingQuotation.when(
       loading: () => const Center(
@@ -307,7 +310,12 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
               _showForm = false;
               _isEditMode = false;
             });
-            ref.invalidate(myQuotationProvider(widget.jobId));
+            ref.invalidate(
+              myQuotationProvider((
+                widget.jobId,
+                ref.read(currentWorkerUidProvider),
+              )),
+            );
           },
         ),
       ),
@@ -328,7 +336,12 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
                 onCancel: () => setState(() => _showForm = false),
                 onSubmitted: () {
                   setState(() => _showForm = false);
-                  ref.invalidate(myQuotationProvider(widget.jobId));
+                  ref.invalidate(
+                    myQuotationProvider((
+                      widget.jobId,
+                      ref.read(currentWorkerUidProvider),
+                    )),
+                  );
                 },
               )
             : Column(
@@ -462,7 +475,13 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        if (success) ref.invalidate(myQuotationProvider(widget.jobId));
+        if (success)
+          ref.invalidate(
+            myQuotationProvider((
+              widget.jobId,
+              ref.read(currentWorkerUidProvider),
+            )),
+          );
       }
     } else {
       reasonController.dispose();

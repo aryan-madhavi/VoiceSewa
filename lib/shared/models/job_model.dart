@@ -51,7 +51,7 @@ enum JobStatusType {
       case JobStatusType.scheduled:
         return const Color(0xFF0056D2);
       case JobStatusType.inProgress:
-        return const Color(0xFF00BFA5); 
+        return const Color(0xFF00BFA5);
       case JobStatusType.completed:
         return Colors.green;
       case JobStatusType.cancelled:
@@ -77,10 +77,17 @@ class BillItem {
 
   double get total => quantity * unitPrice;
 
+  static num? _parseNum(dynamic v) {
+    if (v == null) return null;
+    if (v is num) return v;
+    if (v is String) return num.tryParse(v);
+    return null;
+  }
+
   factory BillItem.fromMap(Map<String, dynamic> map) => BillItem(
     name: map['name'] as String? ?? '',
-    quantity: (map['quantity'] as num?)?.toInt() ?? 1,
-    unitPrice: (map['unit_price'] as num?)?.toDouble() ?? 0.0,
+    quantity: _parseNum(map['quantity'])?.toInt() ?? 1,
+    unitPrice: _parseNum(map['unit_price'])?.toDouble() ?? 0.0,
   );
 
   Map<String, dynamic> toMap() => {
@@ -107,7 +114,9 @@ class JobBill {
     items: (map['items'] as List? ?? [])
         .map((e) => BillItem.fromMap(e as Map<String, dynamic>))
         .toList(),
-    totalAmount: (map['total_amount'] as num?)?.toDouble() ?? 0.0,
+    totalAmount: (map['total_amount'] is num
+        ? (map['total_amount'] as num).toDouble()
+        : double.tryParse(map['total_amount']?.toString() ?? '') ?? 0.0),
     notes: map['notes'] as String? ?? '',
     createdAt: (map['created_at'] as Timestamp?)?.toDate(),
   );
@@ -186,6 +195,15 @@ class JobModel {
     this.workerFeedback,
   });
 
+  /// Safely parse a Firestore value that should be numeric but may have been
+  /// stored as a String (e.g. estimated_cost written from a text field).
+  static double? _toDouble(dynamic v) {
+    if (v == null) return null;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v);
+    return null;
+  }
+
   factory JobModel.fromDoc(DocumentSnapshot doc) {
     final map = doc.data() as Map<String, dynamic>;
 
@@ -212,10 +230,9 @@ class JobModel {
       status: JobStatusType.fromString(map['status'] as String? ?? 'requested'),
       scheduledAt: (map['scheduled_at'] as Timestamp?)?.toDate(),
       finalizedQuotationId: finalizedQuotId,
-      finalizedQuotationAmount: (map['finalized_quotation_amount'] as num?)
-          ?.toDouble(),
+      finalizedQuotationAmount: _toDouble(map['finalized_quotation_amount']),
       workerName: map['worker_name'] as String?,
-      workerRating: (map['worker_rating'] as num?)?.toDouble(),
+      workerRating: _toDouble(map['worker_rating']),
       otp: map['otp'] as String?,
       clientPhone: map['client_phone'] as String?,
       bill: map['bill'] != null
