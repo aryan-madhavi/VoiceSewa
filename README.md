@@ -87,8 +87,10 @@ jobs - collection
       worker_rating: number | null,
       client_phone: string | null,
       otp: string | null,
-      bill: {
-        items: [
+      bill:
+      {
+        items:
+        [
           {
             name: string,
             quantity: number,
@@ -100,11 +102,18 @@ jobs - collection
         created_at: timestamp
       } | null,
       started_at: timestamp | null,
-        worker_feedback: {
+      worker_feedback:
+      {
        rating: number,
        comment: string,
        created_at: timestamp
-     } | null
+      } | null,
+      client_feedback:
+      {
+       rating: number,
+       comment: string,
+       created_at: timestamp
+      } | null,
       
     }
     quotations - collection
