@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_worker/core/providers/session_provider.dart';
 import 'package:voicesewa_worker/features/auth/providers/auth_provider.dart';
 
-/// Authentication service - thin wrapper around SessionNotifier.
+/// Authentication service - thin wrapper around authActionsProvider.
 /// Firebase Auth + Firestore only, no local database.
 class AuthService {
   final WidgetRef ref;
@@ -15,11 +15,11 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    await ref.read(sessionNotifierProvider.notifier).login(email, password);
+    await ref.read(authActionsProvider.notifier).login(email, password);
 
-    final state = ref.read(sessionNotifierProvider);
-    if (state.status == SessionStatus.loggedOut) {
-      return state.errorMessage ?? 'Login failed';
+    final authState = ref.read(authActionsProvider);
+    if (authState.value != null && authState.value!.isNotEmpty) {
+      return authState.value;
     }
     return null; // success
   }
@@ -32,12 +32,12 @@ class AuthService {
     required String username,
   }) async {
     await ref
-        .read(sessionNotifierProvider.notifier)
+        .read(authActionsProvider.notifier)
         .register(email, username, password);
 
-    final state = ref.read(sessionNotifierProvider);
-    if (state.status == SessionStatus.loggedOut) {
-      return state.errorMessage ?? 'Registration failed';
+    final authState = ref.read(authActionsProvider);
+    if (authState.value != null && authState.value!.isNotEmpty) {
+      return authState.value;
     }
 
     // Mark as new registration so ProfileCheckHandler shows profile form

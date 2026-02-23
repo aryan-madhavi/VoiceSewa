@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/core/providers/session_provider.dart';
 
 /// Handles user logout with optional confirmation dialog.
@@ -17,13 +18,13 @@ class LogoutHandler {
     }
 
     try {
-      await ref.read(sessionNotifierProvider.notifier).logout();
+      await ref.read(authActionsProvider.notifier).logout();
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Logged out successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: ColorConstants.successGreen,
             duration: Duration(seconds: 2),
           ),
         );
@@ -34,7 +35,7 @@ class LogoutHandler {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Logout failed: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: ColorConstants.errorRed,
           ),
         );
       }
@@ -48,7 +49,7 @@ class LogoutHandler {
       builder: (ctx) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.logout, color: Colors.orange),
+            Icon(Icons.logout, color: ColorConstants.warningOrange),
             SizedBox(width: 8),
             Text('Logout'),
           ],
@@ -60,7 +61,9 @@ class LogoutHandler {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+            style: FilledButton.styleFrom(
+              backgroundColor: ColorConstants.warningOrange,
+            ),
             onPressed: () => Navigator.of(ctx).pop(true),
             child: const Text('Logout'),
           ),

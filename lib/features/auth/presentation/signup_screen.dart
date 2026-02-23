@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/core/providers/session_provider.dart';
 import 'package:voicesewa_worker/features/auth/presentation/widgets/auth_widgets.dart';
 import 'package:voicesewa_worker/features/auth/providers/auth_provider.dart';
@@ -21,7 +22,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -35,42 +35,41 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    ref.read(authActionsProvider.notifier).clearError();
 
-    try {
-      await ref
-          .read(sessionNotifierProvider.notifier)
-          .register(
-            _emailController.text.trim(),
-            _usernameController.text.trim(),
-            _passwordController.text,
-          );
-
-      if (!mounted) return;
-
-      final sessionState = ref.read(sessionNotifierProvider);
-
-      if (sessionState.status == SessionStatus.loggedIn) {
-        // Mark as new registration so ProfileCheckHandler shows profile form
-        ref.read(isNewRegistrationProvider.notifier).markAsNew();
-      } else if (sessionState.status == SessionStatus.loggedOut) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(sessionState.errorMessage ?? 'Signup failed'),
-            backgroundColor: Colors.red,
-          ),
+    await ref
+        .read(authActionsProvider.notifier)
+        .register(
+          _emailController.text.trim(),
+          _usernameController.text.trim(),
+          _passwordController.text,
         );
-      }
-      // Navigation handled by AppGate reacting to sessionNotifierProvider.
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+
+    if (!mounted) return;
+
+    final authState = ref.read(authActionsProvider);
+
+    if (authState.value == null && !authState.isLoading) {
+      // Success — mark as new registration so ProfileCheckHandler shows profile form.
+      // AppGate navigates automatically via sessionStatusProvider stream.
+      ref.read(isNewRegistrationProvider.notifier).markAsNew();
+    } else if (authState.value != null && authState.value!.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(authState.value!),
+          backgroundColor: ColorConstants.errorRed,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authActionsProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: ColorConstants.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -147,7 +146,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       _obscurePassword
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      color: Colors.grey,
+                      color: ColorConstants.unselectedGrey,
                     ),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
@@ -176,7 +175,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       _obscureConfirmPassword
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      color: Colors.grey,
+                      color: ColorConstants.unselectedGrey,
                     ),
                     onPressed: () => setState(
                       () => _obscureConfirmPassword = !_obscureConfirmPassword,
@@ -189,7 +188,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 AuthButton(
                   text: 'Create Account',
                   onPressed: _handleSignup,
-                  isLoading: _isLoading,
+                  isLoading: isLoading,
                 ),
 
                 const SizedBox(height: 24),
@@ -201,9 +200,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
+                    const Text(
                       'Already have an account? ',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: ColorConstants.subtitleGrey),
                     ),
                     AuthTextButton(
                       text: 'Sign In',

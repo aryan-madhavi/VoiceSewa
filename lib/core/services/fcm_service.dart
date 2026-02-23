@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/features/profile/data/repositories/worker_profile_repository.dart';
 
 class FCMService {
@@ -105,7 +106,7 @@ class FCMService {
         settings.authorizationStatus == AuthorizationStatus.provisional;
   }
 
-  // NEW: Setup foreground message handler
+  // Setup foreground message handler
   void setupForegroundMessageHandler(BuildContext context) {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print('📬 Foreground notification received');
@@ -120,7 +121,7 @@ class FCMService {
     });
   }
 
-  // NEW: Show notification dialog when app is in foreground
+  // Show notification dialog when app is in foreground
   void _showForegroundNotificationDialog(
     BuildContext context,
     RemoteMessage message,
@@ -130,7 +131,7 @@ class FCMService {
     final type = data['type'] ?? 'unknown';
 
     // Get action button text based on notification type
-    String actionText = _getActionText(type);
+    final String actionText = _getActionText(type);
 
     showDialog(
       context: context,
@@ -161,7 +162,10 @@ class FCMService {
               Navigator.of(dialogContext).pop();
               print('❌ User dismissed notification');
             },
-            child: const Text('Later', style: TextStyle(color: Colors.grey)),
+            child: const Text(
+              'Later',
+              style: TextStyle(color: ColorConstants.unselectedGrey),
+            ),
           ),
           FilledButton(
             onPressed: () {
@@ -202,27 +206,27 @@ class FCMService {
     switch (type) {
       case 'new_job':
         icon = Icons.work;
-        color = Colors.blue;
+        color = ColorConstants.primaryBlue;
         break;
       case 'job_update':
         icon = Icons.update;
-        color = Colors.orange;
+        color = ColorConstants.warningOrange;
         break;
       case 'booking':
         icon = Icons.calendar_today;
-        color = Colors.green;
+        color = ColorConstants.successGreen;
         break;
       case 'earning':
         icon = Icons.attach_money;
-        color = Colors.green;
+        color = ColorConstants.successGreen;
         break;
       case 'profile':
         icon = Icons.person;
-        color = Colors.purple;
+        color = ColorConstants.notifPurple;
         break;
       default:
         icon = Icons.notifications;
-        color = Colors.blue;
+        color = ColorConstants.primaryBlue;
     }
 
     return Container(
@@ -238,7 +242,7 @@ class FCMService {
   // Setup notification tap handlers (background/terminated)
   Future<void> setupNotificationHandlers() async {
     // Handle notification tap when app is TERMINATED (completely closed)
-    RemoteMessage? initialMessage = await _messaging.getInitialMessage();
+    final RemoteMessage? initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
       print('🚀 App opened from TERMINATED state via notification');
       _handleNotificationTap(initialMessage);

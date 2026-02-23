@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:voicesewa_worker/core/constants/app_constants.dart';
+import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/core/providers/language_provider.dart';
 import 'package:voicesewa_worker/features/auth/providers/profile_form_provider.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
@@ -129,7 +130,7 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
     if (firebaseUser == null) {
       _showSnackBar(
         'Error: Not signed in. Please restart the app.',
-        Colors.red,
+        ColorConstants.errorRed,
       );
       return;
     }
@@ -161,12 +162,20 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
       if (success) {
         ref.read(localeProvider.notifier).changeLanguage(_selectedLanguage!);
         ref.read(profileCompletionProvider.notifier).markComplete();
-        _showSnackBar('Profile created successfully! 🎉', Colors.green);
+        _showSnackBar(
+          'Profile created successfully! 🎉',
+          ColorConstants.successGreen,
+        );
       } else {
-        _showSnackBar('Failed to save profile. Please try again.', Colors.red);
+        _showSnackBar(
+          'Failed to save profile. Please try again.',
+          ColorConstants.errorRed,
+        );
       }
     } catch (e) {
-      if (mounted) _showSnackBar('Error: ${e.toString()}', Colors.red);
+      if (mounted) {
+        _showSnackBar('Error: ${e.toString()}', ColorConstants.errorRed);
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -187,11 +196,11 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: ColorConstants.backgroundColor,
       appBar: AppBar(
         title: const Text('Complete Your Profile'),
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
+        backgroundColor: ColorConstants.pureWhite,
         elevation: 0,
       ),
       body: SafeArea(
@@ -209,7 +218,10 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                 const SizedBox(height: 8),
                 Text(
                   "Let's set up your worker profile to get started",
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: ColorConstants.subtitleGrey,
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -283,7 +295,10 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                 const SizedBox(height: 8),
                 Text(
                   'Select the primary service you offer',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: ColorConstants.subtitleGrey,
+                  ),
                 ),
                 const SizedBox(height: 12),
 
@@ -323,12 +338,12 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? color.withOpacity(0.12)
-                                    : Colors.white,
+                                    : ColorConstants.pureWhite,
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: isSelected
                                       ? color
-                                      : Colors.grey.shade300,
+                                      : ColorConstants.dividerGrey,
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),
@@ -341,7 +356,9 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                                   Icon(
                                     icon,
                                     size: 18,
-                                    color: isSelected ? color : Colors.grey,
+                                    color: isSelected
+                                        ? color
+                                        : ColorConstants.unselectedGrey,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
@@ -354,7 +371,7 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                                             : FontWeight.normal,
                                         color: isSelected
                                             ? color
-                                            : Colors.grey.shade700,
+                                            : ColorConstants.unselectedGreyDark,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -401,7 +418,10 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                 const SizedBox(height: 4),
                 Text(
                   'Used to match you with nearby jobs.',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: ColorConstants.subtitleGrey,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -419,7 +439,9 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                           _geoPoint != null
                               ? Icons.check_circle_outline
                               : Icons.my_location,
-                          color: _geoPoint != null ? Colors.green : null,
+                          color: _geoPoint != null
+                              ? ColorConstants.successGreen
+                              : null,
                         ),
                   label: Text(
                     _isFetchingLocation
@@ -430,9 +452,13 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                   ),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    foregroundColor: _geoPoint != null ? Colors.green : null,
+                    foregroundColor: _geoPoint != null
+                        ? ColorConstants.successGreen
+                        : null,
                     side: BorderSide(
-                      color: _geoPoint != null ? Colors.green : Colors.grey,
+                      color: _geoPoint != null
+                          ? ColorConstants.successGreen
+                          : ColorConstants.unselectedGrey,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -450,8 +476,8 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                             : Icons.info_outline,
                         size: 16,
                         color: _locationStatusMessage!.startsWith('✅')
-                            ? Colors.green
-                            : Colors.orange,
+                            ? ColorConstants.successGreen
+                            : ColorConstants.warningOrange,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -460,8 +486,8 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                           style: TextStyle(
                             fontSize: 12,
                             color: _locationStatusMessage!.startsWith('✅')
-                                ? Colors.green[700]
-                                : Colors.orange[800],
+                                ? ColorConstants.successGreenDark
+                                : ColorConstants.warningOrangeDark,
                           ),
                         ),
                       ),
@@ -519,8 +545,9 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    backgroundColor: Colors.blue,
-                    disabledBackgroundColor: Colors.grey[300],
+                    backgroundColor: ColorConstants.infoBlue,
+                    foregroundColor: ColorConstants.pureWhite,
+                    disabledBackgroundColor: ColorConstants.disabledGrey,
                   ),
                   child: _isLoading
                       ? const SizedBox(
@@ -529,7 +556,7 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                              ColorConstants.pureWhite,
                             ),
                           ),
                         )
@@ -538,7 +565,7 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: ColorConstants.pureWhite,
                           ),
                         ),
                 ),
@@ -547,16 +574,16 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: ColorConstants.infoBlueSurface,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.shade200),
+                    border: Border.all(color: ColorConstants.infoBlueBorder),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(
                         Icons.info_outline,
-                        color: Colors.blue.shade700,
+                        color: ColorConstants.infoBlueDark,
                         size: 24,
                       ),
                       const SizedBox(width: 12),
@@ -565,7 +592,7 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                           'You can update your profile later from the settings page.',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.blue.shade900,
+                            color: ColorConstants.infoBlueDeep,
                           ),
                         ),
                       ),
@@ -584,18 +611,18 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
   Widget _sectionHeader(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.blue[700]),
+        Icon(icon, size: 20, color: ColorConstants.infoBlueDark),
         const SizedBox(width: 8),
         Text(
           title,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.blue[700],
+            color: ColorConstants.infoBlueDark,
           ),
         ),
         const SizedBox(width: 8),
-        Expanded(child: Divider(color: Colors.blue[100])),
+        const Expanded(child: Divider(color: ColorConstants.infoBlueDivider)),
       ],
     );
   }
@@ -612,7 +639,7 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
       prefixIcon: Icon(icon),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: ColorConstants.pureWhite,
       alignLabelWithHint: alignLabel,
     );
   }

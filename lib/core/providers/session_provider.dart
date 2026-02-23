@@ -1,80 +1,74 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
-import 'package:voicesewa_worker/core/services/fcm_service.dart';
 import 'package:voicesewa_worker/features/auth/data/repositories/auth_repository.dart';
+
+// ── Enums ──────────────────────────────────────────────────────────────────
 
 enum SessionStatus { loading, loggedIn, loggedOut }
 
-class SessionState {
-  final SessionStatus status;
-  final User? user;
-  final String? errorMessage;
+// ── Firebase Auth Stream Providers (same pattern as client app) ────────────
 
-  const SessionState({required this.status, this.user, this.errorMessage});
+/// Raw Firebase Auth state stream — single source of truth.
+/// Never manually overwritten, so no race conditions possible.
+final authStateChangesProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
+});
 
-  SessionState copyWith({
-    SessionStatus? status,
-    User? user,
-    String? errorMessage,
-  }) {
-    return SessionState(
-      status: status ?? this.status,
-      user: user ?? this.user,
-      errorMessage: errorMessage,
-    );
-  }
-}
+/// Current Firebase user (derived from stream)
+final currentUserProvider = Provider<User?>((ref) {
+  return ref.watch(authStateChangesProvider).value;
+});
 
-class SessionNotifier extends StateNotifier<SessionState> {
-  final AuthRepository _authRepository;
-  final Ref _ref;
+/// Session status derived purely from the stream — no manual state setting.
+/// This is why the client app never has the flash/reset bug.
+final sessionStatusProvider = Provider<SessionStatus>((ref) {
+  final authState = ref.watch(authStateChangesProvider);
 
-  SessionNotifier(this._authRepository, this._ref)
-    : super(const SessionState(status: SessionStatus.loading)) {
-    _init();
-  }
+  return authState.when(
+    data: (user) =>
+        user != null ? SessionStatus.loggedIn : SessionStatus.loggedOut,
+    loading: () => SessionStatus.loading,
+    error: (_, __) => SessionStatus.loggedOut,
+  );
+});
 
-  void _init() {
-    // Firebase Auth persists sessions natively.
-    // Listen to auth state — fires immediately with current user or null.
-    _authRepository.authStateChanges.listen((user) {
-      if (user != null) {
-        print('✅ Firebase session active: ${user.email}');
-        state = SessionState(status: SessionStatus.loggedIn, user: user);
-      } else {
-        print('⚠️ No active Firebase session');
-        state = const SessionState(status: SessionStatus.loggedOut);
-      }
-    });
-  }
+// ── Auth Repository Provider ───────────────────────────────────────────────
+
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return AuthRepository();
+});
+
+// ── Auth Actions Notifier ──────────────────────────────────────────────────
+// Handles login/register/logout actions only.
+// Does NOT touch session status — the stream above handles that automatically.
+
+class AuthActionsNotifier extends Notifier<AsyncValue<String?>> {
+  @override
+  AsyncValue<String?> build() => const AsyncValue.data(null);
 
   Future<void> login(String email, String password) async {
-    state = state.copyWith(status: SessionStatus.loading, errorMessage: null);
+    state = const AsyncValue.loading();
 
-    final result = await _authRepository.login(
-      email: email,
-      password: password,
-    );
+    final repo = ref.read(authRepositoryProvider);
+    final result = await repo.login(email: email, password: password);
 
     if (result.success) {
       print('✅ Login successful: ${result.user?.email}');
-      // authStateChanges listener will update state automatically,
-      // but we set it here too for immediate UI response.
-      state = SessionState(status: SessionStatus.loggedIn, user: result.user);
+      // Stream fires automatically → sessionStatusProvider updates → AppGate navigates.
+      state = const AsyncValue.data(null);
     } else {
       print('❌ Login failed: ${result.message}');
-      state = SessionState(
-        status: SessionStatus.loggedOut,
-        errorMessage: result.message,
-      );
+      // Error stored here only — sessionStatusProvider is untouched,
+      // so AppGate never remounts LoginScreen and fields are preserved.
+      state = AsyncValue.data(result.message);
     }
   }
 
   Future<void> register(String email, String username, String password) async {
-    state = state.copyWith(status: SessionStatus.loading, errorMessage: null);
+    state = const AsyncValue.loading();
 
-    final result = await _authRepository.register(
+    final repo = ref.read(authRepositoryProvider);
+    final result = await repo.register(
       email: email,
       username: username,
       password: password,
@@ -82,40 +76,27 @@ class SessionNotifier extends StateNotifier<SessionState> {
 
     if (result.success) {
       print('✅ Registration successful: ${result.user?.email}');
-      state = SessionState(status: SessionStatus.loggedIn, user: result.user);
+      state = const AsyncValue.data(null);
     } else {
       print('❌ Registration failed: ${result.message}');
-      state = SessionState(
-        status: SessionStatus.loggedOut,
-        errorMessage: result.message,
-      );
+      state = AsyncValue.data(result.message);
     }
   }
 
   Future<void> logout() async {
     print('🚪 Logging out...');
-
-    // Clear FCM token from Firestore before signing out
-    final uid = _authRepository.currentUser?.uid;
-    if (uid != null) {
-      await _ref.read(fcmServiceProvider).clearToken(uid);
-    }
-
-    await _authRepository.logout();
-    // authStateChanges listener fires and sets loggedOut automatically.
-    state = const SessionState(status: SessionStatus.loggedOut);
+    final repo = ref.read(authRepositoryProvider);
+    await repo.logout();
+    state = const AsyncValue.data(null);
     print('✅ Logout complete');
+  }
+
+  void clearError() {
+    state = const AsyncValue.data(null);
   }
 }
 
-// ── Providers ──────────────────────────────────────────────────────────────
-
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepository();
-});
-
-final sessionNotifierProvider =
-    StateNotifierProvider<SessionNotifier, SessionState>((ref) {
-      final repo = ref.watch(authRepositoryProvider);
-      return SessionNotifier(repo, ref);
+final authActionsProvider =
+    NotifierProvider<AuthActionsNotifier, AsyncValue<String?>>(() {
+      return AuthActionsNotifier();
     });

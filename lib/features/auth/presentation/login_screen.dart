@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/core/providers/session_provider.dart';
 import 'package:voicesewa_worker/features/auth/presentation/widgets/auth_widgets.dart';
 import 'package:voicesewa_worker/features/auth/providers/auth_screen_provider.dart';
@@ -16,7 +17,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -28,35 +28,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    // Clear any previous error before attempting login
+    ref.read(authActionsProvider.notifier).clearError();
 
-    try {
-      await ref
-          .read(sessionNotifierProvider.notifier)
-          .login(_emailController.text.trim(), _passwordController.text);
+    await ref
+        .read(authActionsProvider.notifier)
+        .login(_emailController.text.trim(), _passwordController.text);
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      final sessionState = ref.read(sessionNotifierProvider);
+    // Check for error — authActionsProvider holds the error message,
+    // sessionStatusProvider is untouched on failure so AppGate never
+    // remounts this screen and fields are preserved.
+    final authState = ref.read(authActionsProvider);
+    final errorMessage = authState.value;
 
-      if (sessionState.status == SessionStatus.loggedOut) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(sessionState.errorMessage ?? 'Login failed'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      // On success, AppGate reacts to sessionNotifierProvider automatically.
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (errorMessage != null && errorMessage.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: ColorConstants.errorRed,
+        ),
+      );
     }
+    // On success: sessionStatusProvider stream fires loggedIn →
+    // AppGate switches to ProfileCheckHandler automatically.
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch loading state from authActionsProvider only
+    final authState = ref.watch(authActionsProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: ColorConstants.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -115,7 +121,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       _obscurePassword
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
-                      color: Colors.grey,
+                      color: ColorConstants.unselectedGrey,
                     ),
                     onPressed: () =>
                         setState(() => _obscurePassword = !_obscurePassword),
@@ -143,7 +149,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 AuthButton(
                   text: 'Sign In',
                   onPressed: _handleLogin,
-                  isLoading: _isLoading,
+                  isLoading: isLoading,
                 ),
 
                 const SizedBox(height: 24),
@@ -155,9 +161,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
+                    const Text(
                       "Don't have an account? ",
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: ColorConstants.subtitleGrey),
                     ),
                     AuthTextButton(
                       text: 'Sign Up',

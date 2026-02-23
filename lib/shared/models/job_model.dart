@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:voicesewa_worker/shared/data/service_data.dart';
 import 'package:voicesewa_worker/shared/models/job_address_model.dart';
 
-
 // ── Job Status ─────────────────────────────────────────────────────────────
-// Mirrors client app's JobStatus enum exactly.
-// All values use .name directly as the Firestore string value.
 
 enum JobStatusType {
   requested,
@@ -54,7 +51,7 @@ enum JobStatusType {
       case JobStatusType.scheduled:
         return const Color(0xFF0056D2);
       case JobStatusType.inProgress:
-        return const Color(0xFF00BFA5);
+        return const Color(0xFF00BFA5); 
       case JobStatusType.completed:
         return Colors.green;
       case JobStatusType.cancelled:
@@ -65,9 +62,92 @@ enum JobStatusType {
   }
 }
 
+// ── Bill Models ────────────────────────────────────────────────────────────
+
+class BillItem {
+  final String name;
+  final int quantity;
+  final double unitPrice;
+
+  const BillItem({
+    required this.name,
+    required this.quantity,
+    required this.unitPrice,
+  });
+
+  double get total => quantity * unitPrice;
+
+  factory BillItem.fromMap(Map<String, dynamic> map) => BillItem(
+    name: map['name'] as String? ?? '',
+    quantity: (map['quantity'] as num?)?.toInt() ?? 1,
+    unitPrice: (map['unit_price'] as num?)?.toDouble() ?? 0.0,
+  );
+
+  Map<String, dynamic> toMap() => {
+    'name': name,
+    'quantity': quantity,
+    'unit_price': unitPrice,
+  };
+}
+
+class JobBill {
+  final List<BillItem> items;
+  final double totalAmount;
+  final String notes;
+  final DateTime? createdAt;
+
+  const JobBill({
+    required this.items,
+    required this.totalAmount,
+    this.notes = '',
+    this.createdAt,
+  });
+
+  factory JobBill.fromMap(Map<String, dynamic> map) => JobBill(
+    items: (map['items'] as List? ?? [])
+        .map((e) => BillItem.fromMap(e as Map<String, dynamic>))
+        .toList(),
+    totalAmount: (map['total_amount'] as num?)?.toDouble() ?? 0.0,
+    notes: map['notes'] as String? ?? '',
+    createdAt: (map['created_at'] as Timestamp?)?.toDate(),
+  );
+
+  Map<String, dynamic> toMap() => {
+    'items': items.map((e) => e.toMap()).toList(),
+    'total_amount': totalAmount,
+    'notes': notes,
+    'created_at': FieldValue.serverTimestamp(),
+  };
+}
+
+// ── Worker Feedback Model ──────────────────────────────────────────────────
+// Stored as job.worker_feedback in Firestore.
+
+class WorkerFeedback {
+  final double rating;
+  final String comment;
+  final DateTime? createdAt;
+
+  const WorkerFeedback({
+    required this.rating,
+    this.comment = '',
+    this.createdAt,
+  });
+
+  factory WorkerFeedback.fromMap(Map<String, dynamic> map) => WorkerFeedback(
+    rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
+    comment: map['comment'] as String? ?? '',
+    createdAt: (map['created_at'] as Timestamp?)?.toDate(),
+  );
+
+  Map<String, dynamic> toMap() => {
+    'rating': rating,
+    'comment': comment,
+    'created_at': FieldValue.serverTimestamp(),
+  };
+}
+
 // ── Job Model ──────────────────────────────────────────────────────────────
-// Mirrors client app's Job model exactly.
-// service_type stored/read as Services enum .name (e.g. 'acApplianceTechnician').
 
 class JobModel {
   final String jobId;
@@ -82,6 +162,10 @@ class JobModel {
   final double? finalizedQuotationAmount;
   final String? workerName;
   final double? workerRating;
+  final String? otp;
+  final String? clientPhone;
+  final JobBill? bill;
+  final WorkerFeedback? workerFeedback; // ← NEW
 
   const JobModel({
     required this.jobId,
@@ -96,6 +180,10 @@ class JobModel {
     this.finalizedQuotationAmount,
     this.workerName,
     this.workerRating,
+    this.otp,
+    this.clientPhone,
+    this.bill,
+    this.workerFeedback,
   });
 
   factory JobModel.fromDoc(DocumentSnapshot doc) {
@@ -128,6 +216,16 @@ class JobModel {
           ?.toDouble(),
       workerName: map['worker_name'] as String?,
       workerRating: (map['worker_rating'] as num?)?.toDouble(),
+      otp: map['otp'] as String?,
+      clientPhone: map['client_phone'] as String?,
+      bill: map['bill'] != null
+          ? JobBill.fromMap(map['bill'] as Map<String, dynamic>)
+          : null,
+      workerFeedback: map['worker_feedback'] != null
+          ? WorkerFeedback.fromMap(
+              map['worker_feedback'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 
@@ -148,6 +246,11 @@ class JobModel {
       map['finalized_quotation_amount'] = finalizedQuotationAmount;
     if (workerName != null) map['worker_name'] = workerName;
     if (workerRating != null) map['worker_rating'] = workerRating;
+    if (otp != null) map['otp'] = otp;
+    if (clientPhone != null) map['client_phone'] = clientPhone;
+    if (bill != null) map['bill'] = bill!.toMap();
+    if (workerFeedback != null)
+      map['worker_feedback'] = workerFeedback!.toMap();
     return map;
   }
 
@@ -158,7 +261,7 @@ class JobModel {
       ServicesData.services[serviceType]![1] as IconData;
   String get serviceName => ServicesData.services[serviceType]![2] as String;
 
-  // ── Status helpers (delegates to JobStatusType) ────────────────────────────
+  // ── Status helpers ─────────────────────────────────────────────────────────
 
   bool get isRequested => status == JobStatusType.requested;
   bool get isQuoted => status == JobStatusType.quoted;
@@ -168,9 +271,18 @@ class JobModel {
   bool get isCancelled => status == JobStatusType.cancelled;
   bool get isRescheduled => status == JobStatusType.rescheduled;
   bool get hasWorker => finalizedQuotationId != null;
+  bool get hasFeedback => workerFeedback != null; // ← NEW
 
   String get statusLabel => status.statusLabel;
   Color get statusColor => status.statusColor;
+
+  bool get isScheduledToday {
+    if (scheduledAt == null) return false;
+    final now = DateTime.now();
+    return scheduledAt!.year == now.year &&
+        scheduledAt!.month == now.month &&
+        scheduledAt!.day == now.day;
+  }
 
   // ── Date helpers ───────────────────────────────────────────────────────────
 
@@ -209,6 +321,10 @@ class JobModel {
     double? finalizedQuotationAmount,
     String? workerName,
     double? workerRating,
+    String? otp,
+    String? clientPhone,
+    JobBill? bill,
+    WorkerFeedback? workerFeedback,
   }) {
     return JobModel(
       jobId: jobId ?? this.jobId,
@@ -224,6 +340,10 @@ class JobModel {
           finalizedQuotationAmount ?? this.finalizedQuotationAmount,
       workerName: workerName ?? this.workerName,
       workerRating: workerRating ?? this.workerRating,
+      otp: otp ?? this.otp,
+      clientPhone: clientPhone ?? this.clientPhone,
+      bill: bill ?? this.bill,
+      workerFeedback: workerFeedback ?? this.workerFeedback,
     );
   }
 

@@ -21,30 +21,28 @@ class _AppGateState extends ConsumerState<AppGate> {
   }
 
   Future<void> _setupFCM() async {
-    // FCM setup remains unchanged — inject fcmServiceProvider here
-    // as you had it before. Keeping stub for brevity.
     print('🔔 FCM setup in AppGate');
   }
 
   @override
   Widget build(BuildContext context) {
-    final sessionState = ref.watch(sessionNotifierProvider);
+    // Now reads from stream-derived provider — no manual state, no race conditions.
+    final sessionStatus = ref.watch(sessionStatusProvider);
     final authScreen = ref.watch(authScreenProvider);
 
-    switch (sessionState.status) {
+    switch (sessionStatus) {
       case SessionStatus.loading:
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
       case SessionStatus.loggedIn:
-        // Delegate profile check to ProfileCheckHandler (mirrors client app)
         return const ProfileCheckHandler();
 
       case SessionStatus.loggedOut:
+        // ValueKeys ensure Flutter reuses the same widget instance,
+        // so controllers/fields survive provider rebuilds.
         return authScreen == AuthScreen.login
-            ? const LoginScreen()
-            : const SignupScreen();
+            ? const LoginScreen(key: ValueKey('login'))
+            : const SignupScreen(key: ValueKey('signup'));
     }
   }
 }

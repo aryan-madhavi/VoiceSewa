@@ -20,7 +20,7 @@ class MyJobCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: Card(
         elevation: 2,
-        shadowColor: Colors.black12,
+        shadowColor: ColorConstants.shadowBlack,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Stack(
           children: [
@@ -33,14 +33,17 @@ class MyJobCard extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Service icon + name
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: job.serviceColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(job.serviceIcon, size: 18, color: job.serviceColor),
+                        child: Icon(
+                          job.serviceIcon,
+                          size: 18,
+                          color: job.serviceColor,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -109,7 +112,9 @@ class MyJobCard extends StatelessWidget {
 
             // ── Left accent bar ───────────────────────────────────────────
             Positioned(
-              left: 0, top: 0, bottom: 0,
+              left: 0,
+              top: 0,
+              bottom: 0,
               width: 5,
               child: Container(
                 decoration: BoxDecoration(
@@ -141,7 +146,7 @@ class MyJobCard extends StatelessWidget {
         return _ActionButton(
           label: 'View Receipt',
           icon: Icons.receipt_long_outlined,
-          color: Colors.green,
+          color: ColorConstants.successGreen,
           outlined: true,
           onTap: () => _openDetails(context),
         );
@@ -157,12 +162,26 @@ class MyJobCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime dt) {
-    final now  = DateTime.now();
+    final now = DateTime.now();
     final diff = now.difference(dt);
     if (diff.inDays == 0) return 'Today';
     if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 7)  return '${diff.inDays} days ago';
-    const m = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    const m = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${dt.day} ${m[dt.month]}, ${dt.year}';
   }
 }
@@ -185,7 +204,11 @@ class _StatusBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: color,
+        ),
       ),
     );
   }
@@ -208,8 +231,10 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(8));
-    final padding = const EdgeInsets.symmetric(vertical: 10);
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    );
+    const padding = EdgeInsets.symmetric(vertical: 10);
 
     if (outlined) {
       return SizedBox(
@@ -236,7 +261,7 @@ class _ActionButton extends StatelessWidget {
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
-          foregroundColor: Colors.white,
+          foregroundColor: ColorConstants.pureWhite,
           padding: padding,
           elevation: 0,
           shape: shape,

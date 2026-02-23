@@ -35,7 +35,8 @@ class LogoutNotifier extends StateNotifier<LogoutState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      await ref.read(sessionNotifierProvider.notifier).logout();
+      // Now delegates to authActionsProvider instead of sessionNotifierProvider
+      await ref.read(authActionsProvider.notifier).logout();
 
       state = state.copyWith(isLoading: false, isSuccess: true);
 
