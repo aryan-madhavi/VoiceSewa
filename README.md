@@ -83,18 +83,33 @@ jobs - collection
       client_uid: string,
       created_at: timestamp,
       status: "requested" | "quoted" | "scheduled" | "inProgress" | "completed" | "cancelled" | "rescheduled",
-      finalized_quotation: reference<quo-uuid>,
-      finalized_quotation_amount: number,
-      scheduled_at: timestamp,
-      worker_name: String,
-      worker_rating: number,
+      finalized_quotation: reference<quo-uuid> | null,
+      finalized_quotation_amount: number | null,
+      scheduled_at: timestamp | null,
+      worker_name: String | null,
+      worker_rating: number | null,
+      client_phone: string | null,
+      otp: string | null,
+      bill: {
+        items: [
+          {
+            name: string,
+            quantity: number,
+            unit_price: number
+          }
+        ],
+        total_amount: number,
+        notes: string,
+        created_at: timestamp
+      } | null,
+      
     }
     quotations - collection
       quo-uuid - document
       {
         worker_uid: string,
         worker_name: string,
-        wroker_rating: number,
+        worker_rating: number,
         estimated_cost: string,
         estimated_time: string,
         description: string,
@@ -113,5 +128,15 @@ jobs - collection
         rejection_reason: string | null,
         withdrawal_reason: string | null,
         auto_rejected: boolean | null
+      },
+    messages - collection
+      msg-uuid - docunment
+      {
+        sender_uid: string,
+        sender_name: string,
+        text: string,
+        is_worker: boolean,
+        sent_at: timestamp
+      }
       }
 ```
