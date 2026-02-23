@@ -138,5 +138,4 @@ jobs - collection
         is_worker: boolean,
         sent_at: timestamp
       }
-      }
 ```
