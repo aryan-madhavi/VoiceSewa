@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 // import 'package:voicesewa_client/core/providers/database_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/audio_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/chat_provider.dart';
@@ -16,8 +17,7 @@ class VoiceBotController extends Notifier<bool> {
   /// Processes user speech and plays AI response (text + optional audio)
   Future<void> processSpeech(String msg) async {
     final AudioNotifier = ref.read(AudioProvider.notifier);
-    // final uid = ref.read(currentUserIdProvider);
-    final uid = 'anonymous_user'; // Temporary UID for testing
+    final uid = ref.read(currentUserIdProvider);
     final lang = ref.read(speechProvider).localeId;
     if (msg.trim().isEmpty) return;
 
@@ -26,13 +26,13 @@ class VoiceBotController extends Notifier<bool> {
     try {
       final response = await http.post(
         Uri.parse(
-          'https://pagales705roratu.app.n8n.cloud/webhook/converse',
+          'https://fomoha8938hutudns.app.n8n.cloud/webhook/chat',
         ),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({'uid': uid, 'msg': msg, 'lang': lang}),
+        body: jsonEncode({'uid': uid, 'msg': msg, 'lang': lang, 'type': 'client'}),
       );
 
       if (response.statusCode != 200) {
