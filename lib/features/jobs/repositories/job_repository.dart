@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:voicesewa_worker/shared/data/service_data.dart';
@@ -11,21 +12,42 @@ class JobRepository {
   CollectionReference get _workers => _firestore.collection('workers');
   CollectionReference get _clients => _firestore.collection('clients');
 
-  // ── Cache-first document fetch ────────────────────────────────────────────
-  // Tries Firestore local cache first, falls back to server.
-  // This makes the app work offline and shows data instantly on repeat opens.
+  // ── Smart document fetch ──────────────────────────────────────────────────
+  // Strategy: try server first (fresh data), fall back to cache if offline/error.
+  // This ensures:
+  //   • Online  → always gets the latest status (fixes the scheduled job bug)
+  //   • Offline → gracefully serves cached data instead of crashing
+  //
+  // Unlike the old cache-first approach, this never serves a stale status
+  // (e.g. showing "quoted" when the job is already "scheduled").
 
   Future<DocumentSnapshot> _getDoc(DocumentReference ref) async {
     try {
-      return await ref.get(const GetOptions(source: Source.cache));
-    } catch (_) {
+      // 1st attempt: live server data
       return await ref.get(const GetOptions(source: Source.server));
+    } catch (_) {
+      // Offline or network error → fall back to local cache
+      try {
+        return await ref.get(const GetOptions(source: Source.cache));
+      } catch (e) {
+        rethrow; // Nothing we can do — bubble up
+      }
     }
   }
 
-  // ── Parallel document fetch ────────────────────────────────────────────────
-  // Resolves all refs simultaneously instead of one-by-one.
-  // 10 serial awaits (≈10s) → 10 parallel awaits (≈1s, limited by slowest).
+  // ── Smart query fetch ─────────────────────────────────────────────────────
+  // Same server-first / cache-fallback strategy for collection queries.
+
+  Future<QuerySnapshot> _getQuery(Query query) async {
+    try {
+      return await query.get(const GetOptions(source: Source.server));
+    } catch (_) {
+      return await query.get(const GetOptions(source: Source.cache));
+    }
+  }
+
+  // ── Parallel document fetch ───────────────────────────────────────────────
+  // Resolves all refs simultaneously using the smart _getDoc above.
 
   Future<List<JobModel>> _fetchJobRefs(List<DocumentReference> refs) async {
     if (refs.isEmpty) return [];
@@ -33,7 +55,50 @@ class JobRepository {
     return docs.where((d) => d.exists).map((d) => JobModel.fromDoc(d)).toList();
   }
 
-  // ── Haversine distance (km) ────────────────────────────────────────────────
+  // ── Combine multiple job doc streams — no external packages ─────────────
+  // Works by keeping the latest snapshot from each job ref in a fixed-size list.
+  // Any time one job doc changes, the full merged list is re-emitted.
+  // Uses only dart:async — no rxdart needed.
+
+  Stream<List<JobModel?>> _combineJobStreams(List<Stream<JobModel?>> streams) {
+    if (streams.isEmpty) return Stream.value([]);
+    if (streams.length == 1) return streams.first.map((j) => [j]);
+
+    final controller = StreamController<List<JobModel?>>();
+    final latest = List<JobModel?>.filled(streams.length, null);
+    final received = List<bool>.filled(streams.length, false);
+    final subs = <StreamSubscription>[];
+    int receivedCount = 0;
+
+    for (int i = 0; i < streams.length; i++) {
+      final index = i;
+      final sub = streams[index].listen(
+        (job) {
+          if (!received[index]) {
+            received[index] = true;
+            receivedCount++;
+          }
+          latest[index] = job;
+          // Only emit once every stream has produced at least one value
+          if (receivedCount == streams.length) {
+            if (!controller.isClosed) controller.add(List.of(latest));
+          }
+        },
+        onError: (e) {
+          if (!controller.isClosed) controller.addError(e);
+        },
+      );
+      subs.add(sub);
+    }
+
+    controller.onCancel = () {
+      for (final s in subs) s.cancel();
+    };
+
+    return controller.stream;
+  }
+
+  // ── Haversine distance (km) ───────────────────────────────────────────────
 
   double _distanceKm(GeoPoint a, GeoPoint b) {
     const r = 6371.0;
@@ -51,14 +116,9 @@ class JobRepository {
   double _toRad(double deg) => deg * pi / 180;
 
   // ── Incoming jobs ─────────────────────────────────────────────────────────
-  // Key changes vs original:
-  //   • Queries per service_type individually (uses Firestore index on
-  //     [service_type, status]) instead of scanning the whole collection.
-  //   • Filters declined IDs in Dart — no extra round-trips.
-  //   • Fetches applied (quoted) refs in parallel.
-  //   • Removes orderBy from Firestore — sorts in memory instead, eliminating
-  //     composite index dependency and the slow index-build cold start.
-  //   • Limits each per-service query to 50 docs to bound scan cost.
+  // Queries per service_type individually using server-first fetch.
+  // Applied (quoted) jobs are also refreshed from server so their status
+  // is always current.
 
   Future<List<JobModel>> fetchIncomingJobs({
     required List<String> workerSkills,
@@ -79,9 +139,14 @@ class JobRepository {
         );
         if ((entry.value as List).isNotEmpty) matchingServices.add(entry.key);
       }
-      if (matchingServices.isEmpty) return [];
+      if (matchingServices.isEmpty) {
+        print(
+          '⚠️ fetchIncomingJobs — no matching services for skills: $workerSkills',
+        );
+        return [];
+      }
 
-      // Fetch worker doc once (cache-first)
+      // Fetch worker doc (server-first so declined/applied lists are fresh)
       final workerDoc = await _getDoc(_workers.doc(workerUid));
       final workerData = workerDoc.data() as Map<String, dynamic>? ?? {};
       final jobsMap = workerData['jobs'] as Map<String, dynamic>? ?? {};
@@ -93,15 +158,14 @@ class JobRepository {
         jobsMap['applied'] ?? [],
       );
 
-      // 1. Query requested jobs — one query per matched service in parallel.
-      //    This targets the [service_type + status] composite index and avoids
-      //    scanning unrelated service documents entirely.
+      // 1. Query requested jobs per service — server-first, cache fallback
       final serviceQueries = matchingServices.map((service) {
-        return _jobs
-            .where('service_type', isEqualTo: service.name)
-            .where('status', isEqualTo: 'requested')
-            .limit(limitPerService)
-            .get(const GetOptions(source: Source.serverAndCache));
+        return _getQuery(
+          _jobs
+              .where('service_type', isEqualTo: service.name)
+              .where('status', isEqualTo: 'requested')
+              .limit(limitPerService),
+        );
       });
 
       final serviceSnaps = await Future.wait(serviceQueries);
@@ -122,7 +186,7 @@ class JobRepository {
         }
       }
 
-      // 2. Fetch applied (quoted) jobs in parallel
+      // 2. Fetch applied (quoted) jobs — server-first for fresh status
       if (appliedRefs.isNotEmpty) {
         final appliedDocs = await Future.wait(appliedRefs.map(_getDoc));
         for (final doc in appliedDocs) {
@@ -135,11 +199,10 @@ class JobRepository {
         }
       }
 
-      // Sort in memory — no Firestore index needed
       results.sort((a, b) {
         final aDate = a.createdAt ?? DateTime(0);
         final bDate = b.createdAt ?? DateTime(0);
-        return bDate.compareTo(aDate); // newest first
+        return bDate.compareTo(aDate);
       });
 
       print(
@@ -154,7 +217,6 @@ class JobRepository {
   }
 
   // ── Applied jobs ──────────────────────────────────────────────────────────
-  // Parallel fetch — was serial loop.
 
   Future<List<JobModel>> fetchAppliedJobs(String workerUid) async {
     try {
@@ -171,67 +233,50 @@ class JobRepository {
     }
   }
 
-  // ── Ongoing jobs stream ────────────────────────────────────────────────────
-  // Was: asyncMap with serial for-loop → now parallel Future.wait inside asyncMap.
-  // asyncMap is kept because we genuinely need live updates when the worker doc
-  // changes (new job confirmed, job moves to completed etc.), but the inner
-  // fetches are now all parallel.
+  // ── Ongoing jobs stream ───────────────────────────────────────────────────
+  // Two-level real-time listening — no external packages:
+  //   Level 1 — worker doc snapshots() → detects when confirmed[] ref list changes.
+  //   Level 2 — each job ref snapshots() → detects field changes on job docs.
+  //
+  // Uses _watchJobRefs() which manages individual job streams via a
+  // StreamController and re-emits whenever any job doc changes.
 
   Stream<List<JobModel>> watchOngoingJobs(String workerUid) {
     const ongoingStatuses = {'scheduled', 'inProgress', 'rescheduled'};
-    return _workers.doc(workerUid).snapshots().asyncMap((snap) async {
-      if (!snap.exists) return <JobModel>[];
-      final data = snap.data() as Map<String, dynamic>;
-      final confirmedRefs = List<DocumentReference>.from(
-        (data['jobs'] as Map<String, dynamic>?)?['confirmed'] ?? [],
-      );
-      if (confirmedRefs.isEmpty) return <JobModel>[];
-
-      // Parallel fetch — all confirmed jobs at once
-      final jobs = await _fetchJobRefs(confirmedRefs);
-      return jobs
-          .where((j) => ongoingStatuses.contains(j.status.value))
-          .toList()
-        ..sort((a, b) {
-          final aDate = a.scheduledAt ?? a.createdAt ?? DateTime(0);
-          final bDate = b.scheduledAt ?? b.createdAt ?? DateTime(0);
-          return bDate.compareTo(aDate);
-        });
-    });
+    return _watchWorkerJobRefs(
+      workerUid: workerUid,
+      refsKey: 'confirmed',
+      filter: (jobs) =>
+          jobs.where((j) => ongoingStatuses.contains(j.status.value)).toList()
+            ..sort((a, b) {
+              final aDate = a.scheduledAt ?? a.createdAt ?? DateTime(0);
+              final bDate = b.scheduledAt ?? b.createdAt ?? DateTime(0);
+              return bDate.compareTo(aDate);
+            }),
+    );
   }
 
   // ── Completed jobs stream ─────────────────────────────────────────────────
-  // Parallel fetch + lazy pagination: only fetches the most recent 20 by
-  // slicing refs in reverse. Older ones load via loadMoreCompleted().
 
   static const int _completedPageSize = 20;
 
   Stream<List<JobModel>> watchCompletedJobs(String workerUid) {
-    return _workers.doc(workerUid).snapshots().asyncMap((snap) async {
-      if (!snap.exists) return <JobModel>[];
-      final data = snap.data() as Map<String, dynamic>;
-      final completedRefs = List<DocumentReference>.from(
-        (data['jobs'] as Map<String, dynamic>?)?['completed'] ?? [],
-      );
-      if (completedRefs.isEmpty) return <JobModel>[];
-
-      // Only fetch the latest _completedPageSize refs (refs are append-order)
-      final recentRefs = completedRefs.length > _completedPageSize
-          ? completedRefs.sublist(completedRefs.length - _completedPageSize)
-          : completedRefs;
-
-      final jobs = await _fetchJobRefs(recentRefs);
-      return jobs.where((j) => j.status == JobStatusType.completed).toList()
-        ..sort((a, b) {
-          final aDate = a.createdAt ?? DateTime(0);
-          final bDate = b.createdAt ?? DateTime(0);
-          return bDate.compareTo(aDate);
-        });
-    });
+    return _watchWorkerJobRefs(
+      workerUid: workerUid,
+      refsKey: 'completed',
+      pageSize: _completedPageSize,
+      filter: (jobs) =>
+          jobs.where((j) => j.status == JobStatusType.completed).toList()
+            ..sort((a, b) {
+              final aDate = a.createdAt ?? DateTime(0);
+              final bDate = b.createdAt ?? DateTime(0);
+              return bDate.compareTo(aDate);
+            }),
+    );
   }
 
-  /// Load an older page of completed jobs (call when user scrolls to bottom).
-  /// [alreadyLoadedCount] = number already shown; returns the next page.
+  // ── Load more completed jobs (lazy pagination) ────────────────────────────
+
   Future<List<JobModel>> loadMoreCompleted({
     required String workerUid,
     required int alreadyLoadedCount,
@@ -247,7 +292,7 @@ class JobRepository {
 
       final totalRefs = completedRefs.length;
       final endIndex = totalRefs - alreadyLoadedCount;
-      if (endIndex <= 0) return []; // nothing more to load
+      if (endIndex <= 0) return [];
 
       final startIndex = (endIndex - _completedPageSize).clamp(0, endIndex);
       final pageRefs = completedRefs.sublist(startIndex, endIndex);
@@ -266,21 +311,123 @@ class JobRepository {
   }
 
   // ── Withdrawn jobs stream ─────────────────────────────────────────────────
-  // Parallel fetch replacing serial loop.
 
   Stream<List<JobModel>> watchWithdrawnJobs(String workerUid) {
-    return _workers.doc(workerUid).snapshots().asyncMap((snap) async {
-      if (!snap.exists) return <JobModel>[];
-      final data = snap.data() as Map<String, dynamic>;
-      final declinedRefs = List<DocumentReference>.from(
-        (data['jobs'] as Map<String, dynamic>?)?['declined'] ?? [],
-      );
-      return _fetchJobRefs(declinedRefs);
-    });
+    return _watchWorkerJobRefs(
+      workerUid: workerUid,
+      refsKey: 'declined',
+      filter: (jobs) => jobs,
+    );
+  }
+
+  // ── Master real-time ref-list watcher ────────────────────────────────────
+  // Watches a worker doc's job ref array (confirmed/completed/declined) and
+  // streams each referenced job doc via snapshots() — pure dart:async only.
+  //
+  // When worker doc changes (refs added/removed) → cancels old job subscriptions,
+  // starts fresh ones for the new ref list.
+  // When any job doc field changes → immediately re-emits the full filtered list.
+  //
+  // This is the same pattern Firestore uses internally for collection queries —
+  // just applied manually to a ref array.
+
+  Stream<List<JobModel>> _watchWorkerJobRefs({
+    required String workerUid,
+    required String refsKey,
+    required List<JobModel> Function(List<JobModel>) filter,
+    int? pageSize,
+  }) {
+    // Outer controller — what the UI listens to
+    final outerController = StreamController<List<JobModel>>();
+
+    // Subscription to the worker doc
+    StreamSubscription? workerSub;
+
+    // Inner subscriptions to individual job docs (reset when refs change)
+    final List<StreamSubscription> jobSubs = [];
+
+    void cancelJobSubs() {
+      for (final s in jobSubs) s.cancel();
+      jobSubs.clear();
+    }
+
+    workerSub = _workers
+        .doc(workerUid)
+        .snapshots()
+        .listen(
+          (workerSnap) {
+            // Worker doc changed — cancel old job listeners and start fresh
+            cancelJobSubs();
+
+            if (!workerSnap.exists) {
+              if (!outerController.isClosed) outerController.add([]);
+              return;
+            }
+
+            final data = workerSnap.data() as Map<String, dynamic>;
+            var refs = List<DocumentReference>.from(
+              (data['jobs'] as Map<String, dynamic>?)?[refsKey] ?? [],
+            );
+
+            if (refs.isEmpty) {
+              if (!outerController.isClosed) outerController.add([]);
+              return;
+            }
+
+            // Apply pagination if needed (completed jobs)
+            if (pageSize != null && refs.length > pageSize) {
+              refs = refs.sublist(refs.length - pageSize);
+            }
+
+            // latest[i] holds the most recent snapshot for each ref
+            final latest = List<JobModel?>.filled(refs.length, null);
+            final received = List<bool>.filled(refs.length, false);
+            int receivedCount = 0;
+
+            for (int i = 0; i < refs.length; i++) {
+              final index = i;
+              final sub = refs[index].snapshots().listen(
+                (docSnap) {
+                  if (!docSnap.exists) {
+                    latest[index] = null;
+                  } else {
+                    latest[index] = JobModel.fromDoc(docSnap);
+                  }
+
+                  if (!received[index]) {
+                    received[index] = true;
+                    receivedCount++;
+                  }
+
+                  // Only emit once every job has produced its first snapshot
+                  if (receivedCount == refs.length) {
+                    final jobs = latest.whereType<JobModel>().toList();
+                    if (!outerController.isClosed) {
+                      outerController.add(filter(jobs));
+                    }
+                  }
+                },
+                onError: (e) {
+                  if (!outerController.isClosed) outerController.addError(e);
+                },
+              );
+              jobSubs.add(sub);
+            }
+          },
+          onError: (e) {
+            if (!outerController.isClosed) outerController.addError(e);
+          },
+        );
+
+    outerController.onCancel = () {
+      workerSub?.cancel();
+      cancelJobSubs();
+    };
+
+    return outerController.stream;
   }
 
   // ── Declined jobs ─────────────────────────────────────────────────────────
-  // Parallel fetch replacing serial loop.
 
   Future<List<JobModel>> fetchDeclinedJobs(String workerUid) async {
     try {
@@ -330,7 +477,8 @@ class JobRepository {
   }) async {
     try {
       final quoRef = _jobs.doc(jobId).collection('quotations').doc(quotationId);
-      final snap = await quoRef.get();
+      // Always fetch from server to check viewed_by_client accurately
+      final snap = await quoRef.get(const GetOptions(source: Source.server));
       if (!snap.exists) return false;
       if ((snap.data() as Map)['viewed_by_client'] == true) return false;
       await quoRef.update({
@@ -385,12 +533,13 @@ class JobRepository {
     required String workerUid,
   }) async {
     try {
-      final snap = await _jobs
-          .doc(jobId)
-          .collection('quotations')
-          .where('worker_uid', isEqualTo: workerUid)
-          .limit(1)
-          .get();
+      final snap = await _getQuery(
+        _jobs
+            .doc(jobId)
+            .collection('quotations')
+            .where('worker_uid', isEqualTo: workerUid)
+            .limit(1),
+      );
       if (snap.docs.isEmpty) return null;
       return QuotationModel.fromDoc(snap.docs.first, jobId);
     } catch (e) {
@@ -430,13 +579,16 @@ class JobRepository {
   }
 
   // ── Verify OTP ────────────────────────────────────────────────────────────
+  // Always fetches from server — OTP must never be read from stale cache.
 
   Future<bool> verifyOtp({
     required String jobId,
     required String enteredOtp,
   }) async {
     try {
-      final doc = await _jobs.doc(jobId).get();
+      final doc = await _jobs
+          .doc(jobId)
+          .get(const GetOptions(source: Source.server));
       if (!doc.exists) return false;
       final stored = (doc.data() as Map<String, dynamic>)['otp'] as String?;
       return stored != null && stored == enteredOtp;

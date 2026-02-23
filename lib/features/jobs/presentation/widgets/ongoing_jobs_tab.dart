@@ -96,21 +96,40 @@ class _OngoingJobsTabState extends ConsumerState<OngoingJobsTab> {
             data: (jobs) {
               final filtered = _applyFilters(jobs);
               if (filtered.isEmpty) {
-                return JobEmptyState(
-                  icon: Icons.work_outline,
-                  title: _emptyTitle(),
-                  subtitle: _emptySubtitle(),
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(ongoingJobsProvider);
+                    await Future.delayed(const Duration(milliseconds: 800));
+                  },
+                  child: ListView(
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.55,
+                        child: JobEmptyState(
+                          icon: Icons.work_outline,
+                          title: _emptyTitle(),
+                          subtitle: _emptySubtitle(),
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               }
               final sorted = widget.sortJobs(filtered, widget.sort);
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+              return RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(ongoingJobsProvider);
+                  await Future.delayed(const Duration(milliseconds: 800));
+                },
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  itemCount: sorted.length,
+                  itemBuilder: (_, i) =>
+                      MyJobCard(job: sorted[i], tabType: JobTabType.ongoing),
                 ),
-                itemCount: sorted.length,
-                itemBuilder: (_, i) =>
-                    MyJobCard(job: sorted[i], tabType: JobTabType.ongoing),
               );
             },
           ),

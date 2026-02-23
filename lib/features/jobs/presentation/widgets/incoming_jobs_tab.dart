@@ -119,6 +119,9 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
                       onRefresh: () async {
                         ref.invalidate(incomingJobsProvider);
                         ref.invalidate(declinedJobsProvider);
+                        // Wait briefly so the stream re-subscribes and
+                        // the indicator stays visible while fetching.
+                        await Future.delayed(const Duration(milliseconds: 800));
                       },
                       child: ListView.builder(
                         padding: const EdgeInsets.symmetric(
@@ -197,11 +200,18 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
       );
     }
     final sorted = widget.sortJobs(filtered, widget.sort);
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: sorted.length,
-      itemBuilder: (_, i) =>
-          MyJobCard(job: sorted[i], tabType: JobTabType.incoming),
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(incomingJobsProvider);
+        ref.invalidate(declinedJobsProvider);
+        await Future.delayed(const Duration(milliseconds: 800));
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        itemCount: sorted.length,
+        itemBuilder: (_, i) =>
+            MyJobCard(job: sorted[i], tabType: JobTabType.incoming),
+      ),
     );
   }
 

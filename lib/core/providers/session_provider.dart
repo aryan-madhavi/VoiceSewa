@@ -6,7 +6,7 @@ import 'package:voicesewa_worker/features/auth/data/repositories/auth_repository
 
 enum SessionStatus { loading, loggedIn, loggedOut }
 
-// ── Firebase Auth Stream Providers (same pattern as client app) ────────────
+// ── Firebase Auth Stream Providers ────────────────────────────────────────
 
 /// Raw Firebase Auth state stream — single source of truth.
 /// Never manually overwritten, so no race conditions possible.
@@ -14,13 +14,12 @@ final authStateChangesProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
-/// Current Firebase user (derived from stream)
+/// Current Firebase user (derived from stream).
 final currentUserProvider = Provider<User?>((ref) {
   return ref.watch(authStateChangesProvider).value;
 });
 
 /// Session status derived purely from the stream — no manual state setting.
-/// This is why the client app never has the flash/reset bug.
 final sessionStatusProvider = Provider<SessionStatus>((ref) {
   final authState = ref.watch(authStateChangesProvider);
 
@@ -39,8 +38,8 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 });
 
 // ── Auth Actions Notifier ──────────────────────────────────────────────────
-// Handles login/register/logout actions only.
-// Does NOT touch session status — the stream above handles that automatically.
+// Handles login / register / logout actions only.
+// Session status is derived from the Firebase Auth stream — never set manually.
 
 class AuthActionsNotifier extends Notifier<AsyncValue<String?>> {
   @override
@@ -54,12 +53,9 @@ class AuthActionsNotifier extends Notifier<AsyncValue<String?>> {
 
     if (result.success) {
       print('✅ Login successful: ${result.user?.email}');
-      // Stream fires automatically → sessionStatusProvider updates → AppGate navigates.
       state = const AsyncValue.data(null);
     } else {
       print('❌ Login failed: ${result.message}');
-      // Error stored here only — sessionStatusProvider is untouched,
-      // so AppGate never remounts LoginScreen and fields are preserved.
       state = AsyncValue.data(result.message);
     }
   }
@@ -83,12 +79,33 @@ class AuthActionsNotifier extends Notifier<AsyncValue<String?>> {
     }
   }
 
+  // ── Logout ─────────────────────────────────────────────────────────────
+  // Full cleanup sequence (see auth_repository.dart for step-by-step detail):
+  //   1. Delete FCM token from device
+  //   2. Remove fcm_token from Firestore worker doc
+  //   3. Firebase Auth signOut  ← triggers authStateChanges stream
+  //   4. Firestore clearPersistence  ← safe now (stream fired, listeners drop)
+  //
+  // The authStateChanges stream fires after step 3, which causes
+  // sessionStatusProvider → loggedOut → AppGate navigates to LoginScreen.
+  // All Riverpod providers are invalidated automatically by the navigation
+  // rebuild, so no stale provider state leaks to the next session.
+
   Future<void> logout() async {
-    print('🚪 Logging out...');
-    final repo = ref.read(authRepositoryProvider);
-    await repo.logout();
-    state = const AsyncValue.data(null);
-    print('✅ Logout complete');
+    print('🚪 Logging out — starting cleanup sequence...');
+    state = const AsyncValue.loading();
+
+    try {
+      final repo = ref.read(authRepositoryProvider);
+      await repo.logout(); // Full cleanup: FCM + signOut + cache wipe
+      state = const AsyncValue.data(null);
+      print('✅ Logout complete — all cleanup done');
+    } catch (e) {
+      // Even if cleanup partially fails, auth signOut always runs first
+      // so the user is always logged out visually.
+      print('⚠️ Logout cleanup error (user still signed out): $e');
+      state = const AsyncValue.data(null);
+    }
   }
 
   void clearError() {

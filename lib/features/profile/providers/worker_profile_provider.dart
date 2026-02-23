@@ -12,8 +12,6 @@ final workerProfileRepositoryProvider = Provider<WorkerProfileRepository>((
 
 // ── Check if worker has a profile in Firestore ────────────────────────────
 
-/// Returns true if a `workers/{uid}` document exists in Firestore.
-/// Uses Firestore offline cache automatically when device is offline.
 final userHasProfileProvider = FutureProvider.autoDispose.family<bool, String>((
   ref,
   uid,
@@ -23,7 +21,7 @@ final userHasProfileProvider = FutureProvider.autoDispose.family<bool, String>((
   return repo.hasProfile(uid);
 });
 
-// ── Fetch the full worker profile ─────────────────────────────────────────
+// ── Fetch the full worker profile (one-shot) ──────────────────────────────
 
 final workerProfileProvider = FutureProvider.autoDispose
     .family<WorkerModel?, String>((ref, uid) async {
@@ -33,13 +31,23 @@ final workerProfileProvider = FutureProvider.autoDispose
     });
 
 // ── Stream the worker profile for real-time UI updates ────────────────────
+// NOT autoDispose — must stay alive for the entire session so that
+// incomingJobsProvider and other providers that depend on the profile
+// stream can read a resolved value instead of null.
+//
+// autoDispose was the root cause of the "no incoming/ongoing jobs" bug:
+//   1. incomingJobsProvider watched this stream on first build
+//   2. stream hadn't emitted yet → .value == null → returned [] immediately
+//   3. FutureProvider never re-ran because it doesn't react to stream changes
+//   4. Switching tabs disposed the stream → cold restart next time → same bug
 
-final workerProfileStreamProvider = StreamProvider.autoDispose
-    .family<WorkerModel?, String>((ref, uid) {
-      if (uid.isEmpty) return const Stream.empty();
-      final repo = ref.watch(workerProfileRepositoryProvider);
-      return repo.watchProfile(uid);
-    });
+final workerProfileStreamProvider = StreamProvider.family<WorkerModel?, String>(
+  (ref, uid) {
+    if (uid.isEmpty) return const Stream.empty();
+    final repo = ref.watch(workerProfileRepositoryProvider);
+    return repo.watchProfile(uid);
+  },
+);
 
 // ── Save / update worker profile ──────────────────────────────────────────
 
@@ -51,9 +59,10 @@ final saveWorkerProfileProvider = Provider<Future<bool> Function(WorkerModel)>((
     final success = await repo.saveProfile(worker);
 
     if (success) {
-      // Invalidate cached providers so UI reflects new data
       ref.invalidate(userHasProfileProvider);
       ref.invalidate(workerProfileProvider);
+      // workerProfileStreamProvider does NOT need invalidation —
+      // it's a live stream that auto-updates when Firestore changes.
     }
 
     return success;

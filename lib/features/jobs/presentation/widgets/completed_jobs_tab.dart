@@ -135,14 +135,33 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
             : allJobs;
 
         if (filtered.isEmpty) {
-          return JobEmptyState(
-            icon: Icons.check_circle_outline,
-            title: _serviceFilter != null
-                ? 'No Completed $_serviceFilter Jobs'
-                : 'No Completed Jobs',
-            subtitle: _serviceFilter != null
-                ? 'No completed jobs for this service yet.'
-                : 'Your job history will appear here.',
+          return RefreshIndicator(
+            onRefresh: () async {
+              setState(() {
+                _extraPages.clear();
+                _hasMore = true;
+                _lastStreamPageSize = 0;
+                _loadingMore = false;
+              });
+              ref.invalidate(completedJobsProvider);
+              await Future.delayed(const Duration(milliseconds: 800));
+            },
+            child: ListView(
+              children: [
+                SizedBox(
+                  height: 400,
+                  child: JobEmptyState(
+                    icon: Icons.check_circle_outline,
+                    title: _serviceFilter != null
+                        ? 'No Completed $_serviceFilter Jobs'
+                        : 'No Completed Jobs',
+                    subtitle: _serviceFilter != null
+                        ? 'No completed jobs for this service yet.'
+                        : 'Your job history will appear here.',
+                  ),
+                ),
+              ],
+            ),
           );
         }
 
@@ -204,18 +223,37 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (jobs) {
         if (jobs.isEmpty) {
-          return const JobEmptyState(
-            icon: Icons.undo_outlined,
-            title: 'No Withdrawn Quotations',
-            subtitle:
-                'Jobs where you withdrew\nyour quotation will appear here.',
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(withdrawnJobsProvider);
+              await Future.delayed(const Duration(milliseconds: 800));
+            },
+            child: ListView(
+              children: const [
+                SizedBox(
+                  height: 400,
+                  child: JobEmptyState(
+                    icon: Icons.undo_outlined,
+                    title: 'No Withdrawn Quotations',
+                    subtitle:
+                        'Jobs where you withdrew your quotation will appear here.',
+                  ),
+                ),
+              ],
+            ),
           );
         }
         final sorted = widget.sortJobs(jobs, widget.sort);
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          itemCount: sorted.length,
-          itemBuilder: (_, i) => _WithdrawnJobCard(job: sorted[i]),
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(withdrawnJobsProvider);
+            await Future.delayed(const Duration(milliseconds: 800));
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            itemCount: sorted.length,
+            itemBuilder: (_, i) => _WithdrawnJobCard(job: sorted[i]),
+          ),
         );
       },
     );

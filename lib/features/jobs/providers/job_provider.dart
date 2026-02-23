@@ -26,34 +26,47 @@ final jobStreamProvider = StreamProvider.autoDispose.family<JobModel?, String>((
 });
 
 // ── Incoming jobs ─────────────────────────────────────────────────────────
-// NOT autoDispose — keeps the result alive across tab switches so we don't
-// re-fetch every time the user navigates away and back.
-// Uses workerProfileStreamProvider (already in memory) instead of a fresh
-// getProfile() call, eliminating the sequential profile-fetch bottleneck.
+// Converted from FutureProvider → StreamProvider so it properly reacts when
+// the profile stream emits after its first async load.
+//
+// THE OLD BUG (FutureProvider + workerProfileStreamProvider):
+//   • FutureProvider runs once. On first run, stream.value == null → returns [].
+//   • FutureProvider never re-runs when the stream later emits the profile.
+//   • Result: always 0 incoming jobs.
+//
+// THE FIX (StreamProvider):
+//   • asyncMap waits for the profile stream to emit a non-null value.
+//   • When profile emits → fetchIncomingJobs runs → jobs appear.
+//   • When profile updates (skills/location change) → auto re-fetches.
+//   • NOT autoDispose — result survives tab switches, no redundant re-fetches.
 
-final incomingJobsProvider = FutureProvider<List<JobModel>>((ref) async {
+final incomingJobsProvider = StreamProvider<List<JobModel>>((ref) {
   final uid = ref.watch(currentWorkerUidProvider);
-  if (uid.isEmpty) return [];
+  if (uid.isEmpty) return const Stream.empty();
 
-  // Read from the already-live profile stream — no extra network call.
-  final worker = ref.watch(workerProfileStreamProvider(uid)).value;
-  if (worker == null) return [];
+  final repo = ref.watch(jobRepositoryProvider);
+  final profileRepo = ref.watch(workerProfileRepositoryProvider);
 
-  final location = worker.address?.location;
-  if (location == null || worker.skills.isEmpty) return [];
+  // Use the repository's raw Stream<WorkerModel?> directly so asyncMap
+  // works without any AsyncValue unwrapping issues.
+  // Each profile emission automatically re-runs fetchIncomingJobs.
+  return profileRepo.watchProfile(uid).asyncMap((worker) async {
+    if (worker == null) return <JobModel>[];
 
-  return ref
-      .watch(jobRepositoryProvider)
-      .fetchIncomingJobs(
-        workerSkills: worker.skills,
-        workerLocation: location,
-        workerUid: uid,
-      );
+    final location = worker.address?.location;
+    if (location == null || worker.skills.isEmpty) return <JobModel>[];
+
+    return repo.fetchIncomingJobs(
+      workerSkills: worker.skills,
+      workerLocation: location,
+      workerUid: uid,
+    );
+  });
 });
 
 // ── Declined jobs ─────────────────────────────────────────────────────────
-
 // NOT autoDispose — kept alive alongside incomingJobsProvider.
+
 final declinedJobsProvider = FutureProvider<List<JobModel>>((ref) async {
   final uid = ref.watch(currentWorkerUidProvider);
   if (uid.isEmpty) return [];
@@ -71,29 +84,26 @@ final appliedJobsProvider = FutureProvider.autoDispose<List<JobModel>>((
 });
 
 // ── Ongoing jobs (stream) ─────────────────────────────────────────────────
+// NOT autoDispose — stream must survive tab switches.
+// autoDispose was causing the stream to restart cold on every tab switch,
+// which meant the UI showed loading → empty briefly every time.
 
-final ongoingJobsProvider = StreamProvider.autoDispose<List<JobModel>>((ref) {
+final ongoingJobsProvider = StreamProvider<List<JobModel>>((ref) {
   final uid = ref.watch(currentWorkerUidProvider);
   if (uid.isEmpty) return const Stream.empty();
   return ref.watch(jobRepositoryProvider).watchOngoingJobs(uid);
 });
 
 // ── Completed jobs (stream — first page only) ─────────────────────────────
-// Streams the most recent 20 completed jobs.
-// Older pages are loaded on demand via loadMoreCompletedProvider.
+// NOT autoDispose — same reason as ongoingJobsProvider.
 
-final completedJobsProvider = StreamProvider.autoDispose<List<JobModel>>((ref) {
+final completedJobsProvider = StreamProvider<List<JobModel>>((ref) {
   final uid = ref.watch(currentWorkerUidProvider);
   if (uid.isEmpty) return const Stream.empty();
   return ref.watch(jobRepositoryProvider).watchCompletedJobs(uid);
 });
 
 // ── Load more completed jobs (lazy pagination) ────────────────────────────
-// Call this provider's function when the user scrolls to the bottom of the
-// Completed tab. Pass [alreadyLoadedCount] = total jobs currently displayed
-// (stream page + any previously loaded extra pages).
-//
-// Returns the next page of older jobs, or [] when there are no more.
 
 final loadMoreCompletedProvider =
     Provider<
