@@ -8,6 +8,7 @@ import 'package:voicesewa_worker/features/jobs/presentation/otp_verification_pag
 import 'package:voicesewa_worker/features/jobs/presentation/widgets/my_job_card.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
+import 'package:voicesewa_worker/shared/models/quotation_model.dart';
 import 'widgets/job_status_card.dart';
 import 'widgets/job_info_section.dart';
 import 'widgets/job_location_section.dart';
@@ -16,8 +17,16 @@ import 'widgets/job_quotation_section.dart';
 class JobDetailPage extends ConsumerStatefulWidget {
   final JobModel job;
   final JobTabType tabType;
+  // Passed directly from the declined list so we never depend on async
+  // quotation fetch for basic display decisions (badge, amount, etc.)
+  final bool isDeclinedEntry;
 
-  const JobDetailPage({super.key, required this.job, required this.tabType});
+  const JobDetailPage({
+    super.key,
+    required this.job,
+    required this.tabType,
+    this.isDeclinedEntry = false,
+  });
 
   @override
   ConsumerState<JobDetailPage> createState() => _JobDetailPageState();
@@ -54,15 +63,35 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
     // ref.watch drives rebuilds when stream emits; _liveJob is the fallback
     // until the first stream value arrives (or after autoDispose).
     final jobAsync = ref.watch(jobStreamProvider(widget.job.jobId));
-    final job = jobAsync.value ?? _liveJob;
+    JobModel job = jobAsync.value ?? _liveJob;
 
-    final isScheduled = job.status == JobStatusType.scheduled;
-    final isInProgress = job.status == JobStatusType.inProgress;
-    final isCompleted = job.status == JobStatusType.completed;
+    // ── Display override ──────────────────────────────────────────────────
+    final workerUid = ref.watch(currentWorkerUidProvider);
+    final myQuo = ref.watch(myQuotationProvider((job.jobId, workerUid)));
+
+    if (widget.tabType == JobTabType.incoming) {
+      // Worker B who hasn't quoted yet should see "requested" not "quoted"
+      if (job.isQuoted && myQuo.value == null && !myQuo.isLoading) {
+        job = job.copyWith(status: JobStatusType.requested);
+      }
+    }
+
+    // A declined job may have any real status (scheduled/completed/etc.)
+    // depending on what happened — gate all action cards behind isDeclined.
+    // widget.isDeclinedEntry is set by the card so we don't flicker while
+    // myQuo is still loading on page open.
+    final isDeclined =
+        widget.isDeclinedEntry ||
+        (widget.tabType == JobTabType.incoming &&
+            _isDeclinedJob(job, myQuo.value));
+
+    final isScheduled = !isDeclined && job.status == JobStatusType.scheduled;
+    final isInProgress = !isDeclined && job.status == JobStatusType.inProgress;
+    final isCompleted = !isDeclined && job.status == JobStatusType.completed;
 
     // Auto-popup: fires once when the live stream delivers completed status
     // and the worker hasn't left feedback yet.
-    if (isCompleted && !job.hasFeedback && !_feedbackShownOnce) {
+    if (isCompleted && !isDeclined && !job.hasFeedback && !_feedbackShownOnce) {
       _feedbackShownOnce = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _showFeedbackSheet(context, job);
@@ -128,24 +157,49 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            JobStatusCard(job: job),
+            JobStatusCard(job: job, isDeclined: isDeclined),
             const SizedBox(height: 16),
 
-            JobInfoSection(job: job),
+            JobInfoSection(job: job, isDeclined: isDeclined),
             const SizedBox(height: 16),
 
             JobLocationSection(job: job),
             const SizedBox(height: 16),
 
             // ── Incoming tab ──────────────────────────────────────────────
-            if (widget.tabType == JobTabType.incoming && job.isRequested)
+
+            // Declined info card — auto-rejected or manually declined
+            // Shows reason only, hides all actions
+            if (widget.tabType == JobTabType.incoming &&
+                _isDeclinedJob(job, myQuo.value)) ...[
+              _DeclinedInfoCard(quotation: myQuo.value),
+              const SizedBox(height: 16),
+            ],
+
+            // Cancelled banner — client cancelled after worker quoted
+            if (widget.tabType == JobTabType.incoming &&
+                job.isCancelled &&
+                !_isDeclinedJob(job, myQuo.value)) ...[
+              _CancelledJobBanner(),
+              const SizedBox(height: 16),
+            ],
+
+            // Decline/quotation actions — only for still-open jobs
+            if (widget.tabType == JobTabType.incoming &&
+                (job.isRequested || job.isQuoted))
               _AcceptRejectGate(job: job),
 
-            // Quotation section shown for incoming requested/quoted jobs
+            // Quotation section — requested/quoted jobs only
             if (widget.tabType == JobTabType.incoming &&
                 (job.isRequested || job.isQuoted)) ...[
               const SizedBox(height: 16),
-              JobQuotationSection(jobId: job.jobId),
+              JobQuotationSection(jobId: job.jobId, jobStatus: job.status),
+              const SizedBox(height: 16),
+            ],
+
+            // Chat with client — only when job is quoted and worker has a quotation
+            if (widget.tabType == JobTabType.incoming && job.isQuoted) ...[
+              _QuotedChatCard(job: job),
               const SizedBox(height: 16),
             ],
 
@@ -181,6 +235,19 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
         ),
       ),
     );
+  }
+
+  // A job is in the "declined" bucket if:
+  // - worker manually declined (no quotation, job in declined[])
+  // - auto-rejected (quotation exists, auto_rejected == true)
+  // - quotation was rejected by client (status == rejected)
+  bool _isDeclinedJob(JobModel job, QuotationModel? quotation) {
+    if (quotation == null) {
+      return job.isScheduled ||
+          job.status == JobStatusType.completed ||
+          job.isCancelled;
+    }
+    return quotation.isRejected || quotation.isWithdrawn;
   }
 
   Future<void> _callClient(
@@ -227,12 +294,12 @@ class _AcceptRejectGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final _workerUid = ref.watch(currentWorkerUidProvider);
+    final workerUid = ref.watch(currentWorkerUidProvider);
     final quotationAsync = ref.watch(
-      myQuotationProvider((job.jobId, _workerUid)),
+      myQuotationProvider((job.jobId, workerUid)),
     );
+    if (quotationAsync.isLoading) return const SizedBox.shrink();
     final hasQuotation = quotationAsync.value != null;
-
     if (hasQuotation) return const SizedBox.shrink();
 
     return Column(
@@ -376,6 +443,91 @@ class _AcceptRejectCardState extends ConsumerState<_AcceptRejectCard> {
   }
 }
 
+// ── Quoted chat card ───────────────────────────────────────────────────────
+
+class _QuotedChatCard extends ConsumerWidget {
+  final JobModel job;
+  const _QuotedChatCard({required this.job});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final workerUid = ref.watch(currentWorkerUidProvider);
+    final quotationAsync = ref.watch(
+      myQuotationProvider((job.jobId, workerUid)),
+    );
+
+    // Don't show if quotation is loading or absent
+    if (quotationAsync.isLoading) return const SizedBox.shrink();
+    final quo = quotationAsync.value;
+    if (quo == null) return const SizedBox.shrink();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: ColorConstants.pureWhite,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: ColorConstants.shadowBlack.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 18,
+                color: ColorConstants.primaryBlue,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Client Communication',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: ColorConstants.textDark,
+                ),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Divider(height: 1),
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.chat_bubble_outline, size: 16),
+              label: const Text('Chat with Client'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      ChatPage(job: job, quotationId: quo.quotationId),
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: ColorConstants.primaryBlue,
+                side: BorderSide(
+                  color: ColorConstants.primaryBlue.withOpacity(0.5),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── Scheduled actions card ─────────────────────────────────────────────────
 
 class _ScheduledActionsCard extends StatelessWidget {
@@ -425,9 +577,16 @@ class _ScheduledActionsCard extends StatelessWidget {
             child: OutlinedButton.icon(
               icon: const Icon(Icons.chat_bubble_outline, size: 16),
               label: const Text('Chat with Client'),
-              onPressed: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => ChatPage(job: job))),
+              // ── FIX: messages path = jobs/{jobId}/quotations/{quotationId}/messages
+              // job.finalizedQuotationId is always set for scheduled jobs
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ChatPage(
+                    job: job,
+                    quotationId: job.finalizedQuotationId ?? '',
+                  ),
+                ),
+              ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: ColorConstants.primaryBlue,
                 side: BorderSide(
@@ -571,9 +730,14 @@ class _InProgressActionsCard extends StatelessWidget {
             child: OutlinedButton.icon(
               icon: const Icon(Icons.chat_bubble_outline, size: 16),
               label: const Text('Chat with Client'),
-              onPressed: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => ChatPage(job: job))),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ChatPage(
+                    job: job,
+                    quotationId: job.finalizedQuotationId ?? '',
+                  ),
+                ),
+              ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: ColorConstants.primaryBlue,
                 side: BorderSide(
@@ -812,6 +976,214 @@ class _CompletedSummaryCard extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Declined info card ─────────────────────────────────────────────────────
+
+class _DeclinedInfoCard extends StatelessWidget {
+  final QuotationModel? quotation;
+  const _DeclinedInfoCard({this.quotation});
+
+  @override
+  Widget build(BuildContext context) {
+    final quo = quotation;
+
+    String reasonTitle;
+    String reasonBody;
+
+    if (quo == null) {
+      reasonTitle = 'Job Declined';
+      reasonBody = 'You declined this job without submitting a quotation.';
+    } else if (quo.autoRejected == true) {
+      reasonTitle = 'Quotation Auto-Rejected by System';
+      reasonBody =
+          'Another worker\'s quotation was accepted by the client. '
+          'Your quotation was automatically rejected.';
+    } else if (quo.isRejected) {
+      reasonTitle = 'Quotation Rejected';
+      reasonBody = quo.rejectionReason?.isNotEmpty == true
+          ? quo.rejectionReason!
+          : 'The client did not select your quotation.';
+    } else if (quo.isWithdrawn) {
+      reasonTitle = 'Quotation Withdrawn';
+      reasonBody = quo.withdrawalReason?.isNotEmpty == true
+          ? quo.withdrawalReason!
+          : 'You withdrew your quotation.';
+    } else {
+      reasonTitle = 'Declined';
+      reasonBody = 'This job is no longer available.';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ColorConstants.errorRed.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: ColorConstants.errorRed.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.block_outlined,
+                color: ColorConstants.errorRed,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                reasonTitle,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: ColorConstants.errorRed,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            reasonBody,
+            style: const TextStyle(
+              fontSize: 13,
+              color: ColorConstants.textGrey,
+              height: 1.4,
+            ),
+          ),
+          if (quo != null) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            if (quo.createdAt != null)
+              _DateRow(
+                icon: Icons.send_outlined,
+                label: 'Submitted',
+                date: quo.createdAt!,
+              ),
+            if (quo.rejectedAt != null) ...[
+              const SizedBox(height: 6),
+              _DateRow(
+                icon: Icons.cancel_outlined,
+                label: 'Rejected',
+                date: quo.rejectedAt!,
+              ),
+            ],
+            if (quo.withdrawnAt != null) ...[
+              const SizedBox(height: 6),
+              _DateRow(
+                icon: Icons.undo_outlined,
+                label: 'Withdrawn',
+                date: quo.withdrawnAt!,
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DateRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final DateTime date;
+  const _DateRow({required this.icon, required this.label, required this.date});
+
+  @override
+  Widget build(BuildContext context) {
+    final d = date;
+    const months = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final formatted =
+        '${d.day} ${months[d.month]}, ${d.year}  '
+        '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: ColorConstants.textGrey),
+        const SizedBox(width: 6),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: ColorConstants.textGrey,
+          ),
+        ),
+        Text(
+          formatted,
+          style: const TextStyle(fontSize: 12, color: ColorConstants.textGrey),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Cancelled job banner ───────────────────────────────────────────────────
+
+class _CancelledJobBanner extends StatelessWidget {
+  const _CancelledJobBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ColorConstants.errorRed.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: ColorConstants.errorRed.withOpacity(0.25)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.cancel_outlined,
+            color: ColorConstants.errorRed,
+            size: 22,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Job Cancelled by Client',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: ColorConstants.errorRed,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'The client has cancelled this job. Your quotation is no longer active.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: ColorConstants.textGrey,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

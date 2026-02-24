@@ -5,8 +5,9 @@ import 'job_section_card.dart';
 
 class JobInfoSection extends StatelessWidget {
   final JobModel job;
+  final bool isDeclined;
 
-  const JobInfoSection({super.key, required this.job});
+  const JobInfoSection({super.key, required this.job, this.isDeclined = false});
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +44,7 @@ class JobInfoSection extends StatelessWidget {
                 _formatDateTime(job.scheduledAt!),
               ),
             ],
-            if (job.finalizedQuotationAmount != null) ...[
+            if (!isDeclined && job.finalizedQuotationAmount != null) ...[
               const SizedBox(height: 10),
               JobDetailRow(
                 Icons.payments_outlined,

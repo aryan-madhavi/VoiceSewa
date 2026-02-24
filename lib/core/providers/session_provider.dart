@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:voicesewa_worker/features/auth/data/repositories/auth_repository.dart';
 
 // ── Enums ──────────────────────────────────────────────────────────────────
@@ -31,6 +32,19 @@ final sessionStatusProvider = Provider<SessionStatus>((ref) {
   );
 });
 
+// ── FCM Init Guard ─────────────────────────────────────────────────────────
+// Tracks which UID has had FCM initialized in the current session.
+// Prevents requestPermissionAndSave from firing on every ProfileCheckHandler
+// rebuild (which would overwrite other users' tokens on the same device).
+// Resets to null on logout because authStateChanges fires → providers rebuild.
+
+final fcmInitializedUidProvider = StateProvider<String?>((ref) {
+  // Auto-reset when user logs out — watch auth state so this provider
+  // is invalidated when the session changes.
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return null;
+  return null; // starts as null for each new login session
+});
 // ── Auth Repository Provider ───────────────────────────────────────────────
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

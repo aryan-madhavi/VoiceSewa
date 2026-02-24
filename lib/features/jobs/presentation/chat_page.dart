@@ -8,8 +8,10 @@ import 'package:voicesewa_worker/shared/models/job_model.dart';
 
 class ChatPage extends ConsumerStatefulWidget {
   final JobModel job;
+  // messages live at jobs/{jobId}/quotations/{quotationId}/messages
+  final String quotationId;
 
-  const ChatPage({super.key, required this.job});
+  const ChatPage({super.key, required this.job, required this.quotationId});
 
   @override
   ConsumerState<ChatPage> createState() => _ChatPageState();
@@ -50,6 +52,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
     await ref.read(sendMessageProvider)(
       jobId: widget.job.jobId,
+      quotationId: widget.quotationId,
       text: text,
       senderName: profile?.name ?? 'Worker',
     );
@@ -84,7 +87,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    final messages = ref.watch(chatMessagesProvider(widget.job.jobId));
+    // Watch messages at the correct sub-path via (jobId, quotationId) key
+    final messages = ref.watch(
+      chatMessagesProvider((widget.job.jobId, widget.quotationId)),
+    );
 
     return Scaffold(
       backgroundColor: ColorConstants.chatBackground,
@@ -109,7 +115,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         foregroundColor: ColorConstants.textDark,
         elevation: 0,
         actions: [
-          // ── Call button ──────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: GestureDetector(

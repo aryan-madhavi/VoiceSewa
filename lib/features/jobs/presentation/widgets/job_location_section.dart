@@ -123,9 +123,20 @@ class JobLocationSection extends StatelessWidget {
   }
 
   Future<void> _openInMaps(GeoPoint location) async {
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}',
+    final lat = location.latitude;
+    final lng = location.longitude;
+
+    // Try native maps app first (geo: URI) — works on Android & iOS
+    final geoUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
+    if (await canLaunchUrl(geoUri)) {
+      await launchUrl(geoUri, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    // Fallback: open Google Maps in browser
+    final webUri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$lat,$lng',
     );
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
+    await launchUrl(webUri, mode: LaunchMode.externalApplication);
   }
 }

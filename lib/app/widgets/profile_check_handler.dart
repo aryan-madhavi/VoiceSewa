@@ -9,6 +9,8 @@ import 'package:voicesewa_worker/features/auth/providers/auth_provider.dart';
 import 'package:voicesewa_worker/features/auth/providers/profile_form_provider.dart';
 import 'package:voicesewa_worker/features/profile/presentation/worker_profile_form_page.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
+import 'package:voicesewa_worker/core/providers/session_provider.dart';
+import 'package:voicesewa_worker/core/providers/session_provider.dart';
 
 /// Determines whether to show profile setup or the main app.
 ///
@@ -45,7 +47,7 @@ class ProfileCheckHandler extends ConsumerWidget {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(profileCompletionProvider.notifier).reset();
         ref.read(isNewRegistrationProvider.notifier).reset();
-        ref.read(fcmServiceProvider).requestPermissionAndSave(firebaseUser.uid);
+        _initFcmOnce(ref, firebaseUser.uid);
       });
       return const RootScaffold();
     }
@@ -62,9 +64,7 @@ class ProfileCheckHandler extends ConsumerWidget {
         if (hasProfile) {
           print('✅ Firestore profile found → Main App');
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            ref
-                .read(fcmServiceProvider)
-                .requestPermissionAndSave(firebaseUser.uid);
+            _initFcmOnce(ref, firebaseUser.uid);
           });
           return const RootScaffold();
         }
@@ -88,5 +88,19 @@ class ProfileCheckHandler extends ConsumerWidget {
         return const WorkerProfileFormPage();
       },
     );
+  }
+
+  /// Initializes FCM exactly once per login session per UID.
+  /// Guards against ProfileCheckHandler rebuilds calling requestPermissionAndSave
+  /// repeatedly, which would overwrite other users' fcm_token on the same device.
+  void _initFcmOnce(WidgetRef ref, String uid) {
+    final initializedUid = ref.read(fcmInitializedUidProvider);
+    if (initializedUid == uid) {
+      print('ℹ️ FCM already initialized for uid: $uid — skipping');
+      return;
+    }
+    print('🔔 Initializing FCM for uid: $uid');
+    ref.read(fcmInitializedUidProvider.notifier).state = uid;
+    ref.read(fcmServiceProvider).requestPermissionAndSave(uid);
   }
 }

@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_worker/features/jobs/repositories/job_repository.dart';
-import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
 import 'package:voicesewa_worker/shared/models/quotation_model.dart';
 
@@ -26,46 +25,20 @@ final jobStreamProvider = StreamProvider.autoDispose.family<JobModel?, String>((
 });
 
 // ── Incoming jobs ─────────────────────────────────────────────────────────
-// Converted from FutureProvider → StreamProvider so it properly reacts when
-// the profile stream emits after its first async load.
+// Uses watchIncomingJobs() which holds live Firestore snapshots() listeners
+// on the jobs/ collection per service type. New client jobs appear instantly
+// without a refresh or app restart.
 //
-// THE OLD BUG (FutureProvider + workerProfileStreamProvider):
-//   • FutureProvider runs once. On first run, stream.value == null → returns [].
-//   • FutureProvider never re-runs when the stream later emits the profile.
-//   • Result: always 0 incoming jobs.
-//
-// THE FIX (StreamProvider):
-//   • asyncMap waits for the profile stream to emit a non-null value.
-//   • When profile emits → fetchIncomingJobs runs → jobs appear.
-//   • When profile updates (skills/location change) → auto re-fetches.
-//   • NOT autoDispose — result survives tab switches, no redundant re-fetches.
+// NOT autoDispose — stream must survive tab switches.
 
 final incomingJobsProvider = StreamProvider<List<JobModel>>((ref) {
   final uid = ref.watch(currentWorkerUidProvider);
   if (uid.isEmpty) return const Stream.empty();
 
-  final repo = ref.watch(jobRepositoryProvider);
-  final profileRepo = ref.watch(workerProfileRepositoryProvider);
-
-  // Use the repository's raw Stream<WorkerModel?> directly so asyncMap
-  // works without any AsyncValue unwrapping issues.
-  // Each profile emission automatically re-runs fetchIncomingJobs.
-  return profileRepo.watchProfile(uid).asyncMap((worker) async {
-    if (worker == null) return <JobModel>[];
-
-    final location = worker.address?.location;
-    if (location == null || worker.skills.isEmpty) return <JobModel>[];
-
-    return repo.fetchIncomingJobs(
-      workerSkills: worker.skills,
-      workerLocation: location,
-      workerUid: uid,
-    );
-  });
+  return ref.watch(jobRepositoryProvider).watchIncomingJobs(workerUid: uid);
 });
 
 // ── Declined jobs ─────────────────────────────────────────────────────────
-// NOT autoDispose — kept alive alongside incomingJobsProvider.
 
 final declinedJobsProvider = FutureProvider<List<JobModel>>((ref) async {
   final uid = ref.watch(currentWorkerUidProvider);
@@ -84,9 +57,6 @@ final appliedJobsProvider = FutureProvider.autoDispose<List<JobModel>>((
 });
 
 // ── Ongoing jobs (stream) ─────────────────────────────────────────────────
-// NOT autoDispose — stream must survive tab switches.
-// autoDispose was causing the stream to restart cold on every tab switch,
-// which meant the UI showed loading → empty briefly every time.
 
 final ongoingJobsProvider = StreamProvider<List<JobModel>>((ref) {
   final uid = ref.watch(currentWorkerUidProvider);
@@ -95,7 +65,6 @@ final ongoingJobsProvider = StreamProvider<List<JobModel>>((ref) {
 });
 
 // ── Completed jobs (stream — first page only) ─────────────────────────────
-// NOT autoDispose — same reason as ongoingJobsProvider.
 
 final completedJobsProvider = StreamProvider<List<JobModel>>((ref) {
   final uid = ref.watch(currentWorkerUidProvider);
@@ -121,12 +90,67 @@ final loadMoreCompletedProvider =
       };
     });
 
-// ── Withdrawn jobs (stream) ───────────────────────────────────────────────
+// ── Withdrawn jobs (stream — raw declined[] refs) ─────────────────────────
 
 final withdrawnJobsProvider = StreamProvider.autoDispose<List<JobModel>>((ref) {
   final uid = ref.watch(currentWorkerUidProvider);
   if (uid.isEmpty) return const Stream.empty();
   return ref.watch(jobRepositoryProvider).watchWithdrawnJobs(uid);
+});
+
+// ── Truly withdrawn jobs (quotation.status == withdrawn only) ────────────
+// declined[] contains BOTH rejected-by-client AND worker-withdrawn jobs.
+// This provider fetches each declined job's quotation and keeps only those
+// where the worker explicitly withdrew. Used by CompletedJobsTab for the
+// accurate chip count and the withdrawn list.
+
+final trueWithdrawnJobsProvider = FutureProvider.autoDispose<List<JobModel>>((
+  ref,
+) async {
+  final uid = ref.watch(currentWorkerUidProvider);
+  if (uid.isEmpty) return [];
+
+  final repo = ref.read(jobRepositoryProvider);
+  final allDeclined = await repo.fetchDeclinedJobs(uid);
+  if (allDeclined.isEmpty) return [];
+
+  final results = await Future.wait(
+    allDeclined.map((job) async {
+      final quo = await repo.fetchMyQuotation(jobId: job.jobId, workerUid: uid);
+      return (quo != null && quo.isWithdrawn) ? job : null;
+    }),
+  );
+
+  return results.whereType<JobModel>().toList();
+});
+
+// ── Incoming-tab declined jobs (excludes withdrawn) ───────────────────────
+// declined[] in Firestore holds BOTH rejected-by-client AND worker-withdrawn
+// jobs. This provider strips out withdrawn ones so the Declined chip in the
+// Incoming tab never shows jobs the worker voluntarily withdrew from.
+
+final incomingDeclinedJobsProvider = FutureProvider<List<JobModel>>((
+  ref,
+) async {
+  final uid = ref.watch(currentWorkerUidProvider);
+  if (uid.isEmpty) return [];
+
+  final repo = ref.read(jobRepositoryProvider);
+  final allDeclined = await repo.fetchDeclinedJobs(uid);
+  if (allDeclined.isEmpty) return [];
+
+  // Check each job's quotation — exclude any that are withdrawn
+  final results = await Future.wait(
+    allDeclined.map((job) async {
+      final quo = await repo.fetchMyQuotation(jobId: job.jobId, workerUid: uid);
+      // Keep if: no quotation (manual decline) OR quotation is rejected/auto-rejected
+      // Exclude if: quotation is withdrawn
+      if (quo != null && quo.isWithdrawn) return null;
+      return job;
+    }),
+  );
+
+  return results.whereType<JobModel>().toList();
 });
 
 // ── Submit quotation ──────────────────────────────────────────────────────
@@ -206,14 +230,13 @@ final withdrawQuotationProvider =
           ref.invalidate(incomingJobsProvider);
           ref.invalidate(appliedJobsProvider);
           ref.invalidate(withdrawnJobsProvider);
+          ref.invalidate(trueWithdrawnJobsProvider);
         }
         return success;
       };
     });
 
 // ── Worker's quotation for a job ──────────────────────────────────────────
-// Family key is (jobId, workerUid) — NOT just jobId — so Worker A and
-// Worker B never share the same cached result for the same job.
 
 final myQuotationProvider = FutureProvider.autoDispose
     .family<QuotationModel?, (String, String)>((ref, args) async {
@@ -314,12 +337,15 @@ final saveWorkerFeedbackProvider =
     });
 
 // ── Chat messages stream ──────────────────────────────────────────────────
+// Family key is (jobId, quotationId) — messages live at
+// jobs/{jobId}/quotations/{quotationId}/messages per the DB schema.
 
 final chatMessagesProvider = StreamProvider.autoDispose
-    .family<List<ChatMessage>, String>((ref, jobId) {
+    .family<List<ChatMessage>, (String, String)>((ref, args) {
+      final (jobId, quotationId) = args;
       return ref
           .watch(jobRepositoryProvider)
-          .watchMessages(jobId)
+          .watchMessages(jobId: jobId, quotationId: quotationId)
           .map((snap) => snap.docs.map((d) => ChatMessage.fromDoc(d)).toList());
     });
 
@@ -329,17 +355,24 @@ final sendMessageProvider =
     Provider<
       Future<bool> Function({
         required String jobId,
+        required String quotationId,
         required String text,
         required String senderName,
       })
     >((ref) {
-      return ({required jobId, required text, required senderName}) async {
+      return ({
+        required jobId,
+        required quotationId,
+        required text,
+        required senderName,
+      }) async {
         final uid = ref.read(currentWorkerUidProvider);
         if (uid.isEmpty) return false;
         return ref
             .read(jobRepositoryProvider)
             .sendMessage(
               jobId: jobId,
+              quotationId: quotationId,
               senderUid: uid,
               senderName: senderName,
               text: text,

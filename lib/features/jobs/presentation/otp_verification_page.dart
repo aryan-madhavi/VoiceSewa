@@ -23,9 +23,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
   final List<FocusNode> _nodes = List.generate(4, (_) => FocusNode());
 
   bool _verifying = false;
-  bool _verified = false;
   bool _error = false;
-  bool _starting = false;
 
   @override
   void dispose() {
@@ -50,29 +48,27 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
     );
 
     if (!mounted) return;
-    setState(() {
-      _verifying = false;
-      _verified = ok;
-      _error = !ok;
-    });
 
     if (!ok) {
+      setState(() {
+        _verifying = false;
+        _error = true;
+      });
       for (final c in _ctrls) c.clear();
       _nodes.first.requestFocus();
+      return;
     }
-  }
 
-  Future<void> _startJob() async {
-    setState(() => _starting = true);
-    final ok = await ref.read(startJobProvider)(widget.job.jobId);
+    // OTP correct — start job immediately, navigate to BillFormPage
+    final started = await ref.read(startJobProvider)(widget.job.jobId);
     if (!mounted) return;
-    setState(() => _starting = false);
 
-    if (ok) {
+    if (started) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => BillFormPage(job: widget.job)),
       );
     } else {
+      setState(() => _verifying = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to start job. Please try again.'),
@@ -101,43 +97,34 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
         child: Column(
           children: [
             // Icon
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
+            Container(
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color:
-                    (_verified
-                            ? ColorConstants.successGreen
-                            : ColorConstants.primaryBlue)
-                        .withOpacity(0.1),
+                color: ColorConstants.primaryBlue.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                _verified ? Icons.check_circle_outline : Icons.lock_outline,
+              child: const Icon(
+                Icons.lock_outline,
                 size: 40,
-                color: _verified
-                    ? ColorConstants.successGreen
-                    : ColorConstants.primaryBlue,
+                color: ColorConstants.primaryBlue,
               ),
             ),
             const SizedBox(height: 24),
 
-            Text(
-              _verified ? 'OTP Verified! 🎉' : 'Enter Client OTP',
-              style: const TextStyle(
+            const Text(
+              'Enter Client OTP',
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: ColorConstants.textDark,
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              _verified
-                  ? 'All set! Tap Start Job to begin.'
-                  : 'Ask the client for their 4-digit OTP\nto verify and begin this job.',
+            const Text(
+              'Ask the client for their 4-digit OTP\nto verify and begin this job.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color: ColorConstants.textGrey,
                 height: 1.5,
@@ -145,142 +132,69 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
             ),
             const SizedBox(height: 40),
 
-            // ── OTP boxes ────────────────────────────────────────────────────
-            if (!_verified) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  4,
-                  (i) => _OtpBox(
-                    ctrl: _ctrls[i],
-                    node: _nodes[i],
-                    hasError: _error,
-                    onChanged: (val) {
-                      if (val.length == 1 && i < 3)
-                        _nodes[i + 1].requestFocus();
-                      if (val.isEmpty && i > 0) _nodes[i - 1].requestFocus();
-                      setState(() => _error = false);
-                      if (_complete) _verify();
-                    },
-                  ),
+            // OTP boxes
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                4,
+                (i) => _OtpBox(
+                  ctrl: _ctrls[i],
+                  node: _nodes[i],
+                  hasError: _error,
+                  onChanged: (val) {
+                    if (val.length == 1 && i < 3) _nodes[i + 1].requestFocus();
+                    if (val.isEmpty && i > 0) _nodes[i - 1].requestFocus();
+                    setState(() => _error = false);
+                    if (_complete) _verify();
+                  },
                 ),
               ),
-              const SizedBox(height: 12),
-              AnimatedOpacity(
-                opacity: _error ? 1 : 0,
-                duration: const Duration(milliseconds: 200),
-                child: const Text(
-                  'Incorrect OTP — please try again.',
-                  style: TextStyle(
-                    color: ColorConstants.errorRed,
-                    fontSize: 13,
-                  ),
+            ),
+            const SizedBox(height: 12),
+            AnimatedOpacity(
+              opacity: _error ? 1 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: const Text(
+                'Incorrect OTP — please try again.',
+                style: TextStyle(
+                  color: ColorConstants.errorRed,
+                  fontSize: 13,
                 ),
               ),
-              const SizedBox(height: 32),
+            ),
+            const SizedBox(height: 32),
 
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: (_complete && !_verifying) ? _verify : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorConstants.primaryBlue,
-                    foregroundColor: ColorConstants.pureWhite,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: (_complete && !_verifying) ? _verify : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ColorConstants.primaryBlue,
+                  foregroundColor: ColorConstants.pureWhite,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: _verifying
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: ColorConstants.pureWhite,
-                          ),
-                        )
-                      : const Text(
-                          'Verify OTP',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                ),
+                child: _verifying
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: ColorConstants.pureWhite,
                         ),
-                ),
-              ),
-            ],
-
-            // ── Verified state ───────────────────────────────────────────────
-            if (_verified) ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: ColorConstants.successGreen.withOpacity(0.07),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: ColorConstants.successGreen.withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.verified_outlined,
-                      color: ColorConstants.successGreen,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Identity Verified',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: ColorConstants.successGreen,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            widget.job.serviceName,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: ColorConstants.textGrey,
-                            ),
-                          ),
-                        ],
+                      )
+                    : const Text(
+                        'Verify OTP',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
               ),
-              const SizedBox(height: 32),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.play_circle_outline, size: 22),
-                  label: Text(
-                    _starting ? 'Starting...' : 'Start Job',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  onPressed: _starting ? null : _startJob,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ColorConstants.successTeal,
-                    foregroundColor: ColorConstants.pureWhite,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ],
         ),
       ),

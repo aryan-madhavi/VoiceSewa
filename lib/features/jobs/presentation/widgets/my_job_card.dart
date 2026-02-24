@@ -9,12 +9,22 @@ enum JobTabType { incoming, ongoing, completed }
 class MyJobCard extends StatelessWidget {
   final JobModel job;
   final JobTabType tabType;
+  // true when rendered inside the declined bucket — overrides status badge
+  // and hides financial/rating info that is irrelevant for declined jobs.
+  final bool isDeclined;
 
-  const MyJobCard({super.key, required this.job, required this.tabType});
+  const MyJobCard({
+    super.key,
+    required this.job,
+    required this.tabType,
+    this.isDeclined = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final color = job.statusColor;
+    // Declined bucket always shows red badge regardless of real job status
+    final color = isDeclined ? ColorConstants.errorRed : job.statusColor;
+    final badgeLabel = isDeclined ? 'Declined' : job.statusLabel;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -70,7 +80,7 @@ class MyJobCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      _StatusBadge(label: job.statusLabel, color: color),
+                      _StatusBadge(label: badgeLabel, color: color),
                     ],
                   ),
 
@@ -93,7 +103,7 @@ class MyJobCard extends StatelessWidget {
                         ? _formatDate(job.createdAt!)
                         : 'Date unknown',
                   ),
-                  if (job.finalizedQuotationAmount != null) ...[
+                  if (!isDeclined && job.finalizedQuotationAmount != null) ...[
                     const SizedBox(height: 6),
                     myJobBuildIconText(
                       Icons.payments_outlined,
@@ -156,7 +166,11 @@ class MyJobCard extends StatelessWidget {
   void _openDetails(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => JobDetailPage(job: job, tabType: tabType),
+        builder: (_) => JobDetailPage(
+          job: job,
+          tabType: tabType,
+          isDeclinedEntry: isDeclined,
+        ),
       ),
     );
   }

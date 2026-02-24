@@ -91,8 +91,60 @@ class _OngoingJobsTabState extends ConsumerState<OngoingJobsTab> {
         const Divider(height: 1),
         Expanded(
           child: ongoing.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            loading: () => RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(ongoingJobsProvider);
+                await Future.delayed(const Duration(milliseconds: 800));
+              },
+              child: ListView(
+                children: [
+                  SizedBox(
+                    height: 300,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ],
+              ),
+            ),
+            error: (e, _) => RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(ongoingJobsProvider);
+                await Future.delayed(const Duration(milliseconds: 800));
+              },
+              child: ListView(
+                children: [
+                  SizedBox(
+                    height: 300,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 40,
+                            color: ColorConstants.textGrey,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Error: $e',
+                            style: const TextStyle(
+                              color: ColorConstants.textGrey,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Pull down to retry',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: ColorConstants.textGrey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             data: (jobs) {
               final filtered = _applyFilters(jobs);
               if (filtered.isEmpty) {

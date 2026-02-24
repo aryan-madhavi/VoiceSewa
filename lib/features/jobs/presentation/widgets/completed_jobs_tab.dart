@@ -37,14 +37,10 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
   bool _loadingMore = false;
   bool _hasMore = true;
 
-  // Tracks the stream's first-page size so we know when it changes
-  // (e.g. a new job just completed) and can reset _hasMore correctly.
   int _lastStreamPageSize = 0;
 
   // ─────────────────────────────────────────────────────────────────────────
 
-  /// Merges the live stream page with all lazily loaded extra pages.
-  /// Deduplicates by jobId so a newly completed job doesn't appear twice.
   List<JobModel> _mergeCompleted(List<JobModel> streamPage) {
     if (streamPage.length > _lastStreamPageSize) {
       _extraPages.clear();
@@ -83,12 +79,13 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
   @override
   Widget build(BuildContext context) {
     final completed = ref.watch(completedJobsProvider);
-    final withdrawn = ref.watch(withdrawnJobsProvider);
+    final trueWithdrawn = ref.watch(trueWithdrawnJobsProvider);
     final uid = ref.watch(currentWorkerUidProvider);
     final profileAsync = ref.watch(workerProfileStreamProvider(uid));
 
     final completedJobs = completed.value ?? [];
-    final withdrawnJobs = withdrawn.value ?? [];
+    // Only jobs where the worker explicitly withdrew (not rejected-by-client)
+    final withdrawnJobs = trueWithdrawn.value ?? [];
     final workerSkills = profileAsync.value?.skills ?? [];
 
     final isWithdrawnView = _statusFilter == 'withdrawn';
@@ -111,7 +108,7 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
         const Divider(height: 1),
         Expanded(
           child: isWithdrawnView
-              ? _buildWithdrawnList(withdrawn)
+              ? _buildWithdrawnList(trueWithdrawn)
               : _buildCompletedList(completed, completedJobs),
         ),
       ],
@@ -125,8 +122,58 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
     List<JobModel> streamPage,
   ) {
     return completedAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      loading: () => RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(completedJobsProvider);
+          await Future.delayed(const Duration(milliseconds: 800));
+        },
+        child: ListView(
+          children: [
+            SizedBox(
+              height: 300,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ],
+        ),
+      ),
+      error: (e, _) => RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(completedJobsProvider);
+          await Future.delayed(const Duration(milliseconds: 800));
+        },
+        child: ListView(
+          children: [
+            SizedBox(
+              height: 300,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 40,
+                      color: ColorConstants.textGrey,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Error: $e',
+                      style: const TextStyle(color: ColorConstants.textGrey),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Pull down to retry',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: ColorConstants.textGrey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
       data: (_) {
         final allJobs = _mergeCompleted(streamPage);
 
@@ -216,16 +263,68 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
   }
 
   // ── Withdrawn list ────────────────────────────────────────────────────────
+  // trueWithdrawnJobsProvider already filters to quotation.status == withdrawn,
+  // so this list only ever contains jobs the worker explicitly withdrew from.
 
   Widget _buildWithdrawnList(AsyncValue<List<JobModel>> withdrawn) {
     return withdrawn.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error: $e')),
+      loading: () => RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(trueWithdrawnJobsProvider);
+          await Future.delayed(const Duration(milliseconds: 800));
+        },
+        child: ListView(
+          children: [
+            SizedBox(
+              height: 300,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ],
+        ),
+      ),
+      error: (e, _) => RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(trueWithdrawnJobsProvider);
+          await Future.delayed(const Duration(milliseconds: 800));
+        },
+        child: ListView(
+          children: [
+            SizedBox(
+              height: 300,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 40,
+                      color: ColorConstants.textGrey,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Error: $e',
+                      style: const TextStyle(color: ColorConstants.textGrey),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Pull down to retry',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: ColorConstants.textGrey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
       data: (jobs) {
         if (jobs.isEmpty) {
           return RefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(withdrawnJobsProvider);
+              ref.invalidate(trueWithdrawnJobsProvider);
               await Future.delayed(const Duration(milliseconds: 800));
             },
             child: ListView(
@@ -246,7 +345,7 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
         final sorted = widget.sortJobs(jobs, widget.sort);
         return RefreshIndicator(
           onRefresh: () async {
-            ref.invalidate(withdrawnJobsProvider);
+            ref.invalidate(trueWithdrawnJobsProvider);
             await Future.delayed(const Duration(milliseconds: 800));
           },
           child: ListView.builder(
@@ -281,6 +380,8 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
           const SizedBox(width: 8),
           _CompletedChip(
             label: 'Withdrawn',
+            // Count shown is the raw stream length — the actual filtered
+            // count is resolved asynchronously per card via quotation fetch.
             count: withdrawnJobs.length,
             selected: _statusFilter == 'withdrawn',
             color: ColorConstants.withdrawnGrey,

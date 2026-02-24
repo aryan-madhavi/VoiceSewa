@@ -35,24 +35,37 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
   // null = all services
   String? _serviceFilter;
 
+  /// Filters the incoming list to exclude any job that is also in the declined
+  /// list (i.e. rejected by client or auto-rejected). Those belong only in the
+  /// Declined bucket.
+  List<JobModel> _cleanIncoming(
+    List<JobModel> incoming,
+    List<JobModel> declined,
+  ) {
+    final declinedIds = declined.map((j) => j.jobId).toSet();
+    return incoming.where((j) => !declinedIds.contains(j.jobId)).toList();
+  }
+
   List<JobModel> _applyFilters(
     List<JobModel> incoming,
     List<JobModel> declined,
   ) {
+    final clean = _cleanIncoming(incoming, declined);
+
     // Step 1: status
     List<JobModel> base;
     switch (_statusFilter) {
       case 'new':
-        base = incoming.where((j) => j.isRequested).toList();
+        base = clean.where((j) => j.isRequested).toList();
         break;
       case 'quoted':
-        base = incoming.where((j) => j.isQuoted).toList();
+        base = clean.where((j) => j.isQuoted).toList();
         break;
       case 'declined':
         base = declined;
         break;
       default:
-        base = incoming;
+        base = clean;
     }
     // Step 2: service
     if (_serviceFilter != null) {
@@ -64,7 +77,7 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
   @override
   Widget build(BuildContext context) {
     final incoming = ref.watch(incomingJobsProvider);
-    final declinedAsync = ref.watch(declinedJobsProvider);
+    final declinedAsync = ref.watch(incomingDeclinedJobsProvider);
     final uid = ref.watch(currentWorkerUidProvider);
     final profileAsync = ref.watch(workerProfileStreamProvider(uid));
 
@@ -72,16 +85,19 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
     final declinedJobs = declinedAsync.value ?? [];
     final workerSkills = profileAsync.value?.skills ?? [];
 
+    // Clean incoming before computing chip counts
+    final cleanIncoming = _cleanIncoming(incomingJobs, declinedJobs);
+
     // Service chip counts are always relative to the currently active
     // status bucket — so chips show how many of each service exist
     // within the selected status view.
     final serviceCountPool = _statusFilter == 'declined'
         ? declinedJobs
         : _statusFilter == 'new'
-        ? incomingJobs.where((j) => j.isRequested).toList()
+        ? cleanIncoming.where((j) => j.isRequested).toList()
         : _statusFilter == 'quoted'
-        ? incomingJobs.where((j) => j.isQuoted).toList()
-        : incomingJobs;
+        ? cleanIncoming.where((j) => j.isQuoted).toList()
+        : cleanIncoming;
 
     return Column(
       children: [
@@ -90,7 +106,7 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
           onSortChanged: widget.onSortChanged,
           sortOptions: widget.sortOptions,
         ),
-        _buildStatusChips(incomingJobs, declinedJobs),
+        _buildStatusChips(cleanIncoming, declinedJobs),
         ServiceFilterRow(
           skills: workerSkills,
           jobs: serviceCountPool,
@@ -102,9 +118,62 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
           child: _statusFilter == 'declined'
               ? _buildDeclinedList(declinedAsync, declinedJobs)
               : incoming.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(child: Text('Error: $e')),
+                  loading: () => RefreshIndicator(
+                    onRefresh: () async {
+                      ref.invalidate(incomingJobsProvider);
+                      ref.invalidate(incomingDeclinedJobsProvider);
+                      await Future.delayed(const Duration(milliseconds: 800));
+                    },
+                    child: ListView(
+                      children: [
+                        SizedBox(
+                          height: 300,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                      ],
+                    ),
+                  ),
+                  error: (e, _) => RefreshIndicator(
+                    onRefresh: () async {
+                      ref.invalidate(incomingJobsProvider);
+                      ref.invalidate(incomingDeclinedJobsProvider);
+                      await Future.delayed(const Duration(milliseconds: 800));
+                    },
+                    child: ListView(
+                      children: [
+                        SizedBox(
+                          height: 300,
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  size: 40,
+                                  color: ColorConstants.textGrey,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Error: $e',
+                                  style: const TextStyle(
+                                    color: ColorConstants.textGrey,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Pull down to retry',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: ColorConstants.textGrey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   data: (jobs) {
                     final filtered = _applyFilters(jobs, declinedJobs);
                     if (filtered.isEmpty) {
@@ -118,9 +187,7 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
                     return RefreshIndicator(
                       onRefresh: () async {
                         ref.invalidate(incomingJobsProvider);
-                        ref.invalidate(declinedJobsProvider);
-                        // Wait briefly so the stream re-subscribes and
-                        // the indicator stays visible while fetching.
+                        ref.invalidate(incomingDeclinedJobsProvider);
                         await Future.delayed(const Duration(milliseconds: 800));
                       },
                       child: ListView.builder(
@@ -203,21 +270,27 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(incomingJobsProvider);
-        ref.invalidate(declinedJobsProvider);
+        ref.invalidate(incomingDeclinedJobsProvider);
         await Future.delayed(const Duration(milliseconds: 800));
       },
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         itemCount: sorted.length,
-        itemBuilder: (_, i) =>
-            MyJobCard(job: sorted[i], tabType: JobTabType.incoming),
+        itemBuilder: (_, i) => MyJobCard(
+          job: sorted[i],
+          tabType: JobTabType.incoming,
+          isDeclined: true,
+        ),
       ),
     );
   }
 
   // ── Status chips (row 1) ─────────────────────────────────────────────────
 
-  Widget _buildStatusChips(List<JobModel> incoming, List<JobModel> declined) {
+  Widget _buildStatusChips(
+    List<JobModel> cleanIncoming,
+    List<JobModel> declined,
+  ) {
     return Container(
       color: ColorConstants.pureWhite,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
@@ -227,7 +300,7 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
           children: [
             _StatusChip(
               label: 'All',
-              count: incoming.length,
+              count: cleanIncoming.length,
               selected: _statusFilter == null,
               color: ColorConstants.primaryBlue,
               onTap: () => setState(() => _statusFilter = null),
@@ -235,7 +308,7 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
             const SizedBox(width: 8),
             _StatusChip(
               label: 'New',
-              count: incoming.where((j) => j.isRequested).length,
+              count: cleanIncoming.where((j) => j.isRequested).length,
               selected: _statusFilter == 'new',
               color: ColorConstants.chipOrange,
               onTap: () => setState(() => _statusFilter = 'new'),
@@ -243,7 +316,7 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
             const SizedBox(width: 8),
             _StatusChip(
               label: 'Quoted',
-              count: incoming.where((j) => j.isQuoted).length,
+              count: cleanIncoming.where((j) => j.isQuoted).length,
               selected: _statusFilter == 'quoted',
               color: ColorConstants.chipPurple,
               onTap: () => setState(() => _statusFilter = 'quoted'),

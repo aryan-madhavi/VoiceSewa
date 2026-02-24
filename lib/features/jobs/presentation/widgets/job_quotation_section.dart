@@ -3,13 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/shared/models/quotation_model.dart';
+import 'package:voicesewa_worker/shared/models/job_model.dart';
 import 'job_section_card.dart';
 import 'quotation_form.dart';
 
 class JobQuotationSection extends ConsumerStatefulWidget {
   final String jobId;
+  final JobStatusType jobStatus;
 
-  const JobQuotationSection({super.key, required this.jobId});
+  const JobQuotationSection({
+    super.key,
+    required this.jobId,
+    required this.jobStatus,
+  });
 
   @override
   ConsumerState<JobQuotationSection> createState() =>
@@ -55,10 +61,10 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
         }[quotation.status] ??
         ColorConstants.warningOrange;
 
-    // Edit: only if not yet viewed by client AND still submitted
-    final canEdit =
-        !quotation.viewedByClient &&
-        quotation.status == QuotationStatus.submitted;
+    // Edit: allowed when quotation is still submitted.
+    // viewedByClient restriction removed — worker can update their quote
+    // as long as the client hasn't accepted/rejected it yet.
+    final canEdit = quotation.status == QuotationStatus.submitted;
 
     // Withdraw: only before accepted (submitted or rejected — not accepted/withdrawn)
     final canWithdraw =
