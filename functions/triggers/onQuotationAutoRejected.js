@@ -24,9 +24,9 @@ exports.onQuotationAutoRejected = onDocumentUpdated(
     //  - AND it was auto-rejected (not manually rejected by client)
     const wasRejected  = before?.status === 'rejected';
     const isRejected   = after?.status  === 'rejected';
-    const isAutoReject = after?.auto_rejected === true;
+    //const isAutoReject = after?.auto_rejected === true;
 
-    if (wasRejected || !isRejected || !isAutoReject) {
+    if (wasRejected || !isRejected) {
       return null;
     }
 
