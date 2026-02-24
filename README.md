@@ -141,13 +141,13 @@ jobs - collection
         withdrawal_reason: string | null,
         auto_rejected: boolean | null
       },
-    messages - collection
-      msg-uuid - docunment
-      {
-        sender_uid: string,
-        sender_name: string,
-        text: string,
-        is_worker: boolean,
-        sent_at: timestamp
-      }
+      messages - collection
+        msg-uuid - docunment
+        {
+          sender_uid: string,
+          sender_name: string,
+          text: string,
+          is_worker: boolean,
+          sent_at: timestamp
+        }
 ```
