@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
+import 'package:http/http.dart';
+import 'dart:convert';
 
 class ChatPage extends ConsumerStatefulWidget {
   final JobModel job;
-  // messages live at jobs/{jobId}/quotations/{quotationId}/messages
   final String quotationId;
 
   const ChatPage({super.key, required this.job, required this.quotationId});
@@ -42,26 +44,65 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Future<void> _send() async {
-    final text = _msgCtrl.text.trim();
-    if (text.isEmpty || _sending) return;
+    final originalMsg = _msgCtrl.text.trim();
+    if (originalMsg.isEmpty || _sending) return;
+
     _msgCtrl.clear();
     setState(() => _sending = true);
 
-    final uid = ref.read(currentWorkerUidProvider);
-    final profile = ref.read(workerProfileStreamProvider(uid)).value;
+    try {
+      final uid = ref.read(currentWorkerUidProvider);
+      final profile = ref.read(workerProfileStreamProvider(uid)).value;
 
-    await ref.read(sendMessageProvider)(
-      jobId: widget.job.jobId,
-      quotationId: widget.quotationId,
-      text: text,
-      senderName: profile?.name ?? 'Worker',
-    );
+      final String? newMessageId = await ref.read(sendMessageProvider)(
+        jobId: widget.job.jobId,
+        quotationId: widget.quotationId,
+        originalMsg: originalMsg,
+        senderName: profile?.name ?? 'Worker',
+      );
 
-    if (mounted) {
-      setState(() => _sending = false);
-      _scrollToBottom();
+      if (newMessageId != null) {
+        await _chatTranslationN8NWebhook(
+          jobId: widget.job.jobId,
+          quotationId: widget.quotationId,
+          messageId: newMessageId,
+        );
+      }
+    } catch (e) {
+      debugPrint("Failed to send: $e");
+    } finally {
+      if (mounted) {
+        setState(() => _sending = false);
+        _scrollToBottom();
+      }
     }
   }
+
+  Future<void> _chatTranslationN8NWebhook({
+   required String jobId,
+   required String quotationId,
+   required String messageId,
+  })async{
+      final url = Uri.parse("https://fomoha8938hutudns.app.n8n.cloud/webhook/translate");
+
+      try {
+        final response = await http.post(
+          url,
+          headers: {"Content-Type" : "application/json"},
+          body: jsonEncode({
+            "jobId": jobId,
+            "quotationId": quotationId,
+            "messageId": messageId,
+          }),
+        );
+        if (response.statusCode != 200){
+          debugPrint("Chat Translation N8N Webhook Error: ${response.statusCode}");
+        }
+      }
+      catch(e){
+        debugPrint("Failed to reach N8N: $e");
+      }
+    }
 
   Future<void> _callClient() async {
     String? phone = widget.job.clientPhone;
@@ -337,7 +378,7 @@ class _Bubble extends StatelessWidget {
                     ],
                   ),
                   child: Text(
-                    msg.text,
+                    msg.originalMsg,
                     style: TextStyle(
                       fontSize: 14,
                       color: isMe
