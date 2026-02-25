@@ -388,6 +388,7 @@ class ChatMessage {
   final String senderUid;
   final String senderName;
   final String originalMsg;
+  final Map<String, String> translated; // Add this field
   final bool isWorker;
   final DateTime? sentAt;
 
@@ -395,16 +396,25 @@ class ChatMessage {
     required this.senderUid,
     required this.senderName,
     required this.originalMsg,
+    required this.translated,
     required this.isWorker,
     this.sentAt,
   });
 
   factory ChatMessage.fromDoc(DocumentSnapshot doc) {
     final map = doc.data() as Map<String, dynamic>;
+
+    // Parse the translated map safely
+    final translatedMap = Map<String, dynamic>.from(map['translated'] ?? {});
+    final Map<String, String> cleanTranslations = translatedMap.map(
+          (key, value) => MapEntry(key, value.toString()),
+    );
+
     return ChatMessage(
       senderUid: map['sender_uid'] as String? ?? '',
       senderName: map['sender_name'] as String? ?? '',
       originalMsg: map['originalMsg'] as String? ?? '',
+      translated: cleanTranslations,
       isWorker: map['is_worker'] as bool? ?? false,
       sentAt: (map['sent_at'] as Timestamp?)?.toDate(),
     );

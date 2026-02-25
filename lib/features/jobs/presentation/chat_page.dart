@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
+
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
-import 'package:http/http.dart';
-import 'dart:convert';
+import '../../../core/providers/language_provider.dart';
 
 class ChatPage extends ConsumerStatefulWidget {
   final JobModel job;
@@ -307,94 +308,67 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
 // ── Chat Bubble ────────────────────────────────────────────────────────────
 
-class _Bubble extends StatelessWidget {
+class _Bubble extends ConsumerWidget { // Change to ConsumerWidget
   final ChatMessage msg;
   const _Bubble({required this.msg});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) { // Add WidgetRef
     final isMe = msg.isWorker;
     final time = msg.sentAt != null ? _fmt(msg.sentAt!) : '';
+
+    final currentLocale = ref.watch(localeProvider);
+    final String langCode = currentLocale.languageCode;
+
+    final String displayMsg = msg.translated[langCode] ?? msg.originalMsg;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
-        mainAxisAlignment: isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
-            CircleAvatar(
+            const CircleAvatar(
               radius: 14,
               backgroundColor: ColorConstants.dividerGrey,
-              child: const Icon(
-                Icons.person_outline,
-                size: 16,
-                color: ColorConstants.textGrey,
-              ),
+              child: Icon(Icons.person_outline, size: 16, color: ColorConstants.textGrey),
             ),
             const SizedBox(width: 8),
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: isMe
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 if (!isMe)
                   Padding(
                     padding: const EdgeInsets.only(left: 4, bottom: 3),
                     child: Text(
                       msg.senderName,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: ColorConstants.textGrey,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: const TextStyle(fontSize: 11, color: ColorConstants.textGrey, fontWeight: FontWeight.w500),
                     ),
                   ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: isMe
-                        ? ColorConstants.primaryBlue
-                        : ColorConstants.pureWhite,
+                    color: isMe ? ColorConstants.primaryBlue : ColorConstants.pureWhite,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
                       bottomLeft: Radius.circular(isMe ? 16 : 4),
                       bottomRight: Radius.circular(isMe ? 4 : 16),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: ColorConstants.shadowBlack.withOpacity(0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                   child: Text(
-                    msg.originalMsg,
+                    displayMsg, // <--- Use the displayMsg variable here
                     style: TextStyle(
                       fontSize: 14,
-                      color: isMe
-                          ? ColorConstants.pureWhite
-                          : ColorConstants.textDark,
+                      color: isMe ? ColorConstants.pureWhite : ColorConstants.textDark,
                     ),
                   ),
                 ),
                 const SizedBox(height: 3),
-                Text(
-                  time,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: ColorConstants.textGrey,
-                  ),
-                ),
+                Text(time, style: const TextStyle(fontSize: 10, color: ColorConstants.textGrey)),
               ],
             ),
           ),
@@ -403,6 +377,7 @@ class _Bubble extends StatelessWidget {
       ),
     );
   }
+
 
   String _fmt(DateTime dt) {
     final h = dt.hour > 12
