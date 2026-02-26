@@ -30,7 +30,7 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
   final _pincodeController = TextEditingController();
 
   String? _selectedLanguage;
-  String? _selectedSkillCategory;
+  final Set<String> _selectedSkills = {};
   bool _isLoading = false;
 
   GeoPoint? _geoPoint;
@@ -146,7 +146,7 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
         bio: _bioController.text.trim().isEmpty
             ? null
             : _bioController.text.trim(),
-        skills: [_selectedSkillCategory!],
+        skills: _selectedSkills.toList(),
         address: WorkerAddress(
           location: _geoPoint,
           city: _cityController.text.trim(),
@@ -304,10 +304,8 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
 
                 // Skill validation wrapper
                 FormField<String>(
-                  initialValue: _selectedSkillCategory,
-                  validator: (_) =>
-                      (_selectedSkillCategory == null ||
-                          _selectedSkillCategory!.isEmpty)
+                  initialValue: _selectedSkills.isEmpty ? null : 'selected',
+                  validator: (_) => (_selectedSkills.isEmpty)
                       ? 'Please select your primary skill'
                       : null,
                   builder: (field) => Column(
@@ -323,15 +321,26 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                         children: ServicesData.services.entries.map((entry) {
                           final color = ServicesData.colorOf(entry.key);
                           final icon = ServicesData.iconOf(entry.key);
-                          final name = ServicesData.nameOf(entry.key);
-                          final isSelected = _selectedSkillCategory == name;
+                          final name = ServicesData.nameOf(
+                            entry.key,
+                          ); // display in UI
+                          final enumName = entry.key.name; // saved to Firestore
+                          final isSelected = _selectedSkills.contains(enumName);
 
                           return GestureDetector(
                             onTap: _isLoading
                                 ? null
                                 : () => setState(() {
-                                    _selectedSkillCategory = name;
-                                    field.didChange(name);
+                                    if (_selectedSkills.contains(enumName)) {
+                                      _selectedSkills.remove(enumName);
+                                    } else {
+                                      _selectedSkills.add(enumName);
+                                    }
+                                    field.didChange(
+                                      _selectedSkills.isEmpty
+                                          ? null
+                                          : 'selected',
+                                    );
                                   }),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 180),

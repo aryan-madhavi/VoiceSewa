@@ -53,6 +53,7 @@ dependencies:
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
   url_launcher: ^6.3.2
+  dart_geohash: ^2.1.0
 
 
 
