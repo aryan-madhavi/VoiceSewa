@@ -9,11 +9,9 @@ class ClientFirebaseRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
 
-  ClientFirebaseRepository({
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _auth = auth ?? FirebaseAuth.instance;
+  ClientFirebaseRepository({FirebaseFirestore? firestore, FirebaseAuth? auth})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      _auth = auth ?? FirebaseAuth.instance;
 
   /// Reference to clients collection
   CollectionReference<Map<String, dynamic>> get _clientsCollection =>
@@ -26,7 +24,7 @@ class ClientFirebaseRepository {
   Future<ClientProfile?> getProfile(String uid) async {
     try {
       final doc = await _clientsCollection.doc(uid).get();
-      
+
       if (!doc.exists) {
         print('📭 No profile found for UID: $uid');
         return null;
@@ -53,10 +51,9 @@ class ClientFirebaseRepository {
   /// Create or update client profile
   Future<void> upsertProfile(ClientProfile profile) async {
     try {
-      await _clientsCollection.doc(profile.uid).set(
-            profile.toFirestore(),
-            SetOptions(merge: true),
-          );
+      await _clientsCollection
+          .doc(profile.uid)
+          .set(profile.toFirestore(), SetOptions(merge: true));
       print('✅ Profile saved for UID: ${profile.uid}');
     } catch (e) {
       print('❌ Error saving profile: $e');
@@ -101,7 +98,7 @@ class ClientFirebaseRepository {
   Future<bool> currentUserHasProfile() async {
     final uid = _currentUserId;
     if (uid == null) return false;
-    
+
     return await profileExists(uid);
   }
 
@@ -133,111 +130,6 @@ class ClientFirebaseRepository {
       print('✅ FCM token updated for UID: $uid');
     } catch (e) {
       print('❌ Error updating FCM token: $e');
-      rethrow;
-    }
-  }
-
-  /// Add address to client profile
-  Future<void> addAddress(String uid, Address address) async {
-    try {
-      await _clientsCollection.doc(uid).update({
-        'addresses': FieldValue.arrayUnion([address.toMap()])
-      });
-      print('✅ Address added for UID: $uid');
-    } catch (e) {
-      print('❌ Error adding address: $e');
-      rethrow;
-    }
-  }
-
-  /// Remove address from client profile
-  Future<void> removeAddress(String uid, Address address) async {
-    try {
-      await _clientsCollection.doc(uid).update({
-        'addresses': FieldValue.arrayRemove([address.toMap()])
-      });
-      print('✅ Address removed for UID: $uid');
-    } catch (e) {
-      print('❌ Error removing address: $e');
-      rethrow;
-    }
-  }
-
-  /// Add job reference to requested services
-  Future<void> addRequestedJob(String uid, String jobId) async {
-    try {
-      final jobRef = _firestore.collection('jobs').doc(jobId);
-      await _clientsCollection.doc(uid).update({
-        'services.requested': FieldValue.arrayUnion([jobRef])
-      });
-      print('✅ Job added to requested for UID: $uid');
-    } catch (e) {
-      print('❌ Error adding requested job: $e');
-      rethrow;
-    }
-  }
-
-  /// Move job from requested to scheduled
-  Future<void> scheduleJob(String uid, String jobId) async {
-    try {
-      final jobRef = _firestore.collection('jobs').doc(jobId);
-      
-      await _firestore.runTransaction((transaction) async {
-        final docRef = _clientsCollection.doc(uid);
-        
-        transaction.update(docRef, {
-          'services.requested': FieldValue.arrayRemove([jobRef]),
-          'services.scheduled': FieldValue.arrayUnion([jobRef]),
-        });
-      });
-      
-      print('✅ Job scheduled for UID: $uid');
-    } catch (e) {
-      print('❌ Error scheduling job: $e');
-      rethrow;
-    }
-  }
-
-  /// Move job from scheduled to completed
-  Future<void> completeJob(String uid, String jobId) async {
-    try {
-      final jobRef = _firestore.collection('jobs').doc(jobId);
-      
-      await _firestore.runTransaction((transaction) async {
-        final docRef = _clientsCollection.doc(uid);
-        
-        transaction.update(docRef, {
-          'services.scheduled': FieldValue.arrayRemove([jobRef]),
-          'services.completed': FieldValue.arrayUnion([jobRef]),
-        });
-      });
-      
-      print('✅ Job completed for UID: $uid');
-    } catch (e) {
-      print('❌ Error completing job: $e');
-      rethrow;
-    }
-  }
-
-  /// Cancel a job
-  Future<void> cancelJob(String uid, String jobId) async {
-    try {
-      final jobRef = _firestore.collection('jobs').doc(jobId);
-      
-      await _firestore.runTransaction((transaction) async {
-        final docRef = _clientsCollection.doc(uid);
-        
-        // Remove from all lists and add to cancelled
-        transaction.update(docRef, {
-          'services.requested': FieldValue.arrayRemove([jobRef]),
-          'services.scheduled': FieldValue.arrayRemove([jobRef]),
-          'services.cancelled': FieldValue.arrayUnion([jobRef]),
-        });
-      });
-      
-      print('✅ Job cancelled for UID: $uid');
-    } catch (e) {
-      print('❌ Error cancelling job: $e');
       rethrow;
     }
   }
