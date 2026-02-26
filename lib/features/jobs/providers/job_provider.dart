@@ -147,4 +147,14 @@ class JobActions {
     _ref.invalidate(currentUserJobsProvider);
     _ref.invalidate(jobProvider(jobId));
   }
+
+  /// Submit client feedback for a completed job
+  Future<void> submitClientFeedback(
+    String jobId,
+    double rating,
+    String comment,
+  ) async {
+    await _repository.submitClientFeedback(jobId, rating, comment);
+    _ref.invalidate(jobProvider(jobId));
+  }
 }

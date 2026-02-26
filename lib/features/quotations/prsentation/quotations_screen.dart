@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/features/quotations/prsentation/chat_screen.dart';
 import 'package:voicesewa_client/features/quotations/prsentation/widgets/quotation_widgets.dart';
 import 'package:voicesewa_client/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_client/shared/models/job_model.dart';
@@ -80,13 +81,34 @@ class QuotationCard extends ConsumerWidget {
       });
     }
 
+    // ── Chat access rules ─────────────────────────────────────────────────
+    // • submitted: chat enabled (client can ask questions)
+    // • accepted:  chat enabled ONLY for the accepted quotation
+    // • rejected / withdrawn: chat disabled
+    final isAcceptedQuotation =
+        quotation.isAccepted && job.finalizedQuotationId == quotation.id;
+    final chatEnabled = quotation.isPending || isAcceptedQuotation;
+
+    void openChat() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            jobId: jobId,
+            quotationId: quotation.id,
+            workerName: quotation.workerName,
+          ),
+        ),
+      );
+    }
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Worker Header (name, rating, status badge, unread dot, submitted date)
+            // Worker Header
             QuotationWorkerHeader(quotation: quotation),
             const SizedBox(height: 16),
 
@@ -101,12 +123,20 @@ class QuotationCard extends ConsumerWidget {
             // Description, Notes, Price Breakdown, Timestamps, Reason banners
             QuotationDescription(quotation: quotation),
 
-            // Action Buttons (only for pending/submitted quotations)
+            const SizedBox(height: 16),
+
+            // Action Buttons — pending shows accept/reject + contact,
+            // others show only contact (enabled/disabled)
             if (quotation.canBeAccepted) ...[
-              const SizedBox(height: 16),
               QuotationActionButtons(
                 onAccept: () => _showAcceptDialog(context, ref),
                 onReject: () => _showRejectDialog(context, ref),
+                onContact: openChat,
+              ),
+            ] else ...[
+              QuotationContactButton(
+                enabled: chatEnabled,
+                onContact: chatEnabled ? openChat : null,
               ),
             ],
           ],

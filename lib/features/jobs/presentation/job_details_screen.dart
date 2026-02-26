@@ -89,6 +89,16 @@ class _JobDetailsContent extends ConsumerWidget {
             const SizedBox(height: 16),
           ],
 
+          // ✅ Feedback Card — shown when job is completed
+          if (job.isCompleted) ...[
+            JobFeedbackCard(
+              existingFeedback: job.clientFeedback,
+              onSubmit: (rating, comment) =>
+                  _submitFeedback(context, ref, job.id, rating, comment),
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // Action Buttons
           unviewedCountAsync.when(
             data: (unviewedCount) => JobActionButtons(
@@ -114,6 +124,29 @@ class _JobDetailsContent extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _submitFeedback(
+    BuildContext context,
+    WidgetRef ref,
+    String jobId,
+    double rating,
+    String comment,
+  ) async {
+    try {
+      final actions = ref.read(jobActionsProvider);
+      await actions.submitClientFeedback(jobId, rating, comment);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Thank you for your feedback!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
   void _navigateToQuotations(BuildContext context) {
@@ -147,9 +180,9 @@ class _JobDetailsContent extends ConsumerWidget {
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               }
             },
@@ -212,9 +245,9 @@ class _JobDetailsContent extends ConsumerWidget {
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
               }
             },

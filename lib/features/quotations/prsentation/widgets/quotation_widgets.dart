@@ -600,35 +600,86 @@ class _ReasonBanner extends StatelessWidget {
 class QuotationActionButtons extends StatelessWidget {
   final VoidCallback onAccept;
   final VoidCallback onReject;
+  final VoidCallback onContact;
 
   const QuotationActionButtons({
     super.key,
     required this.onAccept,
     required this.onReject,
+    required this.onContact,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onReject,
-            icon: const Icon(Icons.cancel),
-            label: const Text('Reject'),
-            style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onReject,
+                icon: const Icon(Icons.cancel, size: 18),
+                label: const Text('Reject'),
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: onAccept,
+                icon: const Icon(Icons.check_circle, size: 18),
+                label: const Text('Accept'),
+                style: FilledButton.styleFrom(backgroundColor: Colors.green),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: FilledButton.icon(
-            onPressed: onAccept,
-            icon: const Icon(Icons.check_circle),
-            label: const Text('Accept'),
-            style: FilledButton.styleFrom(backgroundColor: Colors.green),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: onContact,
+            icon: const Icon(Icons.chat_bubble_outline, size: 18),
+            label: const Text('Contact Worker'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: ColorConstants.seed,
+              side: const BorderSide(color: ColorConstants.seed),
+            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+// ==================== CONTACT BUTTON (for non-pending quotations) ====================
+
+/// Shown on accepted quotation (chat enabled) or disabled on others
+class QuotationContactButton extends StatelessWidget {
+  final bool enabled;
+  final VoidCallback? onContact;
+
+  const QuotationContactButton({
+    super.key,
+    required this.enabled,
+    this.onContact,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: enabled ? onContact : null,
+        icon: const Icon(Icons.chat_bubble_outline, size: 18),
+        label: Text(enabled ? 'Open Chat' : 'Chat Unavailable'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: enabled ? ColorConstants.seed : Colors.grey,
+          side: BorderSide(
+            color: enabled ? ColorConstants.seed : Colors.grey.shade300,
+          ),
+        ),
+      ),
     );
   }
 }

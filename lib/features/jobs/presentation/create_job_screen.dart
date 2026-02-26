@@ -66,6 +66,15 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
       });
       print('✅ Auto-selected first address: ${addresses.first.shortAddress}');
     }
+
+    // ✅ Auto-show new address form when user has no saved addresses
+    if (addresses.isEmpty && !_showAddNewAddress && !_hasAutoSelectedAddress) {
+      setState(() {
+        _showAddNewAddress = true;
+        _hasAutoSelectedAddress = true; // prevent repeated triggers
+      });
+      print('📍 No saved addresses — auto-showing new address form');
+    }
   }
 
   Future<void> _selectScheduledDate() async {

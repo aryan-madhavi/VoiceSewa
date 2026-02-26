@@ -271,6 +271,28 @@ class JobFirebaseService {
     }
   }
 
+  /// Submit client feedback (rating + comment) for a completed job
+  Future<void> submitClientFeedback(
+    String jobId,
+    double rating,
+    String comment,
+  ) async {
+    try {
+      print('⭐ Submitting client feedback for job $jobId');
+      await _jobsRef.doc(jobId).update({
+        'client_feedback': {
+          'rating': rating,
+          'comment': comment,
+          'created_at': Timestamp.now(),
+        },
+      });
+      print('✅ Client feedback submitted');
+    } catch (e) {
+      print('❌ Error submitting client feedback: $e');
+      rethrow;
+    }
+  }
+
   /// Get recent jobs
   Future<List<Job>> getRecentJobs(String clientUid, {int limit = 5}) async {
     try {

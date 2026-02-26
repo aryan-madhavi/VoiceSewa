@@ -162,4 +162,13 @@ class JobRepository {
   Stream<List<Job>> watchRecentJobs(String clientUid, {int limit = 5}) {
     return _firebaseService.watchRecentJobs(clientUid, limit: limit);
   }
+
+  /// Submit client feedback for a completed job
+  Future<void> submitClientFeedback(
+    String jobId,
+    double rating,
+    String comment,
+  ) async {
+    await _firebaseService.submitClientFeedback(jobId, rating, comment);
+  }
 }

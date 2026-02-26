@@ -338,6 +338,8 @@ class AddressSelectionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasAddresses = savedAddresses.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -350,7 +352,9 @@ class AddressSelectionSection extends StatelessWidget {
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            if (savedAddresses.isNotEmpty)
+            // Show "Add New" when there are saved addresses and not already adding
+            // Show "Select Saved" when currently adding and saved addresses exist
+            if (hasAddresses)
               TextButton.icon(
                 onPressed: onToggleAddNew,
                 icon: Icon(
@@ -365,7 +369,35 @@ class AddressSelectionSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        if (!showAddNewAddress && savedAddresses.isNotEmpty)
+
+        // No saved addresses: always show a prompt to add one
+        if (!hasAddresses && !showAddNewAddress)
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.orange.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.location_off, color: Colors.orange.shade700),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'No saved addresses. Please add one below.',
+                    style: TextStyle(
+                      color: Colors.orange.shade900,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // Dropdown only when there are saved addresses and not adding new
+        if (!showAddNewAddress && hasAddresses)
           SavedAddressDropdown(
             addresses: savedAddresses,
             selectedAddress: selectedAddress,

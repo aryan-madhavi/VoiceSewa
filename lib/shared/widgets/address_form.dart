@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
 import 'package:voicesewa_client/shared/models/address_model.dart';
 
@@ -49,7 +50,7 @@ class AddressFormWidget extends StatefulWidget {
 class _AddressFormWidgetState extends State<AddressFormWidget> {
   bool _isLoadingLocation = false;
 
-  /// Get current location using GPS
+  /// Get current location using GPS, then reverse-geocode to auto-fill fields
   Future<void> _getCurrentLocation() async {
     setState(() => _isLoadingLocation = true);
 
@@ -84,16 +85,17 @@ class _AddressFormWidgetState extends State<AddressFormWidget> {
 
       final geoPoint = GeoPoint(position.latitude, position.longitude);
 
+      // Reverse geocode and auto-fill fields (non-blocking on failure)
+      await _reverseGeocode(position.latitude, position.longitude);
+
       if (mounted) {
         widget.onLocationCaptured?.call(geoPoint);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Location captured: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
-            ),
+          const SnackBar(
+            content: Text('Location captured & address auto-filled ✓'),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -112,6 +114,71 @@ class _AddressFormWidgetState extends State<AddressFormWidget> {
       if (mounted) {
         setState(() => _isLoadingLocation = false);
       }
+    }
+  }
+
+  /// Reverse geocode [lat]/[lng] and auto-fill any currently empty fields.
+  /// Only fills a field if the user has not typed anything yet,
+  /// so manual edits are never overwritten.
+  Future<void> _reverseGeocode(double lat, double lng) async {
+    try {
+      print('🗺️ Reverse geocoding: $lat, $lng');
+
+      final placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isEmpty) {
+        print('⚠️ No placemarks returned');
+        return;
+      }
+
+      final p = placemarks.first;
+      print('📍 Placemark: ${p.toJson()}');
+
+      // Line 1: street number + street name
+      if (widget.line1Controller.text.trim().isEmpty) {
+        final line1 = [
+          p.subThoroughfare,
+          p.thoroughfare,
+        ].where((s) => s != null && s.isNotEmpty).join(' ');
+        if (line1.isNotEmpty) widget.line1Controller.text = line1;
+      }
+
+      // Line 2: sub-locality / neighbourhood
+      if (widget.line2Controller.text.trim().isEmpty) {
+        final line2 = p.subLocality ?? '';
+        if (line2.isNotEmpty) widget.line2Controller.text = line2;
+      }
+
+      // Landmark: locality as a familiar nearby area name
+      if (widget.landmarkController.text.trim().isEmpty) {
+        final landmark = p.locality ?? '';
+        if (landmark.isNotEmpty) widget.landmarkController.text = landmark;
+      }
+
+      // City: locality -> subAdministrativeArea -> administrativeArea
+      if (widget.cityController.text.trim().isEmpty) {
+        final city =
+            [
+              p.locality,
+              p.subAdministrativeArea,
+              p.administrativeArea,
+            ].firstWhere(
+              (s) => s != null && s.isNotEmpty,
+              orElse: () => null,
+            ) ??
+            '';
+        if (city.isNotEmpty) widget.cityController.text = city;
+      }
+
+      // Pincode: postalCode
+      if (widget.pincodeController.text.trim().isEmpty) {
+        final pincode = p.postalCode ?? '';
+        if (pincode.isNotEmpty) widget.pincodeController.text = pincode;
+      }
+
+      print('✅ Fields auto-filled from geocoding');
+    } catch (e) {
+      // Non-critical: location already captured, just log and continue
+      print('⚠️ Reverse geocoding failed: $e');
     }
   }
 
@@ -139,7 +206,7 @@ class _AddressFormWidgetState extends State<AddressFormWidget> {
             label: Text(
               widget.location != null
                   ? 'Location Captured ✓'
-                  : 'Capture Location (GPS)',
+                  : 'Use Current Location & Auto-fill',
             ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),

@@ -1,5 +1,50 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// ==================== CHAT MESSAGE MODEL ====================
+
+/// A single chat message stored under:
+/// jobs/{jobId}/quotations/{quotationId}/messages/{msgId}
+class ChatMessage {
+  final String id;
+  final String senderUid;
+  final String senderName;
+  final String text;
+  final bool isWorker;
+  final DateTime sentAt;
+
+  ChatMessage({
+    required this.id,
+    required this.senderUid,
+    required this.senderName,
+    required this.text,
+    required this.isWorker,
+    required this.sentAt,
+  });
+
+  factory ChatMessage.fromMap(String id, Map<String, dynamic> map) {
+    return ChatMessage(
+      id: id,
+      senderUid: map['sender_uid'] as String? ?? '',
+      senderName: map['sender_name'] as String? ?? '',
+      text: map['text'] as String? ?? '',
+      isWorker: map['is_worker'] as bool? ?? false,
+      sentAt: map['sent_at'] != null
+          ? (map['sent_at'] as Timestamp).toDate()
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+    'sender_uid': senderUid,
+    'sender_name': senderName,
+    'text': text,
+    'is_worker': isWorker,
+    'sent_at': Timestamp.fromDate(sentAt),
+  };
+}
+
+// ==================== QUOTATION STATUS ====================
+
 /// Quotation status enum
 enum QuotationStatus {
   submitted,
