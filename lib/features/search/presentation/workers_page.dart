@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
 import 'package:voicesewa_client/features/search/providers/worker_provider.dart';
 import 'package:voicesewa_client/features/search/presentation/widgets/worker_card.dart';
 import 'package:voicesewa_client/features/search/presentation/widgets/worker_details_sheet.dart';
 import 'package:voicesewa_client/shared/data/services_data.dart';
 import 'package:voicesewa_client/shared/models/worker_model.dart';
+import 'package:voicesewa_client/shared/models/address_model.dart';
 
 class SuggestedWorkersPage extends ConsumerStatefulWidget {
   const SuggestedWorkersPage({super.key});
@@ -17,130 +20,53 @@ class SuggestedWorkersPage extends ConsumerStatefulWidget {
 }
 
 class _SuggestedWorkersPageState extends ConsumerState<SuggestedWorkersPage> {
-  GoogleMapController? _mapController;
-  Set<Marker> _markers = {};
+  // Ambarnath fallback center
+  static const LatLng _fallbackCenter = LatLng(19.1958, 73.1964);
 
-  // Ambarnath center coordinates
-  static const LatLng _centerAmbarnath = LatLng(19.1958, 73.1964);
+  // ── Marker color ─────────────────────────────────────────────────────────────
 
-  @override
-  void dispose() {
-    _mapController?.dispose();
-    super.dispose();
-  }
-
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
-  }
-
-  void _updateMarkers(List<WorkerModel> workers) {
-    final markers = <Marker>{};
-
-    for (final worker in workers) {
-      final position = LatLng(
-        worker.address.location.latitude,
-        worker.address.location.longitude,
-      );
-
-      markers.add(
-        Marker(
-          markerId: MarkerId(worker.uid),
-          position: position,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            _getMarkerColor(worker.service),
-          ),
-          infoWindow: InfoWindow(
-            title: worker.name,
-            snippet: '${worker.serviceLabel} • ⭐ ${worker.rating}',
-            onTap: () => _showWorkerDetails(worker),
-          ),
-          onTap: () => _showWorkerDetails(worker),
-        ),
-      );
-    }
-
-    setState(() {
-      _markers = markers;
-    });
-
-    // Animate camera to fit all markers
-    if (workers.isNotEmpty && _mapController != null) {
-      _fitMarkersInView(workers);
-    }
-  }
-
-  void _fitMarkersInView(List<WorkerModel> workers) {
-    if (workers.isEmpty) return;
-
-    double minLat = workers.first.address.location.latitude;
-    double maxLat = workers.first.address.location.latitude;
-    double minLng = workers.first.address.location.longitude;
-    double maxLng = workers.first.address.location.longitude;
-
-    for (final worker in workers) {
-      final lat = worker.address.location.latitude;
-      final lng = worker.address.location.longitude;
-
-      if (lat < minLat) minLat = lat;
-      if (lat > maxLat) maxLat = lat;
-      if (lng < minLng) minLng = lng;
-      if (lng > maxLng) maxLng = lng;
-    }
-
-    final bounds = LatLngBounds(
-      southwest: LatLng(minLat, minLng),
-      northeast: LatLng(maxLat, maxLng),
-    );
-
-    _mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-  }
-
-  double _getMarkerColor(Services service) {
+  Color _getMarkerColor(Services service) {
     switch (service) {
       case Services.houseCleaner:
-        return BitmapDescriptor.hueGreen;
+        return Colors.teal;
       case Services.plumber:
-        return BitmapDescriptor.hueBlue;
+        return Colors.blue;
       case Services.electrician:
-        return BitmapDescriptor.hueYellow;
+        return Colors.amber.shade700;
       case Services.carpenter:
-        return BitmapDescriptor.hueOrange;
+        return Colors.brown;
       case Services.painter:
-        return BitmapDescriptor.hueViolet;
+        return Colors.purple;
       case Services.acApplianceTechnician:
-        return BitmapDescriptor.hueCyan;
+        return Colors.cyan;
       case Services.mechanic:
-        return BitmapDescriptor.hueRose;
+        return Colors.grey.shade700;
       case Services.cook:
-        return BitmapDescriptor.hueRed;
+        return Colors.redAccent;
       case Services.driverOnDemand:
-        return BitmapDescriptor.hueAzure;
+        return Colors.indigo;
       case Services.handymanMasonryWork:
-        return BitmapDescriptor.hueOrange;
+        return Colors.deepOrange;
       default:
-        return BitmapDescriptor.hueRed;
+        return Colors.red;
     }
   }
 
-  void _showWorkerDetails(WorkerModel worker) {
+  // ── Bottom sheets ─────────────────────────────────────────────────────────────
+
+  void _showWorkerDetails(WorkerModel worker, GeoPoint? referenceLocation) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => WorkerDetailsSheet(
         worker: worker,
+        distanceLabel: referenceLocation != null
+            ? worker.distanceFrom(referenceLocation)
+            : null,
         onBookNow: () {
           Navigator.pop(context);
-          // TODO: handle booking logic here
-        },
-        onPlayVoice: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Play voice intro: ${worker.voiceText ?? "No voice intro available"}',
-              ),
-            ),
-          );
+          // TODO: handle booking logic
         },
       ),
     );
@@ -153,218 +79,109 @@ class _SuggestedWorkersPageState extends ConsumerState<SuggestedWorkersPage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
-        return Consumer(
-          builder: (context, ref, _) {
-            final selectedProfession = ref.watch(selectedProfessionProvider);
-
-            return SingleChildScrollView(
-              physics: ScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Filter by Profession',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final selectedProfession = ref.watch(selectedProfessionProvider);
+          return SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Filter by Profession',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 16),
-                    // All Services option
-                    ListTile(
-                      leading: const Icon(Icons.select_all),
-                      title: const Text('All Services'),
-                      trailing: selectedProfession == null
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    leading: const Icon(Icons.select_all),
+                    title: const Text('All Services'),
+                    trailing: selectedProfession == null
+                        ? const Icon(Icons.check, color: ColorConstants.seed)
+                        : null,
+                    onTap: () {
+                      ref.read(selectedProfessionProvider.notifier).state =
+                          null;
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const Divider(),
+                  ...Services.values.map((service) {
+                    final isSelected = selectedProfession == service;
+                    final data = ServicesData.services[service]!;
+                    return ListTile(
+                      leading: Icon(
+                        data[1] as IconData,
+                        color: data[0] as Color,
+                      ),
+                      title: Text(data[2] as String),
+                      trailing: isSelected
                           ? const Icon(Icons.check, color: ColorConstants.seed)
                           : null,
                       onTap: () {
+                        // Toggle: tap same = clear, tap new = set
                         ref.read(selectedProfessionProvider.notifier).state =
-                            null;
+                            isSelected ? null : service;
                         Navigator.pop(context);
                       },
-                    ),
-                    const Divider(),
-                    // Individual services
-                    ...Services.values.map((service) {
-                      final isSelected = selectedProfession == service;
-                      final serviceData = ServicesData.services[service]!;
-                      final color = serviceData[0] as Color;
-                      final icon = serviceData[1] as IconData;
-                      final label = serviceData[2] as String;
-              
-                      return ListTile(
-                        leading: Icon(icon, color: color),
-                        title: Text(label),
-                        trailing: isSelected
-                            ? const Icon(Icons.check, color: ColorConstants.seed)
-                            : null,
-                        onTap: () {
-                          ref.read(selectedProfessionProvider.notifier).state =
-                              service;
-                          Navigator.pop(context);
-                        },
-                      );
-                    }).toList(),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+                    );
+                  }).toList(),
+                  const SizedBox(height: 20),
+                ],
               ),
-            );
-          },
-        );
-      },
+            ),
+          );
+        },
+      ),
     );
   }
+
+  // ── Build ─────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final workersAsync = ref.watch(workerListProvider);
-    final selectedFilter = ref.watch(selectedFilterProvider);
     final selectedProfession = ref.watch(selectedProfessionProvider);
-
-    // Update markers when workers change
-    workersAsync.whenData((workers) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _updateMarkers(workers);
-      });
-    });
+    final referenceLocation = ref.watch(selectedAddressLocationProvider);
+    final addresses = ref.watch(clientAddressListProvider);
+    final selectedAddressIdx = ref.watch(selectedAddressIndexProvider);
 
     return Scaffold(
-      // appBar: AppBar(title: const Text('Suggested Workers'), elevation: 0),
       body: Column(
         children: [
-          // 🗺️ Google Map View (Top Half)
+          // ── Address Picker ───────────────────────────────────────────────────
+          if (addresses.isNotEmpty)
+            _AddressPicker(
+              addresses: addresses,
+              selectedIndex: selectedAddressIdx,
+              onChanged: (idx) =>
+                  ref.read(selectedAddressIndexProvider.notifier).state = idx,
+            ),
+
+          // ── Flutter Map — isolated widget to prevent lag ──────────────────
           Expanded(
             flex: 2,
-            child: GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: const CameraPosition(
-                target: _centerAmbarnath,
-                zoom: 13,
-              ),
-              markers: _markers,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-
-              // ADD THESE FOR BETTER PERFORMANCE:
-              liteModeEnabled: false, // Full map features
-              mapToolbarEnabled: false,
-              zoomControlsEnabled: false,
-              buildingsEnabled: true,
-              compassEnabled: true,
-              rotateGesturesEnabled: true,
-              scrollGesturesEnabled: true,
-              tiltGesturesEnabled: true,
-              zoomGesturesEnabled: true,
-
-              // PERFORMANCE SETTINGS:
-              minMaxZoomPreference: const MinMaxZoomPreference(10, 20),
-              cameraTargetBounds: CameraTargetBounds.unbounded,
+            child: _WorkerMap(
+              workers: workersAsync.value ?? [],
+              referenceLocation: referenceLocation,
+              fallbackCenter: _fallbackCenter,
+              getMarkerColor: _getMarkerColor,
+              onMarkerTap: (worker) =>
+                  _showWorkerDetails(worker, referenceLocation),
             ),
           ),
 
-          // 🔽 Filter Chips (Horizontal scrollable)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip(
-                    context,
-                    WorkerFilter.distance,
-                    'Distance',
-                    Icons.location_on,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                    context,
-                    WorkerFilter.rating,
-                    'Rating',
-                    Icons.star,
-                  ),
-                  const SizedBox(width: 8),
-                  // Profession filter with special handling
-                  InkWell(
-                    onTap: _showProfessionFilter,
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: selectedProfession != null
-                            ? ColorConstants.seed.withOpacity(0.2)
-                            : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: selectedProfession != null
-                              ? ColorConstants.seed
-                              : Colors.transparent,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            selectedProfession != null
-                                ? ServicesData.services[selectedProfession]![1]
-                                      as IconData
-                                : Icons.work,
-                            size: 18,
-                            color: selectedProfession != null
-                                ? Colors.black
-                                : Colors.grey.shade700,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            selectedProfession != null
-                                ? ServicesData.services[selectedProfession]![2]
-                                      as String
-                                : 'Profession',
-                            style: TextStyle(
-                              color: selectedProfession != null
-                                  ? Colors.black
-                                  : Colors.grey.shade700,
-                              fontWeight: selectedProfession != null
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                              fontSize: 14,
-                            ),
-                          ),
-                          if (selectedProfession != null) ...[
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.close,
-                              size: 16,
-                              color: Colors.grey.shade700,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          // ── Filter Chips ─────────────────────────────────────────────────────
+          _FilterBar(
+            selectedProfession: selectedProfession,
+            onProfessionTap: _showProfessionFilter,
           ),
 
-          // 📋 Worker Cards List (scrollable)
+          // ── Worker Cards ─────────────────────────────────────────────────────
           Expanded(
             child: workersAsync.when(
               data: (workers) {
@@ -380,7 +197,7 @@ class _SuggestedWorkersPageState extends ConsumerState<SuggestedWorkersPage> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No workers found',
+                          'No workers found nearby',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey.shade600,
@@ -389,13 +206,14 @@ class _SuggestedWorkersPageState extends ConsumerState<SuggestedWorkersPage> {
                         const SizedBox(height: 8),
                         TextButton(
                           onPressed: () {
-                            // Reset filters
                             ref
                                     .read(selectedProfessionProvider.notifier)
                                     .state =
                                 null;
                             ref.read(selectedFilterProvider.notifier).state =
-                                WorkerFilter.distance;
+                                null;
+                            ref.read(selectedRadiusProvider.notifier).state =
+                                RadiusFilter.five;
                           },
                           child: const Text('Clear Filters'),
                         ),
@@ -403,7 +221,6 @@ class _SuggestedWorkersPageState extends ConsumerState<SuggestedWorkersPage> {
                     ),
                   );
                 }
-
                 return ListView.builder(
                   itemCount: workers.length,
                   padding: const EdgeInsets.symmetric(
@@ -414,16 +231,9 @@ class _SuggestedWorkersPageState extends ConsumerState<SuggestedWorkersPage> {
                     final worker = workers[index];
                     return WorkerCard(
                       worker: worker,
-                      onPlayVoice: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Play voice intro: ${worker.voiceText ?? "No voice intro available"}',
-                            ),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      },
+                      distanceLabel: referenceLocation != null
+                          ? worker.distanceFrom(referenceLocation)
+                          : null,
                     );
                   },
                 );
@@ -466,41 +276,438 @@ class _SuggestedWorkersPageState extends ConsumerState<SuggestedWorkersPage> {
       ),
     );
   }
+}
 
-  Widget _buildFilterChip(
-    BuildContext context,
-    WorkerFilter filter,
-    String label,
-    IconData icon,
-  ) {
-    final selected = ref.watch(selectedFilterProvider);
-    final isSelected = selected == filter;
+// ── Map widget — kept separate so it does NOT rebuild on filter changes ────────
 
-    return ChoiceChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: isSelected ? Colors.black : Colors.grey.shade700,
+class _WorkerMap extends StatefulWidget {
+  final List<WorkerModel> workers;
+  final GeoPoint? referenceLocation;
+  final LatLng fallbackCenter;
+  final Color Function(Services) getMarkerColor;
+  final void Function(WorkerModel) onMarkerTap;
+
+  const _WorkerMap({
+    required this.workers,
+    required this.referenceLocation,
+    required this.fallbackCenter,
+    required this.getMarkerColor,
+    required this.onMarkerTap,
+  });
+
+  @override
+  State<_WorkerMap> createState() => _WorkerMapState();
+}
+
+class _WorkerMapState extends State<_WorkerMap> {
+  final MapController _mapController = MapController();
+  List<Marker> _markers = [];
+  // Track previous values to avoid redundant fitCamera calls
+  List<String>? _prevWorkerIds;
+  GeoPoint? _prevReference;
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  LatLng _geo(GeoPoint g) => LatLng(g.latitude, g.longitude);
+
+  @override
+  void didUpdateWidget(_WorkerMap old) {
+    super.didUpdateWidget(old);
+
+    final newIds = widget.workers.map((w) => w.uid).toList();
+    final refChanged = widget.referenceLocation != _prevReference;
+    final workersChanged = newIds.toString() != (_prevWorkerIds?.toString());
+
+    if (refChanged || workersChanged) {
+      _prevWorkerIds = newIds;
+      _prevReference = widget.referenceLocation;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _rebuild());
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _rebuild());
+  }
+
+  void _rebuild() {
+    if (!mounted) return;
+    final markers = <Marker>[];
+
+    // Client pin
+    if (widget.referenceLocation != null) {
+      markers.add(
+        Marker(
+          point: _geo(widget.referenceLocation!),
+          width: 44,
+          height: 44,
+          child: Icon(Icons.my_location, color: ColorConstants.seed, size: 36),
+        ),
+      );
+    }
+
+    // Worker pins
+    for (final worker in widget.workers) {
+      markers.add(
+        Marker(
+          point: _geo(worker.address.location),
+          width: 36,
+          height: 36,
+          child: GestureDetector(
+            onTap: () => widget.onMarkerTap(worker),
+            child: Icon(
+              Icons.location_pin,
+              color: widget.getMarkerColor(worker.service),
+              size: 36,
+            ),
           ),
-          const SizedBox(width: 6),
-          Text(label),
+        ),
+      );
+    }
+
+    setState(() => _markers = markers);
+
+    // Fit camera
+    if (widget.workers.isNotEmpty) {
+      _fitCamera();
+    } else if (widget.referenceLocation != null) {
+      _mapController.move(_geo(widget.referenceLocation!), 13);
+    }
+  }
+
+  void _fitCamera() {
+    final lats = widget.workers
+        .map((w) => w.address.location.latitude)
+        .toList();
+    final lngs = widget.workers
+        .map((w) => w.address.location.longitude)
+        .toList();
+
+    if (widget.referenceLocation != null) {
+      lats.add(widget.referenceLocation!.latitude);
+      lngs.add(widget.referenceLocation!.longitude);
+    }
+
+    final bounds = LatLngBounds(
+      LatLng(
+        lats.reduce((a, b) => a < b ? a : b),
+        lngs.reduce((a, b) => a < b ? a : b),
+      ),
+      LatLng(
+        lats.reduce((a, b) => a > b ? a : b),
+        lngs.reduce((a, b) => a > b ? a : b),
+      ),
+    );
+
+    _mapController.fitCamera(
+      CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(60)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: widget.referenceLocation != null
+            ? _geo(widget.referenceLocation!)
+            : widget.fallbackCenter,
+        initialZoom: 14,
+        minZoom: 10,
+        maxZoom: 20,
+        // All gestures enabled — no AbsorbPointer blocking them
+        interactionOptions: const InteractionOptions(
+          flags:
+              InteractiveFlag.pinchZoom |
+              InteractiveFlag.drag |
+              InteractiveFlag.doubleTapZoom |
+              InteractiveFlag.scrollWheelZoom |
+              InteractiveFlag.pinchMove,
+        ),
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.voicesewa.client',
+          maxZoom: 20,
+          // Tile caching reduces lag significantly
+          maxNativeZoom: 19,
+          keepBuffer: 4, // keep 4 extra tile rows/cols in memory
+          panBuffer: 2,
+        ),
+        MarkerLayer(
+          markers: _markers,
+          // Rotate markers with map for cleaner look
+          rotate: false,
+        ),
+      ],
+    );
+  }
+}
+
+// ── Filter bar ────────────────────────────────────────────────────────────────
+
+class _FilterBar extends ConsumerWidget {
+  final Services? selectedProfession;
+  final VoidCallback onProfessionTap;
+
+  const _FilterBar({
+    required this.selectedProfession,
+    required this.onProfessionTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedFilter = ref.watch(selectedFilterProvider);
+    final selectedRadius = ref.watch(selectedRadiusProvider);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
-      selected: isSelected,
-      onSelected: (_) {
-        ref.read(selectedFilterProvider.notifier).state = filter;
-      },
-      selectedColor: ColorConstants.seed.withOpacity(0.2),
-      backgroundColor: Colors.grey.shade200,
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.black : Colors.grey.shade700,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-        fontSize: 14,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            // Sort: Distance — toggleable
+            _chip(
+              label: 'Distance',
+              icon: Icons.location_on,
+              isSelected: selectedFilter == WorkerFilter.distance,
+              onTap: () {
+                ref
+                    .read(selectedFilterProvider.notifier)
+                    .state = selectedFilter == WorkerFilter.distance
+                    ? null
+                    : WorkerFilter.distance;
+              },
+            ),
+            const SizedBox(width: 8),
+
+            // Sort: Rating — toggleable
+            _chip(
+              label: 'Rating',
+              icon: Icons.star,
+              isSelected: selectedFilter == WorkerFilter.rating,
+              onTap: () {
+                ref
+                    .read(selectedFilterProvider.notifier)
+                    .state = selectedFilter == WorkerFilter.rating
+                    ? null
+                    : WorkerFilter.rating;
+              },
+            ),
+            const SizedBox(width: 8),
+
+            // Radius: 2 km — toggleable (tapping active = back to 5 km)
+            _chip(
+              label: '2 km',
+              icon: Icons.radar,
+              isSelected: selectedRadius == RadiusFilter.two,
+              onTap: () {
+                ref
+                    .read(selectedRadiusProvider.notifier)
+                    .state = selectedRadius == RadiusFilter.two
+                    ? RadiusFilter.five
+                    : RadiusFilter.two;
+              },
+            ),
+            const SizedBox(width: 8),
+
+            // Radius: 5 km — toggleable (tapping active = stays 5 km, it's default)
+            _chip(
+              label: '5 km',
+              icon: Icons.radar,
+              isSelected: selectedRadius == RadiusFilter.five,
+              onTap: () {
+                ref.read(selectedRadiusProvider.notifier).state =
+                    RadiusFilter.five;
+              },
+            ),
+            const SizedBox(width: 8),
+
+            // Profession filter
+            _ProfessionChip(
+              selectedProfession: selectedProfession,
+              onTap: onProfessionTap,
+            ),
+          ],
+        ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    );
+  }
+
+  Widget _chip({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? ColorConstants.seed.withOpacity(0.15)
+              : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? ColorConstants.seed : Colors.transparent,
+            width: 1.2,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? ColorConstants.seed : Colors.grey.shade700,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? ColorConstants.seed : Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Address Picker ────────────────────────────────────────────────────────────
+
+class _AddressPicker extends StatelessWidget {
+  final List<Address> addresses;
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
+
+  const _AddressPicker({
+    required this.addresses,
+    required this.selectedIndex,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: Row(
+        children: [
+          Icon(Icons.location_on, color: ColorConstants.seed, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: DropdownButton<int>(
+              value: selectedIndex.clamp(0, addresses.length - 1),
+              isExpanded: true,
+              underline: const SizedBox(),
+              isDense: true,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+              items: List.generate(addresses.length, (i) {
+                final addr = addresses[i];
+                return DropdownMenuItem(
+                  value: i,
+                  child: Text(
+                    addr.shortAddress.isNotEmpty
+                        ? addr.shortAddress
+                        : addr.city.isNotEmpty
+                        ? addr.city
+                        : 'Address ${i + 1}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }),
+              onChanged: (idx) {
+                if (idx != null) onChanged(idx);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Profession Chip ───────────────────────────────────────────────────────────
+
+class _ProfessionChip extends StatelessWidget {
+  final Services? selectedProfession;
+  final VoidCallback onTap;
+
+  const _ProfessionChip({
+    required this.selectedProfession,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = selectedProfession != null;
+    final data = isActive ? ServicesData.services[selectedProfession!]! : null;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive
+              ? ColorConstants.seed.withOpacity(0.15)
+              : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isActive ? ColorConstants.seed : Colors.transparent,
+            width: 1.2,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isActive ? data![1] as IconData : Icons.work,
+              size: 16,
+              color: isActive ? ColorConstants.seed : Colors.grey.shade700,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              isActive ? data![2] as String : 'Profession',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                color: isActive ? ColorConstants.seed : Colors.grey.shade700,
+              ),
+            ),
+            if (isActive) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.close, size: 14, color: ColorConstants.seed),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

@@ -5,13 +5,13 @@ import 'package:voicesewa_client/shared/models/worker_model.dart';
 class WorkerDetailsSheet extends StatelessWidget {
   final WorkerModel worker;
   final VoidCallback? onBookNow;
-  final VoidCallback? onPlayVoice;
+  final String? distanceLabel;
 
   const WorkerDetailsSheet({
     Key? key,
     required this.worker,
     this.onBookNow,
-    this.onPlayVoice,
+    this.distanceLabel,
   }) : super(key: key);
 
   @override
@@ -42,7 +42,7 @@ class WorkerDetailsSheet extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(40),
-                  child: (worker.photoUrl.isNotEmpty)
+                  child: worker.photoUrl.isNotEmpty
                       ? Image.network(
                           worker.photoUrl,
                           width: 80,
@@ -65,6 +65,7 @@ class WorkerDetailsSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Name + Verified
                       Row(
                         children: [
                           Flexible(
@@ -86,39 +87,36 @@ class WorkerDetailsSheet extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 6),
+                      // Rating + Distance
                       Row(
                         children: [
                           const Icon(Icons.star, color: Colors.amber, size: 16),
                           Text(' ${worker.rating.toStringAsFixed(1)}'),
-                          const SizedBox(width: 10),
-                          const Icon(
-                            Icons.location_on,
-                            color: Colors.grey,
-                            size: 16,
-                          ),
-                          Text(
-                            worker.distance,
-                            style: const TextStyle(color: Colors.grey),
-                          ),
+                          if (distanceLabel != null) ...[
+                            const SizedBox(width: 10),
+                            const Icon(
+                              Icons.location_on,
+                              color: Colors.grey,
+                              size: 16,
+                            ),
+                            Text(
+                              distanceLabel!,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 6),
+                      // Service label
                       Text(
-                        worker.priceRange,
-                        style: const TextStyle(
+                        worker.serviceLabel,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: worker.serviceColor,
                           fontWeight: FontWeight.w600,
-                          color: Colors.green,
                         ),
                       ),
                     ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: onPlayVoice,
-                  icon: const Icon(
-                    Icons.play_circle_fill,
-                    size: 40,
-                    color: ColorConstants.seed,
                   ),
                 ),
               ],
@@ -127,36 +125,24 @@ class WorkerDetailsSheet extends StatelessWidget {
             const SizedBox(height: 16),
             const Divider(),
 
-            // --- Experience & Availability ---
+            // --- Availability ---
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text(
-                  '${worker.experience} yrs experience',
-                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                Icon(
+                  worker.available == true
+                      ? Icons.circle
+                      : Icons.circle_outlined,
+                  color: worker.available == true ? Colors.green : Colors.red,
+                  size: 10,
                 ),
-                Row(
-                  children: [
-                    Icon(
-                      worker.available == true
-                          ? Icons.circle
-                          : Icons.circle_outlined,
-                      color: worker.available == true
-                          ? Colors.green
-                          : Colors.red,
-                      size: 10,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      worker.available == true ? 'Available' : 'Unavailable',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: worker.available == true
-                            ? Colors.green
-                            : Colors.red,
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 4),
+                Text(
+                  worker.available == true ? 'Available' : 'Unavailable',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: worker.available == true ? Colors.green : Colors.red,
+                  ),
                 ),
               ],
             ),
@@ -190,33 +176,25 @@ class WorkerDetailsSheet extends StatelessWidget {
                   .toList(),
             ),
 
-            const SizedBox(height: 16),
-            const Divider(),
-
-            // --- Voice Intro ---
-            if (worker.voiceText != null && worker.voiceText!.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 10,
-                  horizontal: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: ColorConstants.seed.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.volume_up, color: ColorConstants.seed),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        worker.voiceText!,
-                        style: const TextStyle(color: Colors.black87),
-                      ),
-                    ),
-                  ],
+            // --- Bio ---
+            if (worker.bio.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'About',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                worker.bio,
+                style: const TextStyle(color: Colors.black87, fontSize: 14),
+              ),
+            ],
 
             const SizedBox(height: 24),
 

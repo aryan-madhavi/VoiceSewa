@@ -5,9 +5,9 @@ import 'package:voicesewa_client/features/search/presentation/widgets/worker_det
 
 class WorkerCard extends StatelessWidget {
   final WorkerModel worker;
-  final VoidCallback onPlayVoice;
+  final String? distanceLabel;
 
-  const WorkerCard({Key? key, required this.worker, required this.onPlayVoice})
+  const WorkerCard({Key? key, required this.worker, this.distanceLabel})
     : super(key: key);
 
   void _openDetails(BuildContext context) {
@@ -17,11 +17,11 @@ class WorkerCard extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => WorkerDetailsSheet(
         worker: worker,
+        distanceLabel: distanceLabel,
         onBookNow: () {
           Navigator.pop(context);
           // TODO: handle booking logic here
         },
-        onPlayVoice: onPlayVoice,
       ),
     );
   }
@@ -42,7 +42,7 @@ class WorkerCard extends StatelessWidget {
               // --- Profile Photo ---
               ClipRRect(
                 borderRadius: BorderRadius.circular(40),
-                child: (worker.photoUrl.isNotEmpty)
+                child: worker.photoUrl.isNotEmpty
                     ? Image.network(
                         worker.photoUrl,
                         width: 70,
@@ -100,88 +100,51 @@ class WorkerCard extends StatelessWidget {
                           ' ${worker.rating.toStringAsFixed(1)}',
                           style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
-                        const SizedBox(width: 10),
-                        const Icon(
-                          Icons.location_on,
-                          size: 16,
-                          color: Colors.grey,
-                        ),
-                        Text(
-                          worker.distance,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
+                        if (distanceLabel != null) ...[
+                          const SizedBox(width: 10),
+                          const Icon(
+                            Icons.location_on,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                          Text(
+                            distanceLabel!,
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
                       ],
                     ),
 
-                    const SizedBox(height: 4),
-
-                    // Price Range
-                    Text(
-                      worker.priceRange,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.green,
-                      ),
-                    ),
-
                     const SizedBox(height: 6),
 
-                    const SizedBox(height: 6),
-
-                    // Experience + Availability
+                    // Availability
                     Row(
                       mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: Text(
-                            '${worker.experience} yrs experience',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.black54,
-                            ),
-                          ),
+                        Icon(
+                          worker.available == true
+                              ? Icons.circle
+                              : Icons.circle_outlined,
+                          color: worker.available == true
+                              ? Colors.green
+                              : Colors.red,
+                          size: 12,
                         ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              worker.available == true
-                                  ? Icons.circle
-                                  : Icons.circle_outlined,
-                              color: worker.available == true
-                                  ? Colors.green
-                                  : Colors.red,
-                              size: 12,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              worker.available == true
-                                  ? 'Available'
-                                  : 'Unavailable',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: worker.available == true
-                                    ? Colors.green
-                                    : Colors.red,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(width: 4),
+                        Text(
+                          worker.available == true
+                              ? 'Available'
+                              : 'Unavailable',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: worker.available == true
+                                ? Colors.green
+                                : Colors.red,
+                          ),
                         ),
                       ],
                     ),
                   ],
-                ),
-              ),
-
-              // --- Voice Button ---
-              IconButton(
-                onPressed: onPlayVoice,
-                tooltip: "Play voice intro",
-                icon: const Icon(
-                  Icons.play_circle_fill,
-                  color: ColorConstants.seed,
-                  size: 36,
                 ),
               ),
             ],
