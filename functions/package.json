@@ -14,7 +14,8 @@
   "main": "index.js",
   "dependencies": {
     "firebase-admin": "^13.6.1",
-    "firebase-functions": "^7.0.5"
+    "firebase-functions": "^7.0.6",
+    "ngeohash": "^0.6.3"
   },
   "devDependencies": {
     "firebase-functions-test": "^3.4.1"
