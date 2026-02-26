@@ -5,6 +5,7 @@ import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/features/jobs/presentation/bill_form_page.dart';
 import 'package:voicesewa_worker/features/jobs/presentation/chat_page.dart';
 import 'package:voicesewa_worker/features/jobs/presentation/otp_verification_page.dart';
+import 'package:voicesewa_worker/features/jobs/presentation/widgets/job_card_skelton.dart';
 import 'package:voicesewa_worker/features/jobs/presentation/widgets/my_job_card.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
@@ -13,6 +14,7 @@ import 'widgets/job_status_card.dart';
 import 'widgets/job_info_section.dart';
 import 'widgets/job_location_section.dart';
 import 'widgets/job_quotation_section.dart';
+import 'widgets/job_card_skeleton.dart';
 
 class JobDetailPage extends ConsumerStatefulWidget {
   final JobModel job;
@@ -64,6 +66,31 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
     // until the first stream value arrives (or after autoDispose).
     final jobAsync = ref.watch(jobStreamProvider(widget.job.jobId));
     JobModel job = jobAsync.value ?? _liveJob;
+
+    // Show skeleton only on the very first load before stream emits anything.
+    // Once _liveJob is set (always true since initState), this never triggers —
+    // but if job was fetched fresh from a notification, _liveJob IS the stale
+    // snapshot and the skeleton gives a clean loading feel on first open.
+    if (jobAsync.isLoading && jobAsync.value == null) {
+      return Scaffold(
+        backgroundColor: ColorConstants.backgroundColor,
+        appBar: AppBar(
+          backgroundColor: ColorConstants.pureWhite,
+          foregroundColor: ColorConstants.textDark,
+          elevation: 0,
+          centerTitle: true,
+          title: Container(
+            width: 120,
+            height: 14,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEBEBF4),
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+        ),
+        body: const JobDetailSkeleton(),
+      );
+    }
 
     // ── Display override ──────────────────────────────────────────────────
     final workerUid = ref.watch(currentWorkerUidProvider);

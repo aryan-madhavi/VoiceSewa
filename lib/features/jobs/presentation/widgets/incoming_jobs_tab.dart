@@ -7,6 +7,7 @@ import 'package:voicesewa_worker/features/profile/providers/worker_profile_provi
 import 'package:voicesewa_worker/shared/models/job_model.dart';
 import 'job_filter_bar.dart';
 import 'job_empty_state.dart';
+import 'job_card_skeleton.dart';
 import 'service_filter_row.dart';
 
 class IncomingJobsTab extends ConsumerStatefulWidget {
@@ -118,21 +119,7 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
           child: _statusFilter == 'declined'
               ? _buildDeclinedList(declinedAsync, declinedJobs)
               : incoming.when(
-                  loading: () => RefreshIndicator(
-                    onRefresh: () async {
-                      ref.invalidate(incomingJobsProvider);
-                      ref.invalidate(incomingDeclinedJobsProvider);
-                      await Future.delayed(const Duration(milliseconds: 800));
-                    },
-                    child: ListView(
-                      children: [
-                        SizedBox(
-                          height: 300,
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                      ],
-                    ),
-                  ),
+                  loading: () => const JobListSkeleton(),
                   error: (e, _) => RefreshIndicator(
                     onRefresh: () async {
                       ref.invalidate(incomingJobsProvider);
@@ -249,7 +236,7 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
     List<JobModel> declinedJobs,
   ) {
     if (declinedAsync.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const JobListSkeleton();
     }
     if (declinedAsync.hasError) {
       return Center(child: Text('Error: ${declinedAsync.error}'));

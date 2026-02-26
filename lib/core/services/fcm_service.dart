@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +10,12 @@ class FCMService {
   final WorkerProfileRepository _profileRepo;
 
   FCMService(this._profileRepo);
+
+  // Stream that emits notification data when user taps a notification
+  final _notificationTapController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get onNotificationTap =>
+      _notificationTapController.stream;
 
   // Get FCM token
   Future<String?> getToken() async {
@@ -76,46 +82,17 @@ class FCMService {
     }
   }
 
-  // Listen to token refresh
-  Stream<String> get onTokenRefresh => _messaging.onTokenRefresh;
-
-  // Subscribe to topic
-  Future<void> subscribeToTopic(String topic) async {
-    try {
-      await _messaging.subscribeToTopic(topic);
-      print('✅ Subscribed to topic: $topic');
-    } catch (e) {
-      print('❌ Error subscribing to topic $topic: $e');
-    }
-  }
-
-  // Unsubscribe from topic
-  Future<void> unsubscribeFromTopic(String topic) async {
-    try {
-      await _messaging.unsubscribeFromTopic(topic);
-      print('✅ Unsubscribed from topic: $topic');
-    } catch (e) {
-      print('❌ Error unsubscribing from topic $topic: $e');
-    }
-  }
-
-  // Check current permission status
-  Future<bool> isNotificationPermissionGranted() async {
-    final settings = await _messaging.getNotificationSettings();
-    return settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional;
-  }
-
   // Setup foreground message handler
-  void setupForegroundMessageHandler(BuildContext context) {
+  // Pass a GlobalKey<NavigatorState> so the dialog can always find a valid context
+  void setupForegroundMessageHandler(GlobalKey<NavigatorState> navigatorKey) {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print('📬 Foreground notification received');
       print('Title: ${message.notification?.title}');
       print('Body: ${message.notification?.body}');
       print('Data: ${message.data}');
 
-      // Show dialog when app is open
-      if (message.notification != null) {
+      final context = navigatorKey.currentContext;
+      if (message.notification != null && context != null) {
         _showForegroundNotificationDialog(context, message);
       }
     });
@@ -137,20 +114,9 @@ class FCMService {
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            _getNotificationIcon(type),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                notification.title ?? 'Notification',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
+        title: Text(
+          notification.title ?? 'Notification',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         content: Text(
           notification.body ?? '',
@@ -198,56 +164,9 @@ class FCMService {
     }
   }
 
-  // Get icon based on notification type
-  Widget _getNotificationIcon(String type) {
-    IconData icon;
-    Color color;
-
-    switch (type) {
-      case 'new_job':
-        icon = Icons.work;
-        color = ColorConstants.primaryBlue;
-        break;
-      case 'job_update':
-        icon = Icons.update;
-        color = ColorConstants.warningOrange;
-        break;
-      case 'booking':
-        icon = Icons.calendar_today;
-        color = ColorConstants.successGreen;
-        break;
-      case 'earning':
-        icon = Icons.attach_money;
-        color = ColorConstants.successGreen;
-        break;
-      case 'profile':
-        icon = Icons.person;
-        color = ColorConstants.notifPurple;
-        break;
-      default:
-        icon = Icons.notifications;
-        color = ColorConstants.primaryBlue;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, color: color, size: 24),
-    );
-  }
-
-  // Setup notification tap handlers (background/terminated)
-  Future<void> setupNotificationHandlers() async {
-    // Handle notification tap when app is TERMINATED (completely closed)
-    final RemoteMessage? initialMessage = await _messaging.getInitialMessage();
-    if (initialMessage != null) {
-      print('🚀 App opened from TERMINATED state via notification');
-      _handleNotificationTap(initialMessage);
-    }
-
+  // Setup notification tap handlers (background only)
+  // Terminated state is handled in AppGate directly where context is available
+  void setupNotificationHandlers() {
     // Handle notification tap when app is in BACKGROUND
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('🔔 App opened from BACKGROUND state via notification');
@@ -255,25 +174,18 @@ class FCMService {
     });
   }
 
-  // Handle notification tap and navigate
+  // Handle notification tap — emits to stream so AppGate can navigate
   void _handleNotificationTap(RemoteMessage message) {
     print('📱 Notification tapped!');
     print('Data: ${message.data}');
 
-    // Store the navigation data to be handled by app_gate.dart
     if (message.data.isNotEmpty) {
-      _pendingNavigation = message.data;
+      _notificationTapController.add(message.data);
     }
   }
 
-  // Store pending navigation data
-  Map<String, dynamic>? _pendingNavigation;
-
-  // Get and clear pending navigation
-  Map<String, dynamic>? getPendingNavigation() {
-    final data = _pendingNavigation;
-    _pendingNavigation = null;
-    return data;
+  void dispose() {
+    _notificationTapController.close();
   }
 }
 
@@ -281,10 +193,4 @@ class FCMService {
 final fcmServiceProvider = Provider<FCMService>((ref) {
   final profileRepo = WorkerProfileRepository();
   return FCMService(profileRepo);
-});
-
-// Provider for FCM token
-final fcmTokenProvider = FutureProvider<String?>((ref) async {
-  final fcmService = ref.watch(fcmServiceProvider);
-  return await fcmService.getToken();
 });

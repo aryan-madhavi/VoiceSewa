@@ -7,6 +7,7 @@ import 'package:voicesewa_worker/features/profile/providers/worker_profile_provi
 import 'package:voicesewa_worker/shared/models/job_model.dart';
 import 'job_filter_bar.dart';
 import 'job_empty_state.dart';
+import 'job_card_skeleton.dart';
 import 'service_filter_row.dart';
 
 class CompletedJobsTab extends ConsumerStatefulWidget {
@@ -122,20 +123,7 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
     List<JobModel> streamPage,
   ) {
     return completedAsync.when(
-      loading: () => RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(completedJobsProvider);
-          await Future.delayed(const Duration(milliseconds: 800));
-        },
-        child: ListView(
-          children: [
-            SizedBox(
-              height: 300,
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          ],
-        ),
-      ),
+      loading: () => const JobListSkeleton(),
       error: (e, _) => RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(completedJobsProvider);
@@ -268,20 +256,7 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
 
   Widget _buildWithdrawnList(AsyncValue<List<JobModel>> withdrawn) {
     return withdrawn.when(
-      loading: () => RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(trueWithdrawnJobsProvider);
-          await Future.delayed(const Duration(milliseconds: 800));
-        },
-        child: ListView(
-          children: [
-            SizedBox(
-              height: 300,
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          ],
-        ),
-      ),
+      loading: () => const JobListSkeleton(),
       error: (e, _) => RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(trueWithdrawnJobsProvider);
