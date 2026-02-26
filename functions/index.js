@@ -6,8 +6,10 @@ initializeApp();
 
 const { onQuotationAccepted }     = require('./triggers/onQuotationAccepted');
 const { onQuotationAutoRejected } = require('./triggers/onQuotationAutoRejected');
+const { recalculateWorkerAvgRating } = require('./triggers/Recalculateworkeravgrating')
 
 setGlobalOptions({ maxInstances: 10 });
 
 exports.onQuotationAccepted     = onQuotationAccepted;
 exports.onQuotationAutoRejected = onQuotationAutoRejected;
+exports.recalculateWorkerAvgRating = recalculateWorkerAvgRating;
