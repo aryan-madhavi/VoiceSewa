@@ -274,6 +274,11 @@ final clientPhoneProvider = FutureProvider.autoDispose.family<String?, String>((
   return ref.watch(jobRepositoryProvider).fetchClientPhone(clientUid);
 });
 
+final clientProfileProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, clientUid) async {
+  final snap = await FirebaseFirestore.instance.collection('users').doc(clientUid).get();
+  return snap.data();
+});
+
 // ── Verify OTP ────────────────────────────────────────────────────────────
 
 final verifyOtpProvider =

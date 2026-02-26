@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
+import 'package:voicesewa_worker/features/jobs/presentation/voice_call_page.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
@@ -105,31 +106,22 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       }
     }
 
-  Future<void> _callClient() async {
-    String? phone = widget.job.clientPhone;
-    if (phone == null || phone.isEmpty) {
-      phone = await ref
-          .read(jobRepositoryProvider)
-          .fetchClientPhone(widget.job.clientUid);
-    }
-    if (phone == null || phone.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Client phone number not available'),
-            backgroundColor: ColorConstants.errorRed,
-          ),
-        );
-      }
-      return;
-    }
-    final uri = Uri(scheme: 'tel', path: phone);
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
+  Future<void> _callClient(String clientName) async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VoiceCallPage(
+          channelId: widget.job.jobId,
+          clientName: clientName,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Watch messages at the correct sub-path via (jobId, quotationId) key
+    final clientAsync = ref.watch(clientProfileProvider(widget.job.clientUid));
+    final clientName = clientAsync.value?['name'] ?? 'Client';
     final messages = ref.watch(
       chatMessagesProvider((widget.job.jobId, widget.quotationId)),
     );
@@ -160,7 +152,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: GestureDetector(
-              onTap: _callClient,
+              onTap: () => _callClient(clientName),
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
