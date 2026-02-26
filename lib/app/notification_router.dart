@@ -14,12 +14,16 @@ class NotificationRouter {
   ) async {
     final type = data['type'] as String?;
     final jobId = data['job_id'] as String?;
-    print('🗺️ NotificationRouter — type: $type | jobId: $jobId');
+    print('NotificationRouter type: $type | jobId: $jobId');
 
     switch (type) {
-      // ── Just switch the tab — RootScaffold is always mounted via AppGate ──
       case 'new_job':
-        ref.read(navTabProvider.notifier).setTab(NavTab.jobs);
+        await _navigateToJobDetail(context, ref, jobId, JobTabType.incoming);
+        break;
+
+      case 'job_update':
+      case 'booking':
+        await _navigateToJobDetail(context, ref, jobId, JobTabType.ongoing);
         break;
 
       case 'earning':
@@ -28,12 +32,6 @@ class NotificationRouter {
 
       case 'profile':
         ref.read(navTabProvider.notifier).setTab(NavTab.profile);
-        break;
-
-      // ── Push JobDetailPage on top of existing RootScaffold ────────────────
-      case 'job_update':
-      case 'booking':
-        await _navigateToJobDetail(context, ref, jobId, JobTabType.ongoing);
         break;
 
       default:
@@ -49,7 +47,6 @@ class NotificationRouter {
     JobTabType tabType,
   ) async {
     if (jobId == null || jobId.isEmpty) {
-      print('⚠️ NotificationRouter — no jobId, switching to jobs tab');
       ref.read(navTabProvider.notifier).setTab(NavTab.jobs);
       return;
     }
@@ -58,10 +55,12 @@ class NotificationRouter {
     if (!context.mounted) return;
 
     if (job == null) {
-      print('⚠️ NotificationRouter — job not found, switching to jobs tab');
       ref.read(navTabProvider.notifier).setTab(NavTab.jobs);
       return;
     }
+
+    // Set jobs tab as base so back button lands correctly
+    ref.read(navTabProvider.notifier).setTab(NavTab.jobs);
 
     Navigator.of(context).push(
       MaterialPageRoute(
