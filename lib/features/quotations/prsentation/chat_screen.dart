@@ -8,6 +8,8 @@ import 'package:voicesewa_client/core/constants/color_constants.dart';
 import 'package:voicesewa_client/features/quotations/providers/chat_provider.dart';
 import 'package:voicesewa_client/shared/models/quotation_model.dart';
 
+import '../../../core/providers/language_provider.dart';
+
 class ChatScreen extends ConsumerStatefulWidget {
   final String jobId;
   final String quotationId;
@@ -300,7 +302,7 @@ class _DateSeparator extends StatelessWidget {
 
 // ── Message bubble ─────────────────────────────────────────────────────────
 
-class _MessageBubble extends StatelessWidget {
+class _MessageBubble extends ConsumerWidget { // Changed to ConsumerWidget
   final ChatMessage message;
   final bool isMe;
 
@@ -313,7 +315,13 @@ class _MessageBubble extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+
+    final currentLocale = ref.watch(localeProvider);
+    final String langCode = currentLocale.languageCode;
+
+    final String displayMsg = message.translated[langCode] ?? message.originalMsg;
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -360,7 +368,7 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ),
             Text(
-              message.originalMsg,
+              displayMsg,
               style: TextStyle(
                 fontSize: 14,
                 color: isMe ? Colors.white : Colors.black87,
