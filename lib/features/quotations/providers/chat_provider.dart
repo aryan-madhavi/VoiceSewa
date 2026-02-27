@@ -26,10 +26,10 @@ class ChatActions {
 
   ChatActions(this._service, this._ref);
 
-  Future<void> sendMessage({
+  Future<String?> sendMessage({
     required String jobId,
     required String quotationId,
-    required String text,
+    required String originalMsg,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('Not logged in');
@@ -38,12 +38,12 @@ class ChatActions {
     final profileAsync = _ref.read(currentClientProfileProvider);
     final senderName = profileAsync.value?.name ?? 'Client';
 
-    await _service.sendMessage(
+    return await _service.sendMessage(
       jobId: jobId,
       quotationId: quotationId,
       senderUid: user.uid,
       senderName: senderName,
-      text: text,
+      originalMsg: originalMsg,
     );
   }
 }

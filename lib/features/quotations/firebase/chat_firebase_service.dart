@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+  import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:voicesewa_client/shared/models/quotation_model.dart';
 
 /// Firebase service for chat messages stored under a quotation's subcollection:
@@ -34,21 +34,22 @@ class ChatFirebaseService {
   }
 
   /// Send a message
-  Future<void> sendMessage({
+  Future<String> sendMessage({
     required String jobId,
     required String quotationId,
     required String senderUid,
     required String senderName,
-    required String text,
+    required String originalMsg,
   }) async {
     try {
-      await _messagesRef(jobId, quotationId).add({
+      final docRef = await _messagesRef(jobId, quotationId).add({
         'sender_uid': senderUid,
         'sender_name': senderName,
-        'text': text.trim(),
+        'originalMsg': originalMsg.trim(),
         'is_worker': false,
         'sent_at': Timestamp.fromDate(DateTime.now()),
       });
+      return docRef.id;
     } catch (e) {
       print('❌ Error sending message: $e');
       rethrow;

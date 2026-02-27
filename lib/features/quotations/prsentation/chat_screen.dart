@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
 import 'package:voicesewa_client/features/quotations/providers/chat_provider.dart';
@@ -46,34 +49,61 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _sendMessage() async {
-    final text = _textController.text.trim();
-    if (text.isEmpty || _isSending) return;
+    final originalMsg = _textController.text.trim();
+    if (originalMsg.isEmpty || _isSending) return;
 
     setState(() => _isSending = true);
     _textController.clear();
 
     try {
-      await ref
+      final String? newMessageId = await ref
           .read(chatActionsProvider)
           .sendMessage(
             jobId: widget.jobId,
             quotationId: widget.quotationId,
-            text: text,
+            originalMsg: originalMsg,
           );
+
+      if (newMessageId != null) {
+        await _chatTranslationN8NWebhook(
+          jobId: widget.jobId,
+          quotationId: widget.quotationId,
+          messageId: newMessageId,
+        );
+      }
+
       _scrollToBottom();
     } catch (e) {
       if (mounted) {
-        // Restore text if send failed
-        _textController.text = text;
+        _textController.text = originalMsg;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Failed to send: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
       if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  Future<void> _chatTranslationN8NWebhook({
+    required String jobId,
+    required String quotationId,
+    required String messageId,
+  }) async {
+    final url = Uri.parse("https://fomoha8938hutudns.app.n8n.cloud/webhook/translate");
+
+    try {
+      await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "jobId": jobId,
+          "quotationId": quotationId,
+          "messageId": messageId,
+        }),
+      );
+    } catch (e) {
+      debugPrint("Failed to reach N8N: $e");
     }
   }
 
@@ -330,7 +360,7 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ),
             Text(
-              message.text,
+              message.originalMsg,
               style: TextStyle(
                 fontSize: 14,
                 color: isMe ? Colors.white : Colors.black87,
