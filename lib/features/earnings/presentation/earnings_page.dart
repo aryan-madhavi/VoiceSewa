@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:voicesewa_worker/features/earnings/presentation/widgets/monthly_goal.dart';
-import 'package:voicesewa_worker/features/earnings/presentation/widgets/transactionhistory.dart';
-import 'package:voicesewa_worker/features/earnings/presentation/widgets/withdraw.dart';
-import '../../../core/constants/color_constants.dart';
-import '../../../core/extensions/context_extensions.dart';
+import 'package:voicesewa_worker/core/constants/color_constants.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
+import 'package:voicesewa_worker/features/earnings/presentation/widgets/earnings_chart.dart';
+import 'package:voicesewa_worker/features/earnings/presentation/widgets/earnings_summary.dart';
+import 'package:voicesewa_worker/features/earnings/presentation/widgets/transaction_history.dart';
 
-class EarningsPage extends StatefulWidget {
+class EarningsPage extends StatelessWidget {
   const EarningsPage({super.key});
 
-  @override
-  State<EarningsPage> createState() => _EarningsPageState();
-}
-
-class _EarningsPageState extends State<EarningsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,42 +15,40 @@ class _EarningsPageState extends State<EarningsPage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 30),
         child: Column(
-          children:[
-            const SizedBox(height: 20,),
+          children: [
+            const SizedBox(height: 20),
 
-            const MonthlyGoal(),
+            // ── Line chart — earnings over time ──────────────────────────
+            EarningsChart(),
 
-            const SizedBox(height: 20,),
+            const SizedBox(height: 20),
 
-            const Withdraw(),
+            // ── Summary card — total earned + pending + jobs done ────────
+            EarningsSummary(),
 
-            const SizedBox(height: 24,),
-            
+            const SizedBox(height: 24),
+
+            // ── Transaction history header ────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   Text(
-                    context.loc.recentTransactions, // "Recent Transactions",
+                    context.loc.recentTransactions,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                       color: ColorConstants.textDark,
                     ),
                   ),
-                  TextButton(
-                      onPressed: (){},
-                      child: Text(
-                        context.loc.seeAll, // "See All"
-                      ),
-                  ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 8,),
+            const SizedBox(height: 8),
 
-            const TransactionHistory(),
+            // ── Real transaction list from Firestore ─────────────────────
+            TransactionHistory(),
           ],
         ),
       ),
