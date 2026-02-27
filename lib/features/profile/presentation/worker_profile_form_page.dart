@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +8,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:voicesewa_worker/core/constants/app_constants.dart';
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/core/providers/language_provider.dart';
+import 'package:voicesewa_worker/core/providers/session_provider.dart';
 import 'package:voicesewa_worker/features/auth/providers/profile_form_provider.dart';
+import 'package:voicesewa_worker/features/profile/data/services/profile_image_service.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/shared/data/service_data.dart';
 import 'package:voicesewa_worker/shared/models/worker_model.dart';
@@ -36,6 +39,85 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
   GeoPoint? _geoPoint;
   bool _isFetchingLocation = false;
   String? _locationStatusMessage;
+
+  // ── Image state ───────────────────────────────────────────────────────────
+  File? _pickedImageFile; // locally picked/captured file (not yet uploaded)
+  String? _existingImageUrl; // already-uploaded URL from Firestore
+  bool _isUploadingImage = false;
+  double _uploadProgress = 0.0;
+
+  // ── Edit-mode state ───────────────────────────────────────────────────────
+  bool _prefilled = false;
+  // Key changes after prefill so FormField rebuilds with correct initialValue
+  Key _skillsFieldKey = const ValueKey('skills_empty');
+  WorkerModel? _originalWorker;
+
+  // Whether this page was opened from the profile page (edit) vs first-time setup
+  bool get _isEditMode => _originalWorker != null;
+
+  // The image to show in the avatar preview:
+  // 1. Locally picked file (highest priority)
+  // 2. Existing URL from Firestore
+  // 3. null -> show placeholder
+  ImageProvider? get _previewImage {
+    if (_pickedImageFile != null) return FileImage(_pickedImageFile!);
+    if (_existingImageUrl != null && _existingImageUrl!.isNotEmpty) {
+      return NetworkImage(_existingImageUrl!);
+    }
+    return null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Attempt to prefill on next frame (stream may already have data)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _tryPrefill());
+  }
+
+  void _tryPrefill() {
+    final uid = ref.read(currentUserProvider)?.uid ?? '';
+    if (uid.isEmpty) return;
+    final profileAsync = ref.read(workerProfileStreamProvider(uid));
+    profileAsync.whenData((worker) {
+      if (worker != null && mounted) _prefillFromWorker(worker);
+    });
+  }
+
+  void _prefillFromWorker(WorkerModel worker) {
+    if (_prefilled) return;
+    _prefilled = true;
+    _originalWorker = worker;
+
+    _nameController.text = worker.name;
+    _phoneController.text = worker.phone;
+    _bioController.text = worker.bio ?? '';
+    _cityController.text = worker.address?.city ?? '';
+    _existingImageUrl = worker.profileImg;
+    _pincodeController.text = worker.address?.pincode ?? '';
+
+    // Prefill GeoPoint so it's preserved even if user doesn't re-detect
+    _geoPoint = worker.address?.location;
+    if (_geoPoint != null) {
+      _locationStatusMessage = '✅ Location captured';
+    }
+
+    // Prefill skills grid
+    _selectedSkills
+      ..clear()
+      ..addAll(worker.skills);
+
+    // Prefill language — match stored locale or fall back to current app locale
+    final currentLocale = ref.read(localeProvider);
+    _selectedLanguage =
+        AppConstants.supportedLanguages.any(
+          (l) => l.code == currentLocale.languageCode,
+        )
+        ? currentLocale.languageCode
+        : null;
+
+    _skillsFieldKey = ValueKey('skills_${_selectedSkills.join('_')}');
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
@@ -138,19 +220,59 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
     setState(() => _isLoading = true);
 
     try {
+      // ── Step 1: Upload new image if one was picked ─────────────────────
+      String? finalImageUrl = _existingImageUrl;
+
+      if (_pickedImageFile != null) {
+        setState(() {
+          _isUploadingImage = true;
+          _uploadProgress = 0.0;
+        });
+
+        // Delete old image from Storage to avoid orphaned files
+        if (_existingImageUrl != null) {
+          await ProfileImageService.deleteByUrl(_existingImageUrl!);
+        }
+
+        finalImageUrl = await ProfileImageService.uploadProfileImage(
+          uid: firebaseUser.uid,
+          file: _pickedImageFile!,
+          onProgress: (p) {
+            if (mounted) setState(() => _uploadProgress = p);
+          },
+        );
+
+        if (mounted) setState(() => _isUploadingImage = false);
+      }
+
+      // ── Step 2: Save profile to Firestore ──────────────────────────────
+      // Build updated address — keep existing geohash if GeoPoint unchanged
+      final existingAddress = _originalWorker?.address;
+      final geoPointChanged = _geoPoint != existingAddress?.location;
+
       final worker = WorkerModel(
         workerId: firebaseUser.uid,
         name: _nameController.text.trim(),
-        email: firebaseUser.email ?? '',
+        email: _isEditMode
+            ? (_originalWorker!.email) // email not editable in edit mode
+            : (firebaseUser.email ?? ''),
         phone: _phoneController.text.trim(),
         bio: _bioController.text.trim().isEmpty
             ? null
             : _bioController.text.trim(),
+        profileImg: finalImageUrl,
         skills: _selectedSkills.toList(),
+        // Preserve existing fields that aren't edited in this form
+        avgRating: _originalWorker?.avgRating ?? 0.0,
+        reviews: _originalWorker?.reviews ?? [],
+        fcmToken: _originalWorker?.fcmToken,
+        jobs: _originalWorker?.jobs,
         address: WorkerAddress(
           location: _geoPoint,
           city: _cityController.text.trim(),
           pincode: _pincodeController.text.trim(),
+          // If GeoPoint didn't change, reuse stored geohash to avoid recompute
+          geohash: geoPointChanged ? null : existingAddress?.geohash,
         ),
       );
 
@@ -160,12 +282,24 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
       if (!mounted) return;
 
       if (success) {
-        ref.read(localeProvider.notifier).changeLanguage(_selectedLanguage!);
-        ref.read(profileCompletionProvider.notifier).markComplete();
+        // Only change language if a new one was selected
+        if (_selectedLanguage != null) {
+          ref.read(localeProvider.notifier).changeLanguage(_selectedLanguage!);
+        }
+
+        if (!_isEditMode) {
+          // First-time setup — mark profile complete
+          ref.read(profileCompletionProvider.notifier).markComplete();
+        }
+
         _showSnackBar(
-          'Profile created successfully! 🎉',
+          _isEditMode
+              ? 'Profile updated successfully! ✅'
+              : 'Profile created successfully! 🎉',
           ColorConstants.successGreen,
         );
+
+        if (_isEditMode && mounted) Navigator.of(context).pop();
       } else {
         _showSnackBar(
           'Failed to save profile. Please try again.',
@@ -174,6 +308,7 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
       }
     } catch (e) {
       if (mounted) {
+        setState(() => _isUploadingImage = false);
         _showSnackBar('Error: ${e.toString()}', ColorConstants.errorRed);
       }
     } finally {
@@ -195,13 +330,21 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch stream so if data arrives after initState, we still prefill
+    final uid = ref.watch(currentUserProvider)?.uid ?? '';
+    ref.watch(workerProfileStreamProvider(uid)).whenData((worker) {
+      if (worker != null) _prefillFromWorker(worker);
+    });
+
     return Scaffold(
       backgroundColor: ColorConstants.backgroundColor,
       appBar: AppBar(
-        title: const Text('Complete Your Profile'),
-        automaticallyImplyLeading: false,
+        title: Text(_isEditMode ? 'Edit Profile' : 'Complete Your Profile'),
+        // Show back button in edit mode, hide in first-time setup
+        automaticallyImplyLeading: _isEditMode,
         backgroundColor: ColorConstants.pureWhite,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -211,19 +354,28 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Welcome! 👋',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "Let's set up your worker profile to get started",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: ColorConstants.subtitleGrey,
+                // Show welcome header only on first-time setup, not in edit mode
+                if (!_isEditMode) ...[
+                  const Text(
+                    'Welcome! 👋',
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Let's set up your worker profile to get started",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: ColorConstants.subtitleGrey,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
+
+                // ── Profile Photo ──────────────────────────────────────────
+                _sectionHeader('Profile Photo', Icons.photo_camera_outlined),
+                const SizedBox(height: 16),
+                _buildPhotoSection(),
+                const SizedBox(height: 28),
 
                 // ── Basic Info ──────────────────────────────────────────────
                 _sectionHeader('Basic Information', Icons.person_outline),
@@ -290,11 +442,11 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // ── Primary Skill ────────────────────────────────────────────
-                _sectionHeader('Your Skill', Icons.work_outline),
+                // ── Skills ───────────────────────────────────────────────────
+                _sectionHeader('Your Skills', Icons.work_outline),
                 const SizedBox(height: 8),
                 Text(
-                  'Select the primary service you offer',
+                  'Select all services you offer',
                   style: TextStyle(
                     fontSize: 13,
                     color: ColorConstants.subtitleGrey,
@@ -302,11 +454,11 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                 ),
                 const SizedBox(height: 12),
 
-                // Skill validation wrapper
                 FormField<String>(
+                  key: _skillsFieldKey,
                   initialValue: _selectedSkills.isEmpty ? null : 'selected',
                   validator: (_) => (_selectedSkills.isEmpty)
-                      ? 'Please select your primary skill'
+                      ? 'Please select at least one skill'
                       : null,
                   builder: (field) => Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,10 +473,8 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                         children: ServicesData.services.entries.map((entry) {
                           final color = ServicesData.colorOf(entry.key);
                           final icon = ServicesData.iconOf(entry.key);
-                          final name = ServicesData.nameOf(
-                            entry.key,
-                          ); // display in UI
-                          final enumName = entry.key.name; // saved to Firestore
+                          final name = ServicesData.nameOf(entry.key);
+                          final enumName = entry.key.name;
                           final isSelected = _selectedSkills.contains(enumName);
 
                           return GestureDetector(
@@ -422,7 +572,7 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                 ),
                 const SizedBox(height: 32),
 
-                // ── Location ────────────────────────────────────────────────
+                // ── Location ─────────────────────────────────────────────────
                 _sectionHeader('Your Location', Icons.location_on_outlined),
                 const SizedBox(height: 4),
                 Text(
@@ -547,8 +697,43 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                 const SizedBox(height: 32),
 
                 // ── Submit ───────────────────────────────────────────────────
+                // Show upload progress bar while image is uploading
+                if (_isUploadingImage) ...[
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.cloud_upload_outlined,
+                        size: 16,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Uploading photo... ${(_uploadProgress * 100).toInt()}%',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            LinearProgressIndicator(
+                              value: _uploadProgress,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _handleSubmit,
+                  onPressed: (_isLoading || _isUploadingImage)
+                      ? null
+                      : _handleSubmit,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -569,9 +754,9 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                             ),
                           ),
                         )
-                      : const Text(
-                          'Complete Profile',
-                          style: TextStyle(
+                      : Text(
+                          _isEditMode ? 'Save Changes' : 'Complete Profile',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: ColorConstants.pureWhite,
@@ -598,7 +783,9 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'You can update your profile later from the settings page.',
+                          _isEditMode
+                              ? 'Re-capture your location if you have moved to a new area.'
+                              : 'You can update your profile later from the settings page.',
                           style: TextStyle(
                             fontSize: 13,
                             color: ColorConstants.infoBlueDeep,
@@ -613,6 +800,184 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // ── Image source bottom sheet ─────────────────────────────────────────────
+
+  void _showImageSourceSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Profile Photo',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.photo_library_outlined,
+                    color: Colors.blue,
+                  ),
+                ),
+                title: const Text('Choose from Gallery'),
+                subtitle: const Text('Pick an existing photo'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final file = await ProfileImageService.pickFromGallery();
+                  if (file != null && mounted)
+                    setState(() => _pickedImageFile = file);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt_outlined,
+                    color: Colors.green,
+                  ),
+                ),
+                title: const Text('Take a Photo'),
+                subtitle: const Text('Use your camera'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final file = await ProfileImageService.captureFromCamera();
+                  if (file != null && mounted)
+                    setState(() => _pickedImageFile = file);
+                },
+              ),
+              if (_pickedImageFile != null || _existingImageUrl != null)
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.delete_outline, color: Colors.red),
+                  ),
+                  title: const Text(
+                    'Remove Photo',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    setState(() {
+                      _pickedImageFile = null;
+                      _existingImageUrl = null;
+                    });
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Profile photo avatar widget ───────────────────────────────────────────
+
+  Widget _buildPhotoSection() {
+    return Center(
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: _isLoading ? null : _showImageSourceSheet,
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _pickedImageFile != null
+                          ? ColorConstants.infoBlue
+                          : Colors.grey[300]!,
+                      width: _pickedImageFile != null ? 3 : 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 55,
+                    backgroundColor: Colors.grey[100],
+                    backgroundImage: _previewImage,
+                    child: _previewImage == null
+                        ? Icon(
+                            Icons.person_outline,
+                            size: 50,
+                            color: Colors.grey[400],
+                          )
+                        : null,
+                  ),
+                ),
+                Positioned(
+                  bottom: 2,
+                  right: 2,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: ColorConstants.infoBlue,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _pickedImageFile != null
+                ? 'New photo selected — will upload on save'
+                : _existingImageUrl != null
+                ? 'Tap to change photo'
+                : 'Tap to add a profile photo',
+            style: TextStyle(
+              fontSize: 12,
+              color: _pickedImageFile != null
+                  ? Colors.blue[700]
+                  : Colors.grey[500],
+            ),
+          ),
+        ],
       ),
     );
   }

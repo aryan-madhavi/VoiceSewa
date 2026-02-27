@@ -54,7 +54,8 @@ dependencies:
   latlong2: ^0.9.1
   url_launcher: ^6.3.2
   dart_geohash: ^2.1.0
-
+  image_picker: ^1.2.1
+  firebase_storage: ^13.0.6
 
 
 dev_dependencies:

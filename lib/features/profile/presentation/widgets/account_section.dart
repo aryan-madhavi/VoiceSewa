@@ -20,9 +20,6 @@ class AccountSection extends StatelessWidget {
             // TODO: Implement change password
           },
         ),
-        settingsPageBuildActionTile(context.loc.language, Icons.language, () {
-          // TODO: Implement language selection
-        }),
         settingsPageBuildActionTile(
           context.loc.privacyPolicy,
           Icons.privacy_tip_outlined,
