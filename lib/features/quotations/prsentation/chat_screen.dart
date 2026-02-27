@@ -15,12 +15,14 @@ class ChatScreen extends ConsumerStatefulWidget {
   final String jobId;
   final String quotationId;
   final String workerName;
+  final String workerId;
 
   const ChatScreen({
     super.key,
     required this.jobId,
     required this.quotationId,
     required this.workerName,
+    required this.workerId,
   });
 
   @override
@@ -115,6 +117,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => VoiceCallPage(
+          jobId: widget.jobId,
+          workerId: widget.workerId,
           channelId: widget.jobId,
           workerName: workerName,
         ),

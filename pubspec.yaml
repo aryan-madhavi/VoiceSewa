@@ -58,6 +58,8 @@ dependencies:
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
   agora_rtc_engine: ^6.3.2
+  record: ^6.2.0
+  audioplayers: ^6.5.1
 
 
 dev_dependencies:
