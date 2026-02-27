@@ -75,7 +75,8 @@ jobs - collection
       address: {
         location: geopoint,
         pincode: string,
-        city: string
+        city: string,
+        geohash: string
       },
       client_uid: string,
       created_at: timestamp,
