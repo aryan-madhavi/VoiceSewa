@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
 import 'package:voicesewa_client/features/quotations/providers/chat_provider.dart';
+import 'package:voicesewa_client/features/quotations/prsentation/voice_call_page.dart';
 import 'package:voicesewa_client/shared/models/quotation_model.dart';
 
 import '../../../core/providers/language_provider.dart';
@@ -109,6 +110,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  Future<void> _callWorker(String workerName) async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VoiceCallPage(
+          channelId: widget.jobId,
+          workerName: workerName,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final params = (jobId: widget.jobId, quotationId: widget.quotationId);
@@ -149,14 +162,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           IconButton(
             icon: const Icon(Icons.call),
             tooltip: 'Call worker',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Calling feature coming soon'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
+            onPressed: () => _callWorker(widget.workerName),
           ),
         ],
       ),

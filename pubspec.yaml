@@ -57,6 +57,7 @@ dependencies:
   geocoding: ^4.0.0
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
+  agora_rtc_engine: ^6.3.2
 
 
 dev_dependencies:
