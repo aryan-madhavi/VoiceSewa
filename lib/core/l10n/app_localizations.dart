@@ -162,6 +162,12 @@ abstract class AppLocalizations {
   /// **'My Jobs'**
   String get jobsTitle;
 
+  /// No description provided for @voiceBotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'VoiceBot'**
+  String get voiceBotTitle;
+
   /// No description provided for @earningsTitle.
   ///
   /// In en, this message translates to:

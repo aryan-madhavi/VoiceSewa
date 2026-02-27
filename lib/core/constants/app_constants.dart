@@ -8,7 +8,7 @@ import 'package:voicesewa_worker/shared/data/service_data.dart';
 
 import '../extensions/context_extensions.dart';
 
-enum NavTab { home, jobs, speak, earnings, profile }
+enum NavTab { home, jobs, voicebot, earnings, profile }
 
 class AppConstants {
   static Map<NavTab, List<dynamic>> getPages(BuildContext context) {
@@ -23,7 +23,11 @@ class AppConstants {
         context.loc.jobsTitle,
         const MyJobsPage(),
       ],
-      NavTab.speak: [const SizedBox(), '', const SizedBox.shrink()],
+      NavTab.voicebot: [
+        SizedBox.shrink(),
+        context.loc.voiceBotTitle,
+        SizedBox.shrink(),
+      ],
       NavTab.earnings: [
         const Icon(Icons.monetization_on),
         context.loc.earningsTitle,

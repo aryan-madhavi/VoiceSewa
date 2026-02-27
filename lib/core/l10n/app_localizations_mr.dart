@@ -39,6 +39,9 @@ class AppLocalizationsMr extends AppLocalizations {
   String get jobsTitle => 'माझी कामे';
 
   @override
+  String get voiceBotTitle => 'वॉइसबॉट';
+
+  @override
   String get earningsTitle => 'कमाई';
 
   @override
