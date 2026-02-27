@@ -19,7 +19,9 @@ class VoiceBotController extends Notifier<bool> {
     final AudioNotifier = ref.read(AudioProvider.notifier);
     final uid = ref.read(currentUserProvider)?.uid;
     final lang = ref.read(speechProvider).localeId;
+    if (msg.trim().isEmpty) return;
 
+    state = true;
     try {
       final response = await http.post(
         Uri.parse(
