@@ -147,8 +147,14 @@ jobs - collection
         {
           sender_uid: string,
           sender_name: string,
-          text: string,
-          is_worker: boolean,
+          is_worker: boolean,    
+          originalMsg: string,      
+          translated: {
+            en: string,
+            gu: string,
+            hi: string,
+            mr: string
+          },   
           sent_at: timestamp
         }
 ```
