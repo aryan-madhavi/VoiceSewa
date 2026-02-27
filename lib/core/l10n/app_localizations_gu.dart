@@ -39,6 +39,9 @@ class AppLocalizationsGu extends AppLocalizations {
   String get jobsTitle => 'મારી નોકરીઓ';
 
   @override
+  String get voiceBotTitle => 'વોઇસબોટ';
+
+  @override
   String get earningsTitle => 'કમાણી';
 
   @override

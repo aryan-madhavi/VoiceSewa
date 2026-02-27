@@ -54,6 +54,9 @@ dependencies:
   latlong2: ^0.9.1
   url_launcher: ^6.3.2
   dart_geohash: ^2.1.0
+  http: ^1.6.0
+  speech_to_text: ^7.3.0
+  just_audio: ^0.10.5
   image_picker: ^1.2.1
   firebase_storage: ^13.0.6
   fl_chart: ^1.1.1
