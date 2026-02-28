@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: aadhaar-decode
+    runtime: python
+    buildCommand: pip install -r requirements.txt && apt-get install -y libzbar0 libgl1-mesa-glx || true
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
