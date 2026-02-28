@@ -5,42 +5,31 @@ import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 import 'package:voicesewa_client/features/auth/providers/profile_form_provider.dart';
 import 'package:voicesewa_client/features/auth/services/fcm_service.dart';
 
-/// Handles user logout functionality with Firebase Auth + FCM cleanup
-/// No SQLite dependencies - pure Firebase approach
+/// Handles user logout with Firebase Auth + FCM cleanup
 class LogoutHandler {
   final WidgetRef ref;
   final BuildContext context;
-  final FCMService _fcmService;
 
-  LogoutHandler({
-    required this.ref,
-    required this.context,
-    FCMService? fcmService,
-  }) : _fcmService = fcmService ?? FCMService();
+  LogoutHandler({required this.ref, required this.context});
 
-  /// Performs logout from Firebase Auth with FCM cleanup
-  /// Returns true if successful, false otherwise
+  // ── Public methods ─────────────────────────────────────────────────────────
+
   Future<bool> logout({bool showConfirmation = true}) async {
     if (showConfirmation) {
-      final shouldLogout = await _showLogoutConfirmationDialog();
-      if (shouldLogout != true) return false;
+      final confirmed = await _showLogoutConfirmationDialog();
+      if (confirmed != true) return false;
     }
 
     try {
       final auth = ref.read(firebaseAuthProvider);
-      final currentUser = auth.currentUser;
+      final uid = auth.currentUser?.uid;
 
       print('🚪 Logging out user...');
 
-      // Clean up FCM before logout
-      if (currentUser != null) {
-        await _cleanupFCM(currentUser.uid);
-      }
-
-      // CRITICAL FIX: Reset all auth-related state BEFORE signing out
+      if (uid != null) await _cleanupFCM(uid);
       _resetAuthState();
-
       await auth.signOut();
+
       print('✅ User logged out successfully');
 
       if (context.mounted) {
@@ -52,7 +41,6 @@ class LogoutHandler {
           ),
         );
       }
-
       return true;
     } catch (e) {
       print('❌ Logout error: $e');
@@ -69,38 +57,26 @@ class LogoutHandler {
     }
   }
 
-  /// Logout and delete all user data from Firestore
-  /// WARNING: This permanently deletes the user's Firestore profile
   Future<bool> logoutAndDeleteData({bool showConfirmation = true}) async {
     if (showConfirmation) {
-      final shouldDelete = await _showDeleteDataConfirmationDialog();
-      if (shouldDelete != true) return false;
+      final confirmed = await _showDeleteDataConfirmationDialog();
+      if (confirmed != true) return false;
     }
 
     try {
       final auth = ref.read(firebaseAuthProvider);
       final repo = ref.read(clientFirebaseRepositoryProvider);
-      final currentUser = auth.currentUser;
-
-      if (currentUser == null) {
-        throw Exception('No user logged in');
-      }
+      final uid = auth.currentUser?.uid;
+      if (uid == null) throw Exception('No user logged in');
 
       print('🗑️ Deleting user data...');
 
-      // Clean up FCM
-      await _cleanupFCM(currentUser.uid);
-
-      // Delete Firestore profile
-      await repo.deleteProfile(currentUser.uid);
-      print('✅ Firestore profile deleted');
-
-      // CRITICAL FIX: Reset all auth-related state
+      await _cleanupFCM(uid);
+      await repo.deleteProfile(uid);
       _resetAuthState();
-
-      // Sign out from Firebase
       await auth.signOut();
-      print('✅ User logged out');
+
+      print('✅ User data deleted and logged out');
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -111,14 +87,13 @@ class LogoutHandler {
           ),
         );
       }
-
       return true;
     } catch (e) {
       print('❌ Logout with data deletion error: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Logout with data deletion failed: $e'),
+            content: Text('Failed: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 3),
           ),
@@ -128,50 +103,35 @@ class LogoutHandler {
     }
   }
 
-  /// Delete account permanently (Firebase Auth + Firestore profile)
-  /// WARNING: This cannot be undone!
   Future<bool> deleteAccount({
     bool showConfirmation = true,
     required String password,
   }) async {
     if (showConfirmation) {
-      final shouldDelete = await _showDeleteAccountConfirmationDialog();
-      if (shouldDelete != true) return false;
+      final confirmed = await _showDeleteAccountConfirmationDialog();
+      if (confirmed != true) return false;
     }
 
     try {
       final auth = ref.read(firebaseAuthProvider);
       final repo = ref.read(clientFirebaseRepositoryProvider);
-      final currentUser = auth.currentUser;
-
-      if (currentUser == null) {
-        throw Exception('No user logged in');
-      }
+      final user = auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
 
       print('🗑️ Deleting account...');
 
-      // Re-authenticate before deleting
       final credential = EmailAuthProvider.credential(
-        email: currentUser.email!,
+        email: user.email!,
         password: password,
       );
+      await user.reauthenticateWithCredential(credential);
 
-      await currentUser.reauthenticateWithCredential(credential);
-      print('✅ Re-authenticated');
-
-      // Clean up FCM
-      await _cleanupFCM(currentUser.uid);
-
-      // Delete Firestore profile first
-      await repo.deleteProfile(currentUser.uid);
-      print('✅ Firestore profile deleted');
-
-      // CRITICAL FIX: Reset all auth-related state
+      await _cleanupFCM(user.uid);
+      await repo.deleteProfile(user.uid);
       _resetAuthState();
+      await user.delete();
 
-      // Then delete Firebase Auth account
-      await currentUser.delete();
-      print('✅ Firebase Auth account deleted');
+      print('✅ Account deleted');
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -182,36 +142,26 @@ class LogoutHandler {
           ),
         );
       }
-
       return true;
     } on FirebaseAuthException catch (e) {
-      print('❌ Account deletion error: ${e.code}');
-
-      String errorMessage = 'Account deletion failed';
-      if (e.code == 'wrong-password') {
-        errorMessage = 'Incorrect password';
-      } else if (e.code == 'requires-recent-login') {
-        errorMessage = 'Please logout and login again before deleting account';
-      }
+      final msg = e.code == 'wrong-password'
+          ? 'Incorrect password'
+          : e.code == 'requires-recent-login'
+          ? 'Please logout and login again before deleting account'
+          : 'Account deletion failed';
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
         );
       }
       return false;
     } catch (e) {
-      print('❌ Account deletion error: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Account deletion failed: $e'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -219,148 +169,120 @@ class LogoutHandler {
     }
   }
 
-  /// Clean up FCM token and unsubscribe from topics
+  // ── Private helpers ────────────────────────────────────────────────────────
+
   Future<void> _cleanupFCM(String uid) async {
     try {
       print('🔔 Cleaning up FCM...');
-
-      final repo = ref.read(clientFirebaseRepositoryProvider);
-
-      // Clear FCM token from Firestore
-      await repo.updateFcmToken(uid, ''); // Save empty string to clear
-      print('✅ FCM token cleared from Firestore');
-
-      // Unsubscribe from all topics
-      // await _fcmService.unsubscribeFromAllClientTopics();
-      print('✅ Unsubscribed from all topics');
-
-      // Delete FCM token from device
-      await _fcmService.deleteToken();
-      print('✅ FCM token deleted from device');
+      // Uses the shared FcmService — clears Firestore token + deletes device token
+      await ref.read(fcmServiceProvider).clearToken(uid);
+      print('✅ FCM cleanup complete');
     } catch (e) {
-      print('⚠️ Error cleaning up FCM: $e');
-      // Don't throw - FCM cleanup failure shouldn't block logout
+      print('⚠️ FCM cleanup error (non-critical): $e');
     }
   }
 
-  /// CRITICAL FIX: Reset all auth-related state to prevent stuck loading states
   void _resetAuthState() {
     print('🔄 Resetting auth state...');
-
-    // Reset auth loading state
     ref.read(authLoadingProvider.notifier).state = false;
-
-    // Reset password visibility states
     ref.read(loginPasswordVisibleProvider.notifier).state = false;
     ref.read(registerPasswordVisibleProvider.notifier).state = false;
     ref.read(confirmPasswordVisibleProvider.notifier).state = false;
-
-    // Reset auth mode to login
     ref.read(authModeProvider.notifier).state = true;
-
-    // Reset profile completion states
     ref.read(profileCompletionProvider.notifier).reset();
     ref.read(isNewRegistrationProvider.notifier).reset();
-
     print('✅ Auth state reset complete');
   }
 
-  /// Shows confirmation dialog before logout
+  // ── Dialogs ────────────────────────────────────────────────────────────────
+
   Future<bool?> _showLogoutConfirmationDialog() {
     return showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.logout, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('Logout'),
-            ],
-          ),
-          content: const Text('Are you sure you want to logout?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Colors.orange),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Logout'),
-            ),
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.logout, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Logout'),
           ],
-        );
-      },
+        ),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
     );
   }
 
-  /// Shows confirmation dialog before deleting data
   Future<bool?> _showDeleteDataConfirmationDialog() {
     return showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.delete_forever, color: Colors.red),
-              SizedBox(width: 8),
-              Text('Delete All Data'),
-            ],
-          ),
-          content: const Text(
-            'Are you sure you want to logout and DELETE ALL YOUR DATA from Firestore?\n\n'
-            'This action cannot be undone!',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete & Logout'),
-            ),
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.delete_forever, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Delete All Data'),
           ],
-        );
-      },
+        ),
+        content: const Text(
+          'Are you sure you want to logout and DELETE ALL YOUR DATA?\n\n'
+          'This action cannot be undone!',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete & Logout'),
+          ),
+        ],
+      ),
     );
   }
 
-  /// Shows confirmation dialog before deleting account
   Future<bool?> _showDeleteAccountConfirmationDialog() {
     return showDialog<bool>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.delete_forever, color: Colors.red),
-              SizedBox(width: 8),
-              Text('Delete Account'),
-            ],
-          ),
-          content: const Text(
-            'Are you sure you want to PERMANENTLY DELETE YOUR ACCOUNT?\n\n'
-            'This will delete:\n'
-            '• Your Firebase Auth account\n'
-            '• All your data in Firestore\n\n'
-            'This action CANNOT BE UNDONE!',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: Colors.red),
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete Account'),
-            ),
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.delete_forever, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Delete Account'),
           ],
-        );
-      },
+        ),
+        content: const Text(
+          'Are you sure you want to PERMANENTLY DELETE YOUR ACCOUNT?\n\n'
+          'This will delete:\n'
+          '• Your Firebase Auth account\n'
+          '• All your data in Firestore\n\n'
+          'This action CANNOT BE UNDONE!',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete Account'),
+          ),
+        ],
+      ),
     );
   }
 }
