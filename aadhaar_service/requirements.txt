@@ -1,3 +1,6 @@
-firebase-functions>=0.1.0
-opencv-python-headless
+fastapi>=0.95.0
+pydantic>=1.10.0
 pyaadhaar>=2.0.0
+opencv-python-headless>=4.5.0
+firebase-functions>=0.1.0
+uvicorn>=0.20.0
