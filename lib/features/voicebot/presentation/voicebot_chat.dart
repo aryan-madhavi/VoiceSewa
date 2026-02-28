@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voicesewa_client/features/voicebot/models/chat_message.dart';
+import 'package:voicesewa_client/features/voicebot/presentation/audio_bubble.dart';
+import 'package:voicesewa_client/features/voicebot/providers/audio_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/chat_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/voicechat_provder.dart';
 
@@ -15,6 +16,13 @@ class _VoiceBotPageState extends ConsumerState<VoiceBotPage> {
   final ScrollController _scrollController = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    // Listen to message list changes and scroll to bottom — not inside build()
+    ref.listenManual(chatControllerProvider, (_, __) => _scrollToBottom());
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
@@ -23,79 +31,148 @@ class _VoiceBotPageState extends ConsumerState<VoiceBotPage> {
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.jumpTo(
+        _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
         );
       }
     });
   }
 
+  Future<void> _onMicPressed() async {
+    final audioNotifier = ref.read(audioProvider.notifier);
+    final isRecording = ref.read(audioProvider).isRecording;
+
+    if (isRecording) {
+      final path = await audioNotifier.stopRecording();
+      if (path != null) {
+        await ref.read(voiceBotControllerProvider.notifier).processAudio(path);
+      }
+    } else {
+      await audioNotifier.startRecording();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final messages = ref.watch(chatControllerProvider);
+    final audioState = ref.watch(audioProvider);
     final isProcessing = ref.watch(voiceBotControllerProvider);
-
-    _scrollToBottom();
+    final isRecording = audioState.isRecording;
 
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          child:  Column(
-            children: [
-              Expanded(
-                child: messages.isEmpty
-                    ? const Center(
-                        child: Text('Say something to start the conversation'),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(12),
-                        itemCount: messages.length,
-                        itemBuilder: (_, index) {
-                          final msg = messages[index];
-                          return _ChatBubble(message: msg);
-                        },
-                      ),
-              ),
-              if (isProcessing) const _TypingIndicator(),
-            ],
+      appBar: AppBar(title: const Text('Voice Assistant'), centerTitle: true),
+      body: Column(
+        children: [
+          // ── Message list ──────────────────────────────────────────────
+          Expanded(
+            child: messages.isEmpty
+                ? const _EmptyState()
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
+                    ),
+                    itemCount: messages.length,
+                    itemBuilder: (_, i) => AudioBubble(message: messages[i]),
+                  ),
           ),
-        ),
-      )
-    );
-  }
-}
 
-class _ChatBubble extends StatelessWidget {
-  final ChatMessage message;
+          // ── Typing indicator ──────────────────────────────────────────
+          if (isProcessing) const _TypingIndicator(),
 
-  const _ChatBubble({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final isUser = message.role == ChatRole.user;
-
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.all(12),
-        constraints: const BoxConstraints(maxWidth: 280),
-        decoration: BoxDecoration(
-          color: isUser
-              ? Theme.of(context).colorScheme.primaryContainer
-              : Theme.of(context).colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          message.text,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+          // ── Bottom bar ────────────────────────────────────────────────
+          _BottomBar(
+            isRecording: isRecording,
+            isProcessing: isProcessing,
+            onMicPressed: _onMicPressed,
+          ),
+        ],
       ),
     );
   }
 }
+
+// ─── Bottom bar ──────────────────────────────────────────────────────────────
+
+class _BottomBar extends StatelessWidget {
+  final bool isRecording;
+  final bool isProcessing;
+  final VoidCallback onMicPressed;
+
+  const _BottomBar({
+    required this.isRecording,
+    required this.isProcessing,
+    required this.onMicPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: isProcessing ? null : onMicPressed,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isProcessing
+                    ? Colors.grey.shade300
+                    : isRecording
+                    ? Colors.red.shade500
+                    : colorScheme.primary,
+                boxShadow: isRecording
+                    ? [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.4),
+                          blurRadius: 16,
+                          spreadRadius: 4,
+                        ),
+                      ]
+                    : [],
+              ),
+              child: Icon(
+                isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isProcessing
+                ? 'Processing...'
+                : isRecording
+                ? 'Tap to stop & send'
+                : 'Tap to speak',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Supporting widgets ───────────────────────────────────────────────────────
 
 class _TypingIndicator extends StatelessWidget {
   const _TypingIndicator();
@@ -103,13 +180,37 @@ class _TypingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: const [
-          SizedBox(width: 12),
-          CircularProgressIndicator(strokeWidth: 2),
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
           SizedBox(width: 12),
           Text('Assistant is responding...'),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.mic_none_rounded, size: 56, color: Colors.grey.shade400),
+          const SizedBox(height: 12),
+          Text(
+            'Tap the mic to start talking',
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 15),
+          ),
         ],
       ),
     );

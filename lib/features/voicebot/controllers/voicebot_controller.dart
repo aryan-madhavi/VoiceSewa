@@ -1,45 +1,41 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
-// import 'package:voicesewa_client/core/providers/database_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/audio_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/chat_provider.dart';
-import 'package:voicesewa_client/features/voicebot/providers/speech_provider.dart';
 
 class VoiceBotController extends Notifier<bool> {
-
   @override
-  bool build() {
-    return false; // isProcessing
-  }
+  bool build() => false;
 
-  /// Processes user speech and plays AI response (text + optional audio)
-  Future<void> processSpeech(String msg) async {
-    final AudioNotifier = ref.read(AudioProvider.notifier);
+  Future<void> processAudio(String audioPath) async {
+    final audioNotifier = ref.read(audioProvider.notifier);
     final uid = ref.read(currentUserIdProvider);
-    final lang = ref.read(speechProvider).localeId;
-    if (msg.trim().isEmpty) return;
+
+    final file = File(audioPath);
+    if (!await file.exists()) return;
+
+    final bytes = await file.readAsBytes();
+    final base64Input = base64Encode(bytes);
 
     state = true;
 
     try {
       final response = await http.post(
-        Uri.parse(
-          'https://fomoha8938hutudns.app.n8n.cloud/webhook/chat',
-        ),
+        Uri.parse('https://fomoha8938hutudns.app.n8n.cloud/webhook/chat'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({'uid': uid, 'msg': msg, 'lang': lang, 'type': 'client'}),
+        body: jsonEncode({'uid': uid, 'audio': base64Input, 'type': 'client'}),
       );
 
       if (response.statusCode != 200) {
-        throw Exception('API returned status code ${response.statusCode}');
+        throw Exception('API returned status ${response.statusCode}');
       }
 
-      // Decode JSON safely
       Map<String, dynamic> data;
       try {
         data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -47,22 +43,27 @@ class VoiceBotController extends Notifier<bool> {
         throw FormatException('Failed to decode API response: $e');
       }
 
-      // Extract fields
-      final String? text = data['response'] ?? '';
-      final String? base64Audio = data['base64Audio'];
-      if (text == null)
-        throw Exception('No valid text found in API response');
-      else if (base64Audio == null)
-        throw Exception('No valid base64Audio found in API response');
+      final String? text = data['response'];
+      final String? base64Reply = data['base64Audio'];
+      if (base64Reply == null) throw Exception('No base64Audio in response');
 
-      // Add bot response to chat
-      ref.read(chatControllerProvider.notifier).addBotMessage(text);
-      // Optional: debug
-      print('VoiceBot text response: $text');
-      
-      // Play audio
-      await AudioNotifier.playBase64Audio(base64Audio);
+      // 1. Add user message to chat immediately
+      ref
+          .read(chatControllerProvider.notifier)
+          .addUserMessage(audioPath: audioPath);
 
+      // 2. Save audio file to disk (fast — just writing bytes)
+      final responsePath = await audioNotifier.saveBase64Audio(base64Reply);
+
+      // 3. Add bot message to chat immediately — bubble shows now
+      ref
+          .read(chatControllerProvider.notifier)
+          .addBotMessage(text: text, audioPath: responsePath);
+
+      // 4. Play audio — non-blocking, chat is already updated
+      if (responsePath != null) {
+        audioNotifier.playFile(responsePath);
+      }
     } catch (e) {
       print('VoiceBotController error: $e');
     } finally {
