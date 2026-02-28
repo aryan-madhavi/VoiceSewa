@@ -119,7 +119,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         builder: (context) => VoiceCallPage(
           jobId: widget.jobId,
           workerId: widget.workerId,
-          channelId: widget.jobId,
+          // channelId: widget.jobId,
           workerName: workerName,
         ),
       ),

@@ -7,15 +7,19 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+// --- SHARED TEST CONFIG (Must match exactly on both apps) ---
+const String tempAppId = "e7f6e9aeecf14b2ba10e3f40be9f56e7";
+const String tempToken = "007eJxTYND87Zb0c+N/vResb0pl/mUKGMyXnSHqumXqVvmMBQd/9E1WYEhONEg2STUxNU9ONjexTE5LSkkyMjE0SzIwMUgzM0010124KLMhkJFh1+Z+FkYGCATxORlKUotL4pMTc3IYGABY+iMB";
+const String staticChannelName = "test_call";
+// ---------------------------------------------------------
+
 class VoiceCallPage extends StatefulWidget {
-  final String channelId;
   final String workerName;
   final String workerId;
   final String jobId;
 
   const VoiceCallPage({
     super.key,
-    required this.channelId,
     required this.workerName,
     required this.jobId,
     required this.workerId,
@@ -36,18 +40,19 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
   @override
   void initState() {
     super.initState();
-    _startCall();
+    _startCallSequence();
   }
 
-  Future<void> _sendCallNotification(String workerId, String jobId) async {
+  /// Sends the notification to the worker so they open their call screen
+  Future<void> _sendCallNotification() async {
     final url = Uri.parse("https://fomoha8938hutudns.app.n8n.cloud/webhook/call-notification");
     try {
       await http.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "receiverId": workerId,
-          "jobId": jobId,
+          "receiverId": widget.workerId,
+          "jobId": widget.jobId,
           "callerName": "Client",
           "type": "voice_call",
           "goToCollection": "workers"
@@ -58,9 +63,54 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
     }
   }
 
-  Future<void> _startCall() async {
-    await _sendCallNotification(widget.workerId, widget.jobId);
+  Future<void> _startCallSequence() async {
+    // 1. Notify the worker
+    await _sendCallNotification();
+    // 2. Initialize Agora
     _initAgora();
+  }
+
+  Future<void> _initAgora() async {
+    // Request permissions
+    await [Permission.microphone].request();
+
+    _engine = createAgoraRtcEngine();
+
+    // Initialize with Test App ID
+    await _engine.initialize(const RtcEngineContext(
+      appId: tempAppId,
+      channelProfile: ChannelProfileType.channelProfileCommunication,
+    ));
+
+    // Event Handlers
+    _engine.registerEventHandler(RtcEngineEventHandler(
+      onJoinChannelSuccess: (connection, elapsed) {
+        debugPrint("CLIENT SUCCESS: Joined ${connection.channelId}");
+        setState(() => _joined = true);
+      },
+      onUserJoined: (connection, remoteUid, elapsed) {
+        debugPrint("WORKER JOINED: $remoteUid");
+      },
+      onUserOffline: (connection, remoteUid, reason) => _leaveChannel(),
+      onError: (err, msg) => debugPrint("AGORA ERROR: $err - $msg"),
+    ));
+
+    await _engine.setAudioProfile(
+      profile: AudioProfileType.audioProfileDefault,
+      scenario: AudioScenarioType.audioScenarioGameStreaming,
+    );
+
+    // Join the STATIC channel used for testing
+    await _engine.joinChannel(
+      token: tempToken,
+      channelId: staticChannelName,
+      uid: 0,
+      options: const ChannelMediaOptions(
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+        publishMicrophoneTrack: true,
+        autoSubscribeAudio: true,
+      ),
+    );
   }
 
   Future<void> _handleTranslation() async {
@@ -69,7 +119,7 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
 
       final config = const RecordConfig(encoder: AudioEncoder.wav);
       await _audioRecorder.start(config, path: 'live_translate.wav');
-      await Future.delayed(const Duration(seconds: 5));
+      await Future.delayed(const Duration(seconds: 4));
       final path = await _audioRecorder.stop();
 
       if (path != null) {
@@ -89,33 +139,8 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
           debugPrint("Translation Webhook Error: $e");
         }
       }
-      setState(() => _isTranslating = false);
+      if (mounted) setState(() => _isTranslating = false);
     }
-  }
-
-  Future<void> _initAgora() async {
-    await [Permission.microphone].request();
-    _engine = createAgoraRtcEngine();
-    await _engine.initialize(const RtcEngineContext(appId: "e7f6e9aeecf14b2ba10e3f40be9f56e7"));
-
-    _engine.registerEventHandler(RtcEngineEventHandler(
-      onJoinChannelSuccess: (connection, elapsed) => setState(() => _joined = true),
-      onUserOffline: (connection, remoteUid, reason) => _leaveChannel(),
-    ));
-    await _engine.setAudioProfile(
-      profile: AudioProfileType.audioProfileDefault,
-      scenario: AudioScenarioType.audioScenarioGameStreaming,
-    );
-
-    await _engine.joinChannel(
-      token: "007eJxTYFj3/vKayNVf02qlmLxrlmZ+1ZuxQX2FwcFFTUvyM+7PypuuwJCcaJBskmpiap6cbG5imZyWlJJkZGJolmRgYpBmZppqtmDqosyGQEYGTp0EVkYGCATxeRhKUotLMvPSFZITc3IYGAD53SPU",
-      channelId: widget.channelId,
-      uid: 0,
-      options: const ChannelMediaOptions(
-        clientRoleType: ClientRoleType.clientRoleBroadcaster,
-        publishMicrophoneTrack: true,
-      ),
-    );
   }
 
   void _leaveChannel() async {
@@ -141,7 +166,8 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
           const CircleAvatar(radius: 50, child: Icon(Icons.person, size: 50)),
           const SizedBox(height: 20),
           Text(widget.workerName, style: const TextStyle(color: Colors.white, fontSize: 24)),
-          Text(_joined ? "Connected" : "Calling...", style: const TextStyle(color: Colors.white70)),
+          Text(_joined ? "Connected (Test Mode)" : "Calling Worker...",
+              style: TextStyle(color: _joined ? Colors.greenAccent : Colors.white70)),
           const SizedBox(height: 60),
 
           ElevatedButton.icon(
