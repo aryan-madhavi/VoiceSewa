@@ -15,11 +15,18 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
 
     <application
         android:label="VoiceSewa Partner"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+        <service
+            android:name="io.agora.rtc.ss.impl.ServiceProxy"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
 
         <service
             android:name="com.llfbandit.record.RecordService"

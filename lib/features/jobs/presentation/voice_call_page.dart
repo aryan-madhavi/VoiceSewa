@@ -7,11 +7,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 
-// --- CONFIGURATION FOR TESTING ---
 const String tempAppId = "e7f6e9aeecf14b2ba10e3f40be9f56e7";
-const String tempToken = "007eJxTYFj3/vKayNVf02qlmLxrlmZ+1ZuxQX2FwcFFTUvyM+7PypuuwJCcaJBskmpiap6cbG5imZyWlJJkZGJolmRgYpBmZppqtmDqosyGQEYGTp0EVkYGCATxeRhKUotLMvPSFZITc3IYGAD53SPU";
+const String tempToken = "007eJxTYND87Zb0c+N/vResb0pl/mUKGMyXnSHqumXqVvmMBQd/9E1WYEhONEg2STUxNU9ONjexTE5LSkkyMjE0SzIwMUgzM0010124KLMhkJFh1+Z+FkYGCATxORlKUotL4pMTc3IYGABY+iMB";
 const String staticChannelName = "test_call";
-// ---------------------------------
+
 
 class VoiceCallPage extends StatefulWidget {
   final String clientName;
@@ -37,47 +36,50 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
   }
 
   Future<void> _initAgora() async {
-    // 1. Request Permission
-    final status = await Permission.microphone.request();
-    if (status != PermissionStatus.granted) {
-      debugPrint("Microphone permission denied");
-      return;
-    }
-
-    _engine = createAgoraRtcEngine();
-
-    // 2. Initialize Engine
-    await _engine.initialize(const RtcEngineContext(
-      appId: tempAppId,
-      channelProfile: ChannelProfileType.channelProfileCommunication,
-    ));
-
-    // 3. Register Event Handlers BEFORE joining
-    _engine.registerEventHandler(RtcEngineEventHandler(
-      onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-        debugPrint("SUCCESS: Joined channel: ${connection.channelId}");
-        setState(() => _joined = true);
-      },
-      onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-        debugPrint("REMOTE USER JOINED: $remoteUid");
-      },
-      onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-        debugPrint("REMOTE USER OFFLINE: $remoteUid");
-        _leaveChannel();
-      },
-      onError: (ErrorCodeType err, String msg) {
-        debugPrint("AGORA ERROR: $err - $msg");
-      },
-    ));
-
-    // 4. Set Audio Profile
-    await _engine.setAudioProfile(
-      profile: AudioProfileType.audioProfileDefault,
-      scenario: AudioScenarioType.audioScenarioGameStreaming,
-    );
-
-    // 5. Join Channel with hardcoded test values
     try {
+      final status = await Permission.microphone.request();
+      if (status != PermissionStatus.granted) {
+        debugPrint("Microphone permission denied");
+        return;
+      }
+
+      _engine = createAgoraRtcEngine();
+
+      await _engine.initialize(const RtcEngineContext(
+        appId: tempAppId,
+        channelProfile: ChannelProfileType.channelProfileCommunication,
+      ));
+
+      // 3. Register Event Handlers BEFORE joining or calling audio methods
+      _engine.registerEventHandler(RtcEngineEventHandler(
+        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+          debugPrint("SUCCESS: Joined channel: ${connection.channelId}");
+
+          // SAFE ZONE: Hardware is now ready for audio adjustments
+          _engine.setEnableSpeakerphone(true);
+
+          if (mounted) setState(() => _joined = true);
+        },
+        onConnectionStateChanged: (connection, state, reason) {
+          debugPrint("CONNECTION STATE: $state REASON: $reason");
+        },
+        onUserJoined: (connection, remoteUid, int elapsed) {
+          debugPrint("REMOTE USER JOINED: $remoteUid");
+        },
+        onUserOffline: (connection, remoteUid, reason) => _leaveChannel(),
+        onError: (ErrorCodeType err, String msg) {
+          debugPrint("AGORA ERROR: $err - $msg");
+        },
+      ));
+
+      // 4. Set Audio Profile
+      await _engine.setAudioProfile(
+        profile: AudioProfileType.audioProfileDefault,
+        scenario: AudioScenarioType.audioScenarioGameStreaming,
+      );
+
+      // 5. Join Channel
+      // Note: enableAudio() is omitted to prevent the -3 "Not Ready" error
       await _engine.joinChannel(
         token: tempToken,
         channelId: staticChannelName,
@@ -89,9 +91,12 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
         ),
       );
     } catch (e) {
-      debugPrint("Join Channel Exception: $e");
+      debugPrint("Init Agora Error: $e");
     }
   }
+
+// ... _handleTranslation and build methods remain the same ...
+
 
   // ... _handleTranslation and _leaveChannel remain the same ...
 
