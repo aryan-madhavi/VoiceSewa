@@ -96,7 +96,7 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
   Future<void> _initAgora() async {
     await [Permission.microphone].request();
     _engine = createAgoraRtcEngine();
-    await _engine.initialize(const RtcEngineContext(appId: "YOUR_AGORA_ID"));
+    await _engine.initialize(const RtcEngineContext(appId: "e7f6e9aeecf14b2ba10e3f40be9f56e7"));
 
     _engine.registerEventHandler(RtcEngineEventHandler(
       onJoinChannelSuccess: (connection, elapsed) => setState(() => _joined = true),
@@ -108,7 +108,7 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
     );
 
     await _engine.joinChannel(
-      token: "YOUR_TEMP_TOKEN",
+      token: "007eJxTYFj3/vKayNVf02qlmLxrlmZ+1ZuxQX2FwcFFTUvyM+7PypuuwJCcaJBskmpiap6cbG5imZyWlJJkZGJolmRgYpBmZppqtmDqosyGQEYGTp0EVkYGCATxeRhKUotLMvPSFZITc3IYGAD53SPU",
       channelId: widget.channelId,
       uid: 0,
       options: const ChannelMediaOptions(
