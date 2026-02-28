@@ -37,7 +37,7 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
 
     _engine = createAgoraRtcEngine();
     await _engine.initialize(const RtcEngineContext(
-      appId: "YOUR_AGORA_APP_ID",
+      appId: "e7f6e9aeecf14b2ba10e3f40be9f56e7",
     ));
 
     _engine.registerEventHandler(RtcEngineEventHandler(
@@ -55,7 +55,7 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
     );
 
     await _engine.joinChannel(
-      token: "YOUR_TEMP_TOKEN",
+      token: "007eJxTYLimY/C0Xv9yk7eEs6uVWPHjM3YWV5+0Rpspqinq7b3CsUCBITnRINkk1cTUPDnZ3MQyOS0pJcnIxNAsycDEIM3MNNVs0up5mQ2BjAyJTo0MjFAI4osweOYpOBYUKDgn5uRk5qUrhORnp+YxMAAAyrgi/Q==",
       channelId: widget.channelId,
       uid: 0,
       options: const ChannelMediaOptions(
