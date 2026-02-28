@@ -40,14 +40,14 @@ class SupportPage extends ConsumerWidget {
             SupportButton(
               label: context.loc.paymentIssue,  //"Payment issue",
               icon: Icons.payment_outlined,
-              isSelected: selectedIssue == "Payment issue",
-              onTap: () => ref.read(selectedIssueProvider.notifier).state = "Payment issue",
+              isSelected: selectedIssue == context.loc.paymentIssue,
+              onTap: () => ref.read(selectedIssueProvider.notifier).state = context.loc.paymentIssue,
             ),
             SupportButton(
               label: context.loc.workerNotArrived,  //"Worker not arrived",
               icon: Icons.person_off_outlined,
-              isSelected: selectedIssue == "Worker not arrived",
-              onTap: () => ref.read(selectedIssueProvider.notifier).state = "Worker not arrived",
+              isSelected: selectedIssue == context.loc.workerNotArrived,
+              onTap: () => ref.read(selectedIssueProvider.notifier).state = context.loc.workerNotArrived,
             ),
             SupportButton(
               label: context.loc.cancelJob, //"Cancel job",
@@ -58,8 +58,8 @@ class SupportPage extends ConsumerWidget {
             SupportButton(
               label: context.loc.fAQs,  //"FAQs",
               icon: Icons.help_outline,
-              isSelected: selectedIssue == "FAQs",
-              onTap: () => ref.read(selectedIssueProvider.notifier).state = "FAQs",
+              isSelected: selectedIssue == context.loc.fAQs,
+              onTap: () => ref.read(selectedIssueProvider.notifier).state = context.loc.fAQs,
             ),
 
             const SizedBox(height: 32),

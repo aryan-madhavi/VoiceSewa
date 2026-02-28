@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/voicebot/presentation/audio_bubble.dart';
 import 'package:voicesewa_client/features/voicebot/providers/audio_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/chat_provider.dart';
@@ -62,7 +63,7 @@ class _VoiceBotPageState extends ConsumerState<VoiceBotPage> {
     final isRecording = audioState.isRecording;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Voice Assistant'), centerTitle: true),
+      appBar: AppBar(title: Text(context.loc.voiceAssistant), centerTitle: true),
       body: Column(
         children: [
           // ── Message list ──────────────────────────────────────────────
@@ -182,14 +183,14 @@ class _TypingIndicator extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
-        children: const [
-          SizedBox(
+        children: [
+          const SizedBox(
             width: 18,
             height: 18,
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
-          SizedBox(width: 12),
-          Text('Assistant is responding...'),
+          const SizedBox(width: 12),
+          Text(context.loc.assistantIsResponding),
         ],
       ),
     );
@@ -208,7 +209,7 @@ class _EmptyState extends StatelessWidget {
           Icon(Icons.mic_none_rounded, size: 56, color: Colors.grey.shade400),
           const SizedBox(height: 12),
           Text(
-            'Tap the mic to start talking',
+            context.loc.tapTheMicToStartTalking,
             style: TextStyle(color: Colors.grey.shade500, fontSize: 15),
           ),
         ],

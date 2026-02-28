@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/search/providers/worker_provider.dart';
 import 'package:voicesewa_client/features/search/presentation/widgets/worker_card.dart';
 import 'package:voicesewa_client/features/search/presentation/widgets/worker_details_sheet.dart';
@@ -99,7 +100,7 @@ class _SuggestedWorkersPageState extends ConsumerState<SuggestedWorkersPage> {
                   const SizedBox(height: 16),
                   ListTile(
                     leading: const Icon(Icons.select_all),
-                    title: const Text('All Services'),
+                    title: Text(context.loc.allServices),
                     trailing: selectedProfession == null
                         ? const Icon(Icons.check, color: ColorConstants.seed)
                         : null,
@@ -215,7 +216,7 @@ class _SuggestedWorkersPageState extends ConsumerState<SuggestedWorkersPage> {
                             ref.read(selectedRadiusProvider.notifier).state =
                                 RadiusFilter.five;
                           },
-                          child: const Text('Clear Filters'),
+                          child: Text(context.loc.clearFilters),
                         ),
                       ],
                     ),
@@ -484,7 +485,7 @@ class _FilterBar extends ConsumerWidget {
           children: [
             // Sort: Distance — toggleable
             _chip(
-              label: 'Distance',
+              label: context.loc.distance,
               icon: Icons.location_on,
               isSelected: selectedFilter == WorkerFilter.distance,
               onTap: () {
@@ -499,7 +500,7 @@ class _FilterBar extends ConsumerWidget {
 
             // Sort: Rating — toggleable
             _chip(
-              label: 'Rating',
+              label: context.loc.rating,
               icon: Icons.star,
               isSelected: selectedFilter == WorkerFilter.rating,
               onTap: () {
@@ -514,7 +515,7 @@ class _FilterBar extends ConsumerWidget {
 
             // Radius: 2 km — toggleable (tapping active = back to 5 km)
             _chip(
-              label: '2 km',
+              label: context.loc.twoKm,
               icon: Icons.radar,
               isSelected: selectedRadius == RadiusFilter.two,
               onTap: () {
@@ -529,7 +530,7 @@ class _FilterBar extends ConsumerWidget {
 
             // Radius: 5 km — toggleable (tapping active = stays 5 km, it's default)
             _chip(
-              label: '5 km',
+              label: context.loc.fiveKm,
               icon: Icons.radar,
               isSelected: selectedRadius == RadiusFilter.five,
               onTap: () {

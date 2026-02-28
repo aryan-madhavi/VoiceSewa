@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/job_model.dart';
 
 /// Service information card showing icon, name, and status
@@ -171,14 +172,14 @@ class JobOtpCard extends StatelessWidget {
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: otp));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('OTP copied to clipboard'),
+                  SnackBar(
+                    content: Text(context.loc.oTPCopiedToClipboard),
                     duration: Duration(seconds: 2),
                   ),
                 );
               },
               icon: const Icon(Icons.copy, size: 16),
-              label: const Text('Copy OTP'),
+              label: Text(context.loc.copyOTP),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.orange.shade800,
               ),
@@ -400,9 +401,9 @@ class JobBillCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Price',
+                              context.loc.price,
                               textAlign: TextAlign.right,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -601,10 +602,10 @@ class JobDatesCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            InfoRow(label: 'Created', value: createdDate),
+            InfoRow(label: context.loc.created, value: createdDate),
             if (scheduledDate != null) ...[
               const Divider(),
-              InfoRow(label: 'Scheduled', value: scheduledDate!),
+              InfoRow(label: context.loc.scheduled, value: scheduledDate!),
             ],
           ],
         ),
@@ -739,7 +740,7 @@ class JobFeedbackCard extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: () => _openFeedbackSheet(context),
               icon: const Icon(Icons.add_reaction_outlined),
-              label: const Text('Add Feedback'),
+              label: Text(context.loc.addFeedback),
               style: OutlinedButton.styleFrom(
                 foregroundColor: ColorConstants.seed,
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -793,7 +794,7 @@ class _FeedbackBottomSheetState extends State<_FeedbackBottomSheet> {
   Future<void> _submit() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a star rating')),
+        SnackBar(content: Text(context.loc.pleaseSelectAStarRating)),
       );
       return;
     }
@@ -891,7 +892,7 @@ class _FeedbackBottomSheetState extends State<_FeedbackBottomSheet> {
             maxLines: 3,
             textInputAction: TextInputAction.done,
             decoration: InputDecoration(
-              hintText: 'Write a comment (optional)',
+              hintText: context.loc.writeACommentOptional,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -924,7 +925,7 @@ class _FeedbackBottomSheetState extends State<_FeedbackBottomSheet> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Maybe Later'),
+                  child: Text(context.loc.maybeLater),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1011,7 +1012,7 @@ class JobActionButtons extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onCancel,
             icon: const Icon(Icons.cancel),
-            label: const Text('Cancel Job'),
+            label: Text(context.loc.cancelJob),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1025,7 +1026,7 @@ class JobActionButtons extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onReschedule,
             icon: const Icon(Icons.schedule),
-            label: const Text('Reschedule Job'),
+            label: Text(context.loc.rescheduleJob),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),

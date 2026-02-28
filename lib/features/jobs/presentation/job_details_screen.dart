@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/quotations/prsentation/quotations_screen.dart';
 import 'package:voicesewa_client/features/jobs/presentation/widgets/job_detail_widgets.dart';
 import 'package:voicesewa_client/features/jobs/providers/job_provider.dart';
@@ -19,13 +20,13 @@ class JobDetailsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorConstants.scaffold,
       appBar: AppBar(
-        title: const Text('Job Details'),
+        title: Text(context.loc.jobDetails),
         backgroundColor: ColorConstants.appBar,
       ),
       body: jobAsync.when(
         data: (job) {
           if (job == null) {
-            return const Center(child: Text('Job not found'));
+            return Center(child: Text(context.loc.jobNotFound));
           }
           return _JobDetailsContent(job: job);
         },
@@ -138,8 +139,8 @@ class _JobDetailsContent extends ConsumerWidget {
       await actions.submitClientFeedback(jobId, rating, comment);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Thank you for your feedback!'),
+          SnackBar(
+            content: Text(context.loc.thankYouForYourFeedback),
             backgroundColor: Colors.green,
           ),
         );
@@ -160,12 +161,12 @@ class _JobDetailsContent extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancel Job'),
-        content: const Text('Are you sure you want to cancel this job?'),
+        title: Text(context.loc.cancelJob),
+        content: Text(context.loc.areYouSureYouWantToCancelThisJob),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('No'),
+            child: Text(context.loc.no),
           ),
           FilledButton(
             onPressed: () async {
@@ -175,7 +176,7 @@ class _JobDetailsContent extends ConsumerWidget {
                 await actions.cancelJob(jobId, 'Cancelled by client');
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Job cancelled')),
+                    SnackBar(content: Text(context.loc.jobCancelled)),
                   );
                 }
               } catch (e) {
@@ -186,7 +187,7 @@ class _JobDetailsContent extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Yes, Cancel'),
+            child: Text(context.loc.yesCancel),
           ),
         ],
       ),
@@ -203,12 +204,12 @@ class _JobDetailsContent extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reschedule Job'),
+        title: Text(context.loc.rescheduleJob),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Select new date:'),
-            const SizedBox(height: 16),
+            Text(context.loc.selectNewDate),
+            SizedBox(height: 16),
             FilledButton(
               onPressed: () async {
                 final date = await showDatePicker(
@@ -230,7 +231,7 @@ class _JobDetailsContent extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.loc.cancel),
           ),
           FilledButton(
             onPressed: () async {
@@ -240,7 +241,7 @@ class _JobDetailsContent extends ConsumerWidget {
                 await actions.rescheduleJob(jobId, selectedDate);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Job rescheduled')),
+                    SnackBar(content: Text(context.loc.jobRescheduled)),
                   );
                 }
               } catch (e) {
@@ -251,7 +252,7 @@ class _JobDetailsContent extends ConsumerWidget {
                 }
               }
             },
-            child: const Text('Confirm'),
+            child: Text(context.loc.confirm),
           ),
         ],
       ),

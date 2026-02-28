@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/voicebot/presentation/audio_bubble.dart';
 import 'package:voicesewa_client/features/voicebot/providers/audio_provider.dart';
 import 'package:voicesewa_client/features/voicebot/providers/chat_provider.dart';
@@ -80,8 +81,8 @@ class _ChatOverlayModalState extends ConsumerState<ChatOverlayModal> {
                 // Messages
                 Expanded(
                   child: messages.isEmpty
-                      ? const Center(
-                          child: Text('Tap the mic to start talking'),
+                      ? Center(
+                          child: Text(context.loc.tapTheMicToStartTalking),
                         )
                       : ListView.builder(
                           controller: _scrollController,
@@ -100,14 +101,14 @@ class _ChatOverlayModalState extends ConsumerState<ChatOverlayModal> {
                       vertical: 8,
                     ),
                     child: Row(
-                      children: const [
-                        SizedBox(
+                      children: [
+                        const SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                        SizedBox(width: 10),
-                        Text('Assistant is responding...'),
+                        const SizedBox(width: 10),
+                        Text(context.loc.assistantIsResponding),
                       ],
                     ),
                   ),
@@ -142,7 +143,7 @@ class _OverlayHeader extends StatelessWidget {
           Icon(Icons.graphic_eq, color: isRecording ? Colors.red : null),
           const SizedBox(width: 8),
           Text(
-            isRecording ? 'Recording...' : 'Voice Assistant',
+            isRecording ? 'Recording...' : context.loc.voiceAssistant,
             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
           ),
           const Spacer(),

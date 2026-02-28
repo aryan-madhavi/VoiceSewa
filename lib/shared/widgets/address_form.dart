@@ -4,6 +4,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
 import 'package:voicesewa_client/shared/models/address_model.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 
 /// Reusable address form widget
 /// Can be used in profile setup, job creation, and anywhere else addresses are needed
@@ -92,10 +94,10 @@ class _AddressFormWidgetState extends State<AddressFormWidget> {
         widget.onLocationCaptured?.call(geoPoint);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Location captured & address auto-filled ✓'),
+          SnackBar(
+            content: Text(context.loc.locationCapturedAddressAutofilled),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -227,7 +229,7 @@ class _AddressFormWidgetState extends State<AddressFormWidget> {
           decoration: InputDecoration(
             labelText:
                 'Address Line 1 (Street) ${widget.isRequired ? '*' : ''}',
-            hintText: 'House/Flat No., Street Name',
+            hintText: context.loc.houseFlatNoStreetName,
             prefixIcon: const Icon(Icons.home),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             enabledBorder: OutlineInputBorder(
@@ -257,8 +259,8 @@ class _AddressFormWidgetState extends State<AddressFormWidget> {
         TextFormField(
           controller: widget.line2Controller,
           decoration: InputDecoration(
-            labelText: 'Address Line 2',
-            hintText: 'Apartment, Suite, Building (Optional)',
+            labelText: context.loc.addressLine2,
+            hintText: context.loc.apartmentSuiteBuildingOptional,
             prefixIcon: const Icon(Icons.apartment),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             enabledBorder: OutlineInputBorder(
@@ -280,8 +282,8 @@ class _AddressFormWidgetState extends State<AddressFormWidget> {
         TextFormField(
           controller: widget.landmarkController,
           decoration: InputDecoration(
-            labelText: 'Landmark',
-            hintText: 'Nearby landmark (Optional)',
+            labelText: context.loc.landmark,
+            hintText: context.loc.nearbyLandmarkOptional,
             prefixIcon: const Icon(Icons.place),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             enabledBorder: OutlineInputBorder(
@@ -308,7 +310,7 @@ class _AddressFormWidgetState extends State<AddressFormWidget> {
                 controller: widget.cityController,
                 decoration: InputDecoration(
                   labelText: 'City ${widget.isRequired ? '*' : ''}',
-                  hintText: 'City name',
+                  hintText: context.loc.cityName,
                   prefixIcon: const Icon(Icons.location_city),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -342,7 +344,7 @@ class _AddressFormWidgetState extends State<AddressFormWidget> {
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   labelText: 'Pincode ${widget.isRequired ? '*' : ''}',
-                  hintText: '6 digits',
+                  hintText: context.loc.sixDigits,
                   prefixIcon: const Icon(Icons.pin_drop),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),

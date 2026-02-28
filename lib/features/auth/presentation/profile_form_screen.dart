@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/address_model.dart';
 import 'package:voicesewa_client/shared/models/client_model.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
@@ -56,8 +57,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       if (_nameController.text.trim().isEmpty ||
           _phoneController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Name and phone are required'),
+          SnackBar(
+            content: Text(context.loc.nameAndPhoneAreRequired),
             backgroundColor: Colors.red,
           ),
         );
@@ -110,8 +111,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile created successfully!'),
+          SnackBar(
+            content: Text(context.loc.profileCreatedSuccessfully),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
           ),
@@ -145,7 +146,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Complete Your Profile'),
+        title: Text(context.loc.completeYourProfile),
         centerTitle: true,
         elevation: 0,
       ),
@@ -163,14 +164,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     children: [
                       _buildSectionHeader(
                         icon: Icons.person,
-                        title: 'Personal Information',
+                        title: context.loc.personalInformation,
                       ),
                       const SizedBox(height: 16),
 
                       _buildTextField(
                         controller: _nameController,
-                        label: 'Full Name *',
-                        hint: 'Enter your full name',
+                        label: context.loc.fullName,
+                        hint: context.loc.enterYourFullName,
                         icon: Icons.person_outline,
                         validator: (v) => (v == null || v.trim().isEmpty)
                             ? 'Please enter your name'
@@ -180,8 +181,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
                       _buildTextField(
                         controller: _phoneController,
-                        label: 'Phone Number *',
-                        hint: '10-digit mobile number',
+                        label: context.loc.phoneNumber,
+                        hint: context.loc.tendigitMobileNumber,
                         icon: Icons.phone_outlined,
                         keyboardType: TextInputType.phone,
                         validator: (v) {
@@ -198,7 +199,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
                       _buildSectionHeader(
                         icon: Icons.location_on,
-                        title: 'Service Address',
+                        title: context.loc.serviceAddress,
                       ),
                       const SizedBox(height: 8),
 
@@ -208,7 +209,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           _skipAddress = v ?? false;
                           if (_skipAddress) _location = null;
                         }),
-                        title: const Text('Skip address (add later)'),
+                        title: Text(context.loc.skipAddressAddLater),
                         controlAffinity: ListTileControlAffinity.leading,
                         activeColor: ColorConstants.seed,
                       ),

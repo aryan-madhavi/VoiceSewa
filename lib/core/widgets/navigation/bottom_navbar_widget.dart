@@ -26,7 +26,7 @@ class BottomNavBar extends ConsumerWidget {
         return label != context.loc.voiceBotTitle
             ? NavigationDestination(icon: icon, label: label)
             : FloatingActionButton(
-                tooltip: 'Speak',
+                tooltip: context.loc.speak,
                 backgroundColor: isProcessing
                     ? Colors.grey.shade300
                     : Theme.of(context).colorScheme.primaryContainer,

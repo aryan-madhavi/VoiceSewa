@@ -103,5 +103,9 @@
   "voiceRecognition": "आवाज़ पहचान",
   "speakNow": "अब बोलें",
   "startSpeaking": "बोलना शुरू करें",
-  "noTextRecognized": "कोई टेक्स्ट पहचाना नहीं गया"
+  "noTextRecognized": "कोई टेक्स्ट पहचाना नहीं गया",
+  "workerNotAssigned": "वर्कर असाइन नहीं किया गया",
+  "rescheduled": "पुनर्निर्धारित",
+  "quoted": "उद्धृत",
+  "requested": "अनुरोधित"
 }

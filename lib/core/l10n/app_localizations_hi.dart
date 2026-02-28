@@ -277,4 +277,306 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get noTextRecognized => 'कोई टेक्स्ट पहचाना नहीं गया';
+
+  @override
+  String get loadingProfile => 'Loading profile...';
+
+  @override
+  String get locationCapturedAddressAutofilled =>
+      'Location captured & address auto-filled ✓';
+
+  @override
+  String get houseFlatNoStreetName => 'House/Flat No., Street Name';
+
+  @override
+  String get addressLine2 => 'Address Line 2';
+
+  @override
+  String get apartmentSuiteBuildingOptional =>
+      'Apartment, Suite, Building (Optional)';
+
+  @override
+  String get landmark => 'Landmark';
+
+  @override
+  String get nearbyLandmarkOptional => 'Nearby landmark (Optional)';
+
+  @override
+  String get cityName => 'City name';
+
+  @override
+  String get sixDigits => '6 digits';
+
+  @override
+  String get noJobsMatchTheSelectedFilters2 =>
+      'No jobs match the selected filters';
+
+  @override
+  String get noRecentRequests => 'No recent requests';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get jobDetails => 'Job Details';
+
+  @override
+  String get jobNotFound => 'Job not found';
+
+  @override
+  String get thankYouForYourFeedback => 'Thank you for your feedback!';
+
+  @override
+  String get areYouSureYouWantToCancelThisJob =>
+      'Are you sure you want to cancel this job?';
+
+  @override
+  String get no => 'No';
+
+  @override
+  String get jobCancelled => 'Job cancelled';
+
+  @override
+  String get yesCancel => 'Yes, Cancel';
+
+  @override
+  String get rescheduleJob => 'Reschedule Job';
+
+  @override
+  String get selectNewDate => 'Select new date:';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get jobRescheduled => 'Job rescheduled';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get addressSavedForFutureUse => 'Address saved for future use';
+
+  @override
+  String get pleaseSelectAService => 'Please select a service';
+
+  @override
+  String get pleaseSelectWhenYouWantTheJobDone =>
+      'Please select when you want the job done';
+
+  @override
+  String get pleaseFillRequiredAddressFields =>
+      'Please fill required address fields';
+
+  @override
+  String get pleaseCaptureLocationForTheAddress =>
+      'Please capture location for the address';
+
+  @override
+  String get pleaseSelectAnAddress => 'Please select an address';
+
+  @override
+  String get createJobRequest => 'Create Job Request';
+
+  @override
+  String get describeWhatYouNeedDone => 'Describe what you need done...';
+
+  @override
+  String get selectAddress => 'Select Address';
+
+  @override
+  String get oTPCopiedToClipboard => 'OTP copied to clipboard';
+
+  @override
+  String get copyOTP => 'Copy OTP';
+
+  @override
+  String get created => 'Created';
+
+  @override
+  String get addFeedback => 'Add Feedback';
+
+  @override
+  String get pleaseSelectAStarRating => 'Please select a star rating';
+
+  @override
+  String get writeACommentOptional => 'Write a comment (optional)';
+
+  @override
+  String get maybeLater => 'Maybe Later';
+
+  @override
+  String get voiceAssistant => 'Voice Assistant';
+
+  @override
+  String get assistantIsResponding => 'Assistant is responding...';
+
+  @override
+  String get tapTheMicToStartTalking => 'Tap the mic to start talking';
+
+  @override
+  String get quotations => 'Quotations';
+
+  @override
+  String get acceptQuotation => 'Accept Quotation';
+
+  @override
+  String get quotationAcceptedOTPGenerated =>
+      'Quotation accepted! OTP generated.';
+
+  @override
+  String get confirmAccept => 'Confirm Accept';
+
+  @override
+  String get rejectQuotation => 'Reject Quotation';
+
+  @override
+  String get reasonOptional => 'Reason (optional)';
+
+  @override
+  String get whyAreYouRejectingThis => 'Why are you rejecting this?';
+
+  @override
+  String get quotationRejected => 'Quotation rejected';
+
+  @override
+  String get reject => 'Reject';
+
+  @override
+  String get callWorker => 'Call worker';
+
+  @override
+  String get typeAMessage => 'Type a message…';
+
+  @override
+  String get estCost => 'Est. Cost';
+
+  @override
+  String get estTime => 'Est. Time';
+
+  @override
+  String get rejectionReason => 'Rejection Reason';
+
+  @override
+  String get withdrawalReason => 'Withdrawal Reason';
+
+  @override
+  String get viewed => 'Viewed';
+
+  @override
+  String get accepted => 'Accepted';
+
+  @override
+  String get rejected => 'Rejected';
+
+  @override
+  String get withdrawn => 'Withdrawn';
+
+  @override
+  String get updated => 'Updated';
+
+  @override
+  String get accept => 'Accept';
+
+  @override
+  String get contactWorker => 'Contact Worker';
+
+  @override
+  String get allServices => 'All Services';
+
+  @override
+  String get clearFilters => 'Clear Filters';
+
+  @override
+  String get twoKm => '2 km';
+
+  @override
+  String get fiveKm => '5 km';
+
+  @override
+  String get nameAndPhoneAreRequired => 'Name and phone are required';
+
+  @override
+  String get profileCreatedSuccessfully => 'Profile created successfully!';
+
+  @override
+  String get completeYourProfile => 'Complete Your Profile';
+
+  @override
+  String get personalInformation => 'Personal Information';
+
+  @override
+  String get fullName => 'Full Name *';
+
+  @override
+  String get enterYourFullName => 'Enter your full name';
+
+  @override
+  String get phoneNumber => 'Phone Number *';
+
+  @override
+  String get tendigitMobileNumber => '10-digit mobile number';
+
+  @override
+  String get serviceAddress => 'Service Address';
+
+  @override
+  String get skipAddressAddLater => 'Skip address (add later)';
+
+  @override
+  String get loginSuccessful => 'Login successful!';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get signIn => 'Sign In';
+
+  @override
+  String get signUp => 'Sign Up';
+
+  @override
+  String get accountCreatedSuccessfully => 'Account created successfully!';
+
+  @override
+  String get username => 'Username';
+
+  @override
+  String get confirmPassword => 'Confirm Password';
+
+  @override
+  String get speak => 'Speak';
+
+  @override
+  String get comingSoon => 'Coming Soon';
+
+  @override
+  String get comingSoon2 => 'Coming Soon ......';
+
+  @override
+  String get pageNotFound => 'Page not found';
+
+  @override
+  String get str_876667 => 'हिंदी';
+
+  @override
+  String get str_147662 => 'मराठी';
+
+  @override
+  String get str_112163 => 'ગુજરાતી';
+
+  @override
+  String get workerNotAssigned => 'वर्कर असाइन नहीं किया गया';
+
+  @override
+  String get rescheduled => 'पुनर्निर्धारित';
+
+  @override
+  String get quoted => 'उद्धृत';
+
+  @override
+  String get requested => 'अनुरोधित';
 }

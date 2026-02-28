@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/jobs/presentation/widgets/create_job_widgets.dart';
 import 'package:voicesewa_client/shared/models/address_model.dart';
 import 'package:voicesewa_client/features/jobs/providers/client_provider.dart';
@@ -119,8 +120,8 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Address saved for future use'),
+          SnackBar(
+            content: Text(context.loc.addressSavedForFutureUse),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
           ),
@@ -153,14 +154,14 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
     if (_selectedService == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please select a service')));
+      ).showSnackBar(SnackBar(content: Text(context.loc.pleaseSelectAService)));
       return;
     }
 
     if (_scheduledDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select when you want the job done'),
+        SnackBar(
+          content: Text(context.loc.pleaseSelectWhenYouWantTheJobDone),
         ),
       );
       return;
@@ -175,7 +176,7 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
           _cityController.text.trim().isEmpty ||
           _pincodeController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill required address fields')),
+          SnackBar(content: Text(context.loc.pleaseFillRequiredAddressFields)),
         );
         return;
       }
@@ -183,8 +184,8 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
       // Check if location is captured for new address
       if (_newAddressLocation == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please capture location for the address'),
+          SnackBar(
+            content: Text(context.loc.pleaseCaptureLocationForTheAddress),
             backgroundColor: Colors.orange,
           ),
         );
@@ -207,7 +208,7 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
     } else if (_selectedAddress == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please select an address')));
+      ).showSnackBar(SnackBar(content: Text(context.loc.pleaseSelectAnAddress)));
       return;
     }
 
@@ -264,7 +265,7 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
     return Scaffold(
       backgroundColor: ColorConstants.scaffold,
       appBar: AppBar(
-        title: const Text('Create Job Request'),
+        title: Text(context.loc.createJobRequest),
         backgroundColor: ColorConstants.appBar,
       ),
       body: SafeArea(
@@ -280,7 +281,7 @@ class _CreateJobScreenState extends ConsumerState<CreateJobScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => ref.invalidate(clientAddressesProvider),
-                  child: const Text('Retry'),
+                  child: Text(context.loc.retry),
                 ),
               ],
             ),

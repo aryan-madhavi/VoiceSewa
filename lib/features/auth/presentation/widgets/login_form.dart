@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 import 'package:voicesewa_client/features/auth/data/services/auth_service.dart';
 import 'package:voicesewa_client/features/auth/providers/profile_form_provider.dart';
@@ -60,10 +61,10 @@ class _LoginFormState extends ConsumerState<LoginForm> {
       _passwordCtrl.clear();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Login successful!'),
+        SnackBar(
+          content: Text(context.loc.loginSuccessful),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     } else {
@@ -91,10 +92,10 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           // Email field
           TextFormField(
             controller: _emailCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              prefixIcon: Icon(Icons.email_outlined),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: context.loc.email,
+              prefixIcon: const Icon(Icons.email_outlined),
+              border: const OutlineInputBorder(),
             ),
             keyboardType: TextInputType.emailAddress,
             enabled: !loading,
@@ -112,7 +113,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           TextFormField(
             controller: _passwordCtrl,
             decoration: InputDecoration(
-              labelText: 'Password',
+              labelText: context.loc.password,
               prefixIcon: const Icon(Icons.lock_outline),
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
@@ -144,9 +145,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                       color: Colors.white,
                     ),
                   )
-                : const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('Sign In'),
+                : Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text(context.loc.signIn),
                   ),
           ),
           const SizedBox(height: 16),
@@ -165,7 +166,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                     : () {
                         ref.read(authModeProvider.notifier).state = false;
                       },
-                child: const Text('Sign Up'),
+                child: Text(context.loc.signUp),
               ),
             ],
           ),

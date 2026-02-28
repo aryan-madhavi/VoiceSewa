@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/job_model.dart';
 import 'package:voicesewa_client/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_client/features/jobs/presentation/create_job_screen.dart';
@@ -16,7 +17,7 @@ class BookAgainPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorConstants.scaffold,
       appBar: AppBar(
-        title: const Text('Book Again'),
+        title: Text(context.loc.bookAgain),
         backgroundColor: ColorConstants.appBar,
       ),
       body: jobsAsync.when(
@@ -197,8 +198,8 @@ class _CompletedJobCard extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.refresh, size: 16),
-                    label: const Text(
-                      'Book Again',
+                    label: Text(
+                      context.loc.bookAgain,
                       style: TextStyle(fontSize: 13),
                     ),
                     style: TextButton.styleFrom(
@@ -220,7 +221,7 @@ class _CompletedJobCard extends StatelessWidget {
                   //   },
                   //   icon: const Icon(Icons.download, size: 16),
                   //   label: const Text(
-                  //     'Invoice',
+                  //     context.loc.invoice,
                   //     style: TextStyle(fontSize: 13),
                   //   ),
                   //   style: TextButton.styleFrom(
@@ -242,8 +243,8 @@ class _CompletedJobCard extends StatelessWidget {
                       );
                     },
                     icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-                    label: const Text(
-                      'Details',
+                    label: Text(
+                      context.loc.details,
                       style: TextStyle(fontSize: 13),
                     ),
                     style: TextButton.styleFrom(
@@ -334,7 +335,7 @@ class _EmptyState extends StatelessWidget {
                 );
               },
               icon: const Icon(Icons.add),
-              label: const Text('Book a Service'),
+              label: Text(context.loc.bookCTA),
               style: FilledButton.styleFrom(
                 backgroundColor: ColorConstants.seed,
                 foregroundColor: Colors.white,
@@ -387,7 +388,7 @@ class _ErrorState extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(context.loc.retry),
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorConstants.seed,
                 foregroundColor: Colors.white,

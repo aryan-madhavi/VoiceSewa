@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/quotations/prsentation/chat_screen.dart';
 import 'package:voicesewa_client/features/quotations/prsentation/widgets/quotation_widgets.dart';
 import 'package:voicesewa_client/features/jobs/providers/job_provider.dart';
@@ -21,13 +22,13 @@ class QuotationsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ColorConstants.scaffold,
       appBar: AppBar(
-        title: const Text('Quotations'),
+        title: Text(context.loc.quotations),
         backgroundColor: ColorConstants.appBar,
       ),
       body: jobAsync.when(
         data: (job) {
           if (job == null) {
-            return const Center(child: Text('Job not found'));
+            return Center(child: Text(context.loc.jobNotFound));
           }
           return quotationsAsync.when(
             data: (quotations) {
@@ -167,7 +168,7 @@ class QuotationCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Accept Quotation'),
+        title: Text(context.loc.acceptQuotation),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,7 +194,7 @@ class QuotationCard extends ConsumerWidget {
                     Text(
                       quotation.workerName.trim().isNotEmpty
                           ? quotation.workerName.trim()
-                          : 'Worker',
+                          : context.loc.worker,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
@@ -253,7 +254,7 @@ class QuotationCard extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.loc.cancel),
           ),
           FilledButton(
             onPressed: () async {
@@ -263,8 +264,8 @@ class QuotationCard extends ConsumerWidget {
                 await actions.acceptQuotation(jobId, quotation.id, scheduledAt);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Quotation accepted! OTP generated.'),
+                    SnackBar(
+                      content: Text(context.loc.quotationAcceptedOTPGenerated),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -279,7 +280,7 @@ class QuotationCard extends ConsumerWidget {
               }
             },
             style: FilledButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Confirm Accept'),
+            child: Text(context.loc.confirmAccept),
           ),
         ],
       ),
@@ -292,19 +293,19 @@ class QuotationCard extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reject Quotation'),
+        title: Text(context.loc.rejectQuotation),
         content: TextField(
           controller: reasonController,
-          decoration: const InputDecoration(
-            labelText: 'Reason (optional)',
-            hintText: 'Why are you rejecting this?',
+          decoration: InputDecoration(
+            labelText: context.loc.reasonOptional,
+            hintText: context.loc.whyAreYouRejectingThis,
           ),
           maxLines: 3,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(context.loc.cancel),
           ),
           FilledButton(
             onPressed: () async {
@@ -317,7 +318,7 @@ class QuotationCard extends ConsumerWidget {
                 await actions.rejectQuotation(jobId, quotation.id, reason);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Quotation rejected')),
+                    SnackBar(content: Text(context.loc.quotationRejected)),
                   );
                 }
               } catch (e) {
@@ -329,7 +330,7 @@ class QuotationCard extends ConsumerWidget {
               }
             },
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Reject'),
+            child: Text(context.loc.reject),
           ),
         ],
       ),

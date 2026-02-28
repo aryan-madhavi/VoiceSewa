@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/quotations/providers/chat_provider.dart';
 import 'package:voicesewa_client/features/quotations/prsentation/voice_call_page.dart';
 import 'package:voicesewa_client/shared/models/quotation_model.dart';
@@ -165,7 +166,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           // ── Call button (placeholder) ──────────────────────────────────
           IconButton(
             icon: const Icon(Icons.call),
-            tooltip: 'Call worker',
+            tooltip: context.loc.callWorker,
             onPressed: () => _callWorker(widget.workerName),
           ),
         ],
@@ -435,7 +436,7 @@ class _MessageInputBar extends StatelessWidget {
                 maxLines: 4,
                 textInputAction: TextInputAction.newline,
                 decoration: InputDecoration(
-                  hintText: 'Type a message…',
+                  hintText: context.loc.typeAMessage,
                   filled: true,
                   fillColor: Colors.grey.shade100,
                   contentPadding: const EdgeInsets.symmetric(

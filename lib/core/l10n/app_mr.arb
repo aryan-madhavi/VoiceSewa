@@ -103,5 +103,9 @@
   "voiceRecognition": "आवाज ओळख",
   "speakNow": "आता बोला",
   "startSpeaking": "बोलणे सुरू करा",
-  "noTextRecognized": "क कोणताही मजकूर ओळखला गेला नाही"
+  "noTextRecognized": "क कोणताही मजकूर ओळखला गेला नाही",
+  "workerNotAssigned": "कामगार नियुक्त केला नाही",
+  "rescheduled": "पुनर्नियोजित",
+  "quoted": "कोटेशन दिले",
+  "requested": "विनंती केली"
 }

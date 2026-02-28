@@ -14,6 +14,10 @@ class JobCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = job.statusColor;
 
+    // ✅ Translate the status key once — reuse below.
+    // localizedStatus() is defined in job_details_sheet.dart
+    final translatedStatus = localizedStatus(context, job.status);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -43,7 +47,8 @@ class JobCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                StatusBadge(status: job.status, color: color),
+                // ✅ Pass translated status string — not raw job.status
+                StatusBadge(status: translatedStatus, color: color),
               ],
             ),
 

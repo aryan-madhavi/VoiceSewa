@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/job_model.dart';
 import 'package:voicesewa_client/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_client/features/jobs/presentation/job_details_screen.dart';
@@ -33,10 +34,10 @@ class RecentRequestCard extends ConsumerWidget {
             recentJobsAsync.when(
               data: (jobs) {
                 if (jobs.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('No recent requests'),
+                      padding: const EdgeInsets.all(16),
+                      child: Text(context.loc.noRecentRequests),
                     ),
                   );
                 }

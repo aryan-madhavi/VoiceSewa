@@ -36,17 +36,17 @@ class AppBarWidget extends ConsumerWidget implements PreferredSizeWidget {
                     "English" //"🇺🇸 English"
                 ),
             ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'hi',  
-              child: Text('हिंदी'),
+              child: Text(context.loc.str_876667),
             ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
                value: 'mr',
-               child: Text('मराठी'),
+               child: Text(context.loc.str_147662),
             ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'gu',
-              child: Text('ગુજરાતી'),
+              child: Text(context.loc.str_112163),
             ),
           ],
         )

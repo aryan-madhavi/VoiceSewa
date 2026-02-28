@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/worker_model.dart';
 import 'package:voicesewa_client/features/search/presentation/widgets/worker_details_sheet.dart';
 
@@ -133,8 +134,8 @@ class WorkerCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           worker.available == true
-                              ? 'Available'
-                              : 'Unavailable',
+                              ? context.loc.available
+                              : context.loc.unavailable,
                           style: TextStyle(
                             fontSize: 12,
                             color: worker.available == true

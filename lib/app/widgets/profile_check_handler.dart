@@ -6,6 +6,7 @@ import 'package:voicesewa_client/features/auth/presentation/login_screen.dart';
 import 'package:voicesewa_client/features/auth/presentation/profile_form_screen.dart';
 import 'package:voicesewa_client/features/auth/providers/profile_form_provider.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 
 /// Determines whether to show profile setup or main app
 ///
@@ -76,14 +77,14 @@ class ProfileCheckHandler extends ConsumerWidget {
       },
       loading: () {
         print('⏳ Checking Firestore for profile...');
-        return const Scaffold(
+        return Scaffold(
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Loading profile...'),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(context.loc.loadingProfile),
               ],
             ),
           ),

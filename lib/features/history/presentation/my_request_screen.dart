@@ -6,6 +6,7 @@ import 'package:voicesewa_client/features/jobs/presentation/create_job_screen.da
 import 'package:voicesewa_client/shared/models/job_model.dart';
 import 'package:voicesewa_client/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_client/features/jobs/presentation/job_details_screen.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 
 // ==================== STATE PROVIDERS FOR FILTER & SORT ====================
 
@@ -15,8 +16,31 @@ final activeSortProvider = StateProvider<String>((ref) => 'newest');
 final completedStatusProvider = StateProvider<String>((ref) => 'All');
 final completedSortProvider = StateProvider<String>((ref) => 'newest');
 
+// ==================== HELPER: Translate job status key → localized string ====================
+
+String localizedJobStatus(BuildContext context, String statusKey) {
+  switch (statusKey.toLowerCase()) {
+    case 'scheduled':
+      return context.loc.scheduled;
+    case 'inprogress':
+    case 'in_progress':
+      return context.loc.inProgress;
+    case 'completed':
+      return context.loc.completed;
+    case 'cancelled':
+      return context.loc.cancelled;
+    case 'requested':
+      return context.loc.requested;
+    case 'quoted':
+      return context.loc.quoted;
+    case 'rescheduled':
+      return context.loc.rescheduled;
+    default:
+      return statusKey;
+  }
+}
+
 // ==================== MY REQUESTS PAGE ====================
-// ✅ OPTIMIZED VERSION - Removed fake delays and manual pagination
 
 class MyRequestsPage extends ConsumerStatefulWidget {
   const MyRequestsPage({super.key});
@@ -33,9 +57,6 @@ class _MyRequestsPageState extends ConsumerState<MyRequestsPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    // ✅ Removed scroll controller - not needed!
-    // ✅ Removed _visibleCount - ListView.builder handles this!
-    // ✅ Removed fake delays - instant loading!
   }
 
   @override
@@ -44,18 +65,17 @@ class _MyRequestsPageState extends ConsumerState<MyRequestsPage>
     super.dispose();
   }
 
-  // ✅ Filter and sort jobs in memory (same as before)
+  // ✅ Filter uses neutral keys — compare job.statusLabel (raw English key) to statusKey
   List<Job> _applyFilter(List<Job> jobs, String statusKey, String sortKey) {
     List<Job> filteredJobs = List.from(jobs);
 
-    // Apply status filter
+    // 'All' is the neutral key — skip filtering
     if (statusKey != 'All') {
       filteredJobs = filteredJobs.where((job) {
         return job.statusLabel.toLowerCase() == statusKey.toLowerCase();
       }).toList();
     }
 
-    // Apply sort
     filteredJobs.sort((a, b) {
       switch (sortKey) {
         case 'oldest':
@@ -69,19 +89,15 @@ class _MyRequestsPageState extends ConsumerState<MyRequestsPage>
     return filteredJobs;
   }
 
-  // ✅ TRUE lazy loading - ListView.builder does all the work!
   Widget _buildJobList(List<Job> jobs) {
     if (jobs.isEmpty) {
-      return const Center(child: Text('No jobs match the selected filters'));
+      return Center(child: Text(context.loc.noJobsMatchTheSelectedFilters2));
     }
 
-    // ✅ Simple and fast - no manual pagination needed!
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 16),
-      itemCount: jobs.length, // ✅ Use ALL jobs, not a subset
+      itemCount: jobs.length,
       itemBuilder: (context, index) {
-        // ✅ This only builds visible cards (3-4 at a time)
-        // ✅ As user scrolls, more are built automatically
         return _JobCard(job: jobs[index]);
       },
     );
@@ -96,13 +112,12 @@ class _MyRequestsPageState extends ConsumerState<MyRequestsPage>
       backgroundColor: ColorConstants.scaffold,
       appBar: canPop
           ? AppBar(
-              title: const Text('My Requests'),
+              title: Text(context.loc.myRequests),
               backgroundColor: ColorConstants.appBar,
             )
           : null,
       body: jobsAsync.when(
         data: (allJobs) {
-          // Separate active and completed jobs
           final activeJobs = allJobs.where((job) {
             return job.status == JobStatus.requested ||
                 job.status == JobStatus.quoted ||
@@ -121,20 +136,18 @@ class _MyRequestsPageState extends ConsumerState<MyRequestsPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Tab Bar Card
                 Card(
                   child: TabBar(
                     controller: _tabController,
                     labelColor: Colors.black87,
                     indicatorColor: Colors.black87,
-                    tabs: const [
-                      Tab(text: 'Active Jobs'),
-                      Tab(text: 'Completed Jobs'),
+                    tabs: [
+                      Tab(text: context.loc.activeJobs),
+                      Tab(text: context.loc.completedJobs),
                     ],
                   ),
                 ),
 
-                // Tab Views
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
@@ -151,15 +164,17 @@ class _MyRequestsPageState extends ConsumerState<MyRequestsPage>
                             sortKey,
                           );
 
+                          // Keys are neutral English keys used for filter logic
+                          // Values are localized display strings
                           final activeStatusMap = {
-                            'All': 'All',
-                            'Scheduled': 'Scheduled',
-                            'In Progress': 'In Progress',
+                            'All': context.loc.all,
+                            'Scheduled': context.loc.scheduled,
+                            'inProgress': context.loc.inProgress,
                           };
 
                           final sortMap = {
-                            'newest': 'Newest First',
-                            'oldest': 'Oldest First',
+                            'newest': context.loc.newestFirst,
+                            'oldest': context.loc.oldestFirst,
                           };
 
                           return Column(
@@ -189,14 +204,14 @@ class _MyRequestsPageState extends ConsumerState<MyRequestsPage>
                           );
 
                           final completedStatusMap = {
-                            'All': 'All',
-                            'Completed': 'Completed',
-                            'Cancelled': 'Cancelled',
+                            'All': context.loc.all,
+                            'Completed': context.loc.completed,
+                            'Cancelled': context.loc.cancelled,
                           };
 
                           final sortMap = {
-                            'newest': 'Newest First',
-                            'oldest': 'Oldest First',
+                            'newest': context.loc.newestFirst,
+                            'oldest': context.loc.oldestFirst,
                           };
 
                           return Column(
@@ -247,6 +262,14 @@ class _DynamicJobFilterBar extends ConsumerWidget {
     final selectedStatus = ref.watch(statusProvider);
     final selectedSort = ref.watch(sortProvider);
 
+    // Guard: if current value not in map keys (e.g. after locale change), fall back to first key
+    final safeStatus = statusOptions.containsKey(selectedStatus)
+        ? selectedStatus
+        : statusOptions.keys.first;
+    final safeSort = sortOptions.containsKey(selectedSort)
+        ? selectedSort
+        : sortOptions.keys.first;
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Padding(
@@ -256,21 +279,21 @@ class _DynamicJobFilterBar extends ConsumerWidget {
             // Status Dropdown
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: selectedStatus,
-                decoration: const InputDecoration(
-                  labelText: 'Status',
+                value: safeStatus,
+                decoration: InputDecoration(
+                  labelText: context.loc.status,
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
                   ),
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 items: statusOptions.entries.map((entry) {
                   return DropdownMenuItem(
-                    value: entry.key,
+                    value: entry.key, // neutral key — never translated
                     child: Text(
-                      entry.value,
+                      entry.value, // localized display label
                       style: const TextStyle(fontSize: 14),
                     ),
                   );
@@ -287,21 +310,21 @@ class _DynamicJobFilterBar extends ConsumerWidget {
             // Sort Dropdown
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: selectedSort,
-                decoration: const InputDecoration(
-                  labelText: 'Sort',
+                value: safeSort,
+                decoration: InputDecoration(
+                  labelText: context.loc.sort,
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
                   ),
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 items: sortOptions.entries.map((entry) {
                   return DropdownMenuItem(
-                    value: entry.key,
+                    value: entry.key, // neutral key
                     child: Text(
-                      entry.value,
+                      entry.value, // localized display label
                       style: const TextStyle(fontSize: 14),
                     ),
                   );
@@ -346,6 +369,9 @@ class _JobCard extends StatelessWidget {
   Widget build(BuildContext context) {
     Color color = job.statusColor;
 
+    // ✅ Translate the status label for display — filter logic still uses raw job.statusLabel
+    final translatedStatus = localizedJobStatus(context, job.statusLabel);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12, left: 4, right: 4),
       child: InkWell(
@@ -389,7 +415,8 @@ class _JobCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _StatusBadge(status: job.statusLabel, color: color),
+                  // ✅ Pass translated status string to badge
+                  _StatusBadge(status: translatedStatus, color: color),
                 ],
               ),
 
@@ -410,7 +437,7 @@ class _JobCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            job.workerName ?? 'Worker not assigned',
+                            job.workerName ?? context.loc.workerNotAssigned,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -451,13 +478,13 @@ class _JobCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.star, size: 16, color: Colors.amber),
-                        SizedBox(width: 4),
+                        const Icon(Icons.star, size: 16, color: Colors.amber),
+                        const SizedBox(width: 4),
                         Text(
-                          'Your Rating: —',
-                          style: TextStyle(
+                          '${context.loc.yourRating}: —',
+                          style: const TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 13,
                           ),
@@ -498,9 +525,9 @@ class _JobCard extends StatelessWidget {
                           );
                         },
                         icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text(
-                          'Book Again',
-                          style: TextStyle(fontSize: 13),
+                        label: Text(
+                          context.loc.bookAgain,
+                          style: const TextStyle(fontSize: 13),
                         ),
                         style: TextButton.styleFrom(
                           foregroundColor: ColorConstants.seed,
@@ -509,29 +536,6 @@ class _JobCard extends StatelessWidget {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                       ),
-
-                    // Invoice - Only for completed
-                    if (job.isCompleted)
-                      // TextButton.icon(
-                      //   onPressed: () {
-                      //     ScaffoldMessenger.of(context).showSnackBar(
-                      //       const SnackBar(
-                      //         content: Text('Invoice download coming soon'),
-                      //       ),
-                      //     );
-                      //   },
-                      //   icon: const Icon(Icons.download, size: 16),
-                      //   label: const Text(
-                      //     'Invoice',
-                      //     style: TextStyle(fontSize: 13),
-                      //   ),
-                      //   style: TextButton.styleFrom(
-                      //     foregroundColor: Colors.black87,
-                      //     padding: const EdgeInsets.symmetric(horizontal: 4),
-                      //     minimumSize: const Size(0, 36),
-                      //     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      //   ),
-                      // ),
 
                     // Details - Always visible
                     TextButton.icon(
@@ -544,9 +548,9 @@ class _JobCard extends StatelessWidget {
                         );
                       },
                       icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-                      label: const Text(
-                        'Details',
-                        style: TextStyle(fontSize: 13),
+                      label: Text(
+                        context.loc.details,
+                        style: const TextStyle(fontSize: 13),
                       ),
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.black87,

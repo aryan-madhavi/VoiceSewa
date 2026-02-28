@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 import 'package:voicesewa_client/features/auth/data/services/auth_service.dart';
 import 'package:voicesewa_client/features/auth/providers/profile_form_provider.dart';
@@ -67,10 +68,10 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
       _confirmPasswordCtrl.clear();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully!'),
+        SnackBar(
+          content: Text(context.loc.accountCreatedSuccessfully),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     } else {
@@ -99,8 +100,8 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           // Username field
           TextFormField(
             controller: _usernameCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Username',
+            decoration: InputDecoration(
+              labelText: context.loc.username,
               prefixIcon: Icon(Icons.person_outline),
               border: OutlineInputBorder(),
             ),
@@ -116,10 +117,10 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           // Email field
           TextFormField(
             controller: _emailCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              prefixIcon: Icon(Icons.email_outlined),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: context.loc.email,
+              prefixIcon: const Icon(Icons.email_outlined),
+              border: const OutlineInputBorder(),
             ),
             keyboardType: TextInputType.emailAddress,
             enabled: !loading,
@@ -137,7 +138,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           TextFormField(
             controller: _passwordCtrl,
             decoration: InputDecoration(
-              labelText: 'Password',
+              labelText: context.loc.password,
               prefixIcon: const Icon(Icons.lock_outline),
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
@@ -166,7 +167,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           TextFormField(
             controller: _confirmPasswordCtrl,
             decoration: InputDecoration(
-              labelText: 'Confirm Password',
+              labelText: context.loc.confirmPassword,
               prefixIcon: const Icon(Icons.lock_outline),
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
@@ -203,9 +204,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                       color: Colors.white,
                     ),
                   )
-                : const Padding(
+                : Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('Sign Up'),
+                    child: Text(context.loc.signUp),
                   ),
           ),
           const SizedBox(height: 16),
@@ -224,7 +225,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     : () {
                         ref.read(authModeProvider.notifier).state = true;
                       },
-                child: const Text('Sign In'),
+                child: Text(context.loc.signIn),
               ),
             ],
           ),

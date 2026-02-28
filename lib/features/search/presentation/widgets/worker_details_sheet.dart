@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/worker_model.dart';
 
 class WorkerDetailsSheet extends StatelessWidget {
@@ -138,7 +139,7 @@ class WorkerDetailsSheet extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  worker.available == true ? 'Available' : 'Unavailable',
+                  worker.available == true ? context.loc.available : context.loc.unavailable,
                   style: TextStyle(
                     fontSize: 13,
                     color: worker.available == true ? Colors.green : Colors.red,
@@ -153,7 +154,7 @@ class WorkerDetailsSheet extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'Skills',
+                context.loc.skills,
                 style: Theme.of(
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
@@ -211,8 +212,8 @@ class WorkerDetailsSheet extends StatelessWidget {
                   ),
                 ),
                 icon: const Icon(Icons.calendar_today, color: Colors.white),
-                label: const Text(
-                  'Book Now',
+                label: Text(
+                  context.loc.bookNow,
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),

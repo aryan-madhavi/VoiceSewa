@@ -23,6 +23,14 @@ class DynamicJobFilterBar extends ConsumerWidget {
     final selectedStatus = ref.watch(statusProvider);
     final selectedSort = ref.watch(sortProvider);
 
+    // ✅ Guard: fall back to first key if current value isn't valid in the map
+    final safeStatus = statusOptions.containsKey(selectedStatus)
+        ? selectedStatus
+        : statusOptions.keys.first;
+    final safeSort = sortOptions.containsKey(selectedSort)
+        ? selectedSort
+        : sortOptions.keys.first;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: Row(
@@ -31,27 +39,31 @@ class DynamicJobFilterBar extends ConsumerWidget {
           Expanded(
             child: DropdownButtonFormField<String>(
               isExpanded: true,
-              value: statusOptions.containsKey(selectedStatus)
-                  ? selectedStatus
-                  : statusOptions.keys.first,
+              value: safeStatus,
               icon: const Icon(Icons.filter_alt_outlined, size: 20),
               decoration: InputDecoration(
                 labelText: context.loc.filter,
                 labelStyle: const TextStyle(fontSize: 13),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               items: statusOptions.entries.map((entry) {
                 return DropdownMenuItem<String>(
-                  value: entry.key,
+                  value: entry.key, // ✅ neutral key — used for logic
                   child: Text(
-                    entry.value,
+                    entry.value, // ✅ localized label — shown to user
                     overflow: TextOverflow.ellipsis,
                   ),
                 );
               }).toList(),
               onChanged: (value) {
-                if (value != null) ref.read(statusProvider.notifier).state = value;
+                if (value != null)
+                  ref.read(statusProvider.notifier).state = value;
               },
             ),
           ),
@@ -60,27 +72,31 @@ class DynamicJobFilterBar extends ConsumerWidget {
           Expanded(
             child: DropdownButtonFormField<String>(
               isExpanded: true,
-              value: sortOptions.containsKey(selectedSort)
-                  ? selectedSort
-                  : sortOptions.keys.first,
+              value: safeSort,
               icon: const Icon(Icons.sort_outlined, size: 20),
               decoration: InputDecoration(
                 labelText: context.loc.sort,
                 labelStyle: const TextStyle(fontSize: 13),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               items: sortOptions.entries.map((entry) {
                 return DropdownMenuItem<String>(
-                  value: entry.key,
+                  value: entry.key, // ✅ neutral key — used for logic
                   child: Text(
-                    entry.value,
+                    entry.value, // ✅ localized label — shown to user
                     overflow: TextOverflow.ellipsis,
                   ),
                 );
               }).toList(),
               onChanged: (value) {
-                if (value != null) ref.read(sortProvider.notifier).state = value;
+                if (value != null)
+                  ref.read(sortProvider.notifier).state = value;
               },
             ),
           ),

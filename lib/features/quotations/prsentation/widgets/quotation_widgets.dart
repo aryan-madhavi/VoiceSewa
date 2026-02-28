@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/models/quotation_model.dart';
 import 'package:voicesewa_client/features/quotations/statusQueue/quotation_status_data.dart';
 
@@ -38,7 +39,7 @@ class QuotationWorkerHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final displayName = quotation.workerName.trim().isNotEmpty
         ? quotation.workerName.trim()
-        : 'Worker';
+        : context.loc.worker;
     final avatarLetter = displayName[0].toUpperCase();
 
     return Row(
@@ -202,7 +203,7 @@ class QuotationEstimates extends StatelessWidget {
             Expanded(
               child: InfoChip(
                 icon: Icons.currency_rupee,
-                label: 'Est. Cost',
+                label: context.loc.estCost,
                 value: cost,
               ),
             ),
@@ -210,7 +211,7 @@ class QuotationEstimates extends StatelessWidget {
             Expanded(
               child: InfoChip(
                 icon: Icons.access_time,
-                label: 'Est. Time',
+                label: context.loc.estTime,
                 value: time,
               ),
             ),
@@ -355,7 +356,7 @@ class QuotationDescription extends StatelessWidget {
           const SizedBox(height: 12),
           _ReasonBanner(
             icon: Icons.cancel_outlined,
-            label: 'Rejection Reason',
+            label: context.loc.rejectionReason,
             reason: quotation.rejectionReason!,
             color: Colors.red,
           ),
@@ -366,7 +367,7 @@ class QuotationDescription extends StatelessWidget {
           const SizedBox(height: 12),
           _ReasonBanner(
             icon: Icons.undo,
-            label: 'Withdrawal Reason',
+            label: context.loc.withdrawalReason,
             reason: quotation.withdrawalReason!,
             color: Colors.orange,
           ),
@@ -449,7 +450,7 @@ class _QuotationTimestamps extends StatelessWidget {
       entries.add(
         _TimestampEntry(
           icon: Icons.visibility_outlined,
-          label: 'Viewed',
+          label: context.loc.viewed,
           date: quotation.viewedAt!,
           color: Colors.blue,
         ),
@@ -459,7 +460,7 @@ class _QuotationTimestamps extends StatelessWidget {
       entries.add(
         _TimestampEntry(
           icon: Icons.check_circle_outline,
-          label: 'Accepted',
+          label: context.loc.accepted,
           date: quotation.acceptedAt!,
           color: Colors.green,
         ),
@@ -469,7 +470,7 @@ class _QuotationTimestamps extends StatelessWidget {
       entries.add(
         _TimestampEntry(
           icon: Icons.cancel_outlined,
-          label: 'Rejected',
+          label: context.loc.rejected,
           date: quotation.rejectedAt!,
           color: Colors.red,
         ),
@@ -479,7 +480,7 @@ class _QuotationTimestamps extends StatelessWidget {
       entries.add(
         _TimestampEntry(
           icon: Icons.undo,
-          label: 'Withdrawn',
+          label: context.loc.withdrawn,
           date: quotation.withdrawnAt!,
           color: Colors.orange,
         ),
@@ -489,7 +490,7 @@ class _QuotationTimestamps extends StatelessWidget {
       entries.add(
         _TimestampEntry(
           icon: Icons.update,
-          label: 'Updated',
+          label: context.loc.updated,
           date: quotation.updatedAt!,
           color: Colors.grey,
         ),
@@ -619,7 +620,7 @@ class QuotationActionButtons extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: onReject,
                 icon: const Icon(Icons.cancel, size: 18),
-                label: const Text('Reject'),
+                label: Text(context.loc.reject),
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
               ),
             ),
@@ -628,7 +629,7 @@ class QuotationActionButtons extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: onAccept,
                 icon: const Icon(Icons.check_circle, size: 18),
-                label: const Text('Accept'),
+                label: Text(context.loc.accept),
                 style: FilledButton.styleFrom(backgroundColor: Colors.green),
               ),
             ),
@@ -640,7 +641,7 @@ class QuotationActionButtons extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: onContact,
             icon: const Icon(Icons.chat_bubble_outline, size: 18),
-            label: const Text('Contact Worker'),
+            label: Text(context.loc.contactWorker),
             style: OutlinedButton.styleFrom(
               foregroundColor: ColorConstants.seed,
               side: const BorderSide(color: ColorConstants.seed),

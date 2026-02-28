@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
+import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/shared/data/services_data.dart';
 import 'package:voicesewa_client/shared/models/address_model.dart';
 
@@ -64,7 +65,7 @@ class ServiceDropdown extends StatelessWidget {
           }).toList(),
           onChanged: onServiceSelected,
           validator: (value) =>
-              value == null ? 'Please select a service' : null,
+              value == null ? context.loc.pleaseSelectAService : null,
         ),
       ],
     );
@@ -209,7 +210,7 @@ class JobDescriptionField extends StatelessWidget {
           controller: controller,
           maxLines: 4,
           decoration: InputDecoration(
-            hintText: 'Describe what you need done...',
+            hintText: context.loc.describeWhatYouNeedDone,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
           validator: (value) {
@@ -429,7 +430,7 @@ class SavedAddressDropdown extends StatelessWidget {
           isExpanded: true,
           value: selectedAddress,
           decoration: InputDecoration(
-            labelText: 'Select Address',
+            labelText: context.loc.selectAddress,
             prefixIcon: const Icon(Icons.location_on),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),

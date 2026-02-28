@@ -21,8 +21,8 @@ class RootScaffold extends ConsumerWidget {
 
     if (builder == null) {
       // Fallback in case the route is missing
-      return const Scaffold(
-        body: Center(child: Text('Page not found')),
+      return Scaffold(
+        body: Center(child: Text(context.loc.pageNotFound)),
       );
     }
 
