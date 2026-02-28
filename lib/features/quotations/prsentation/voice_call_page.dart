@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
@@ -43,46 +44,42 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
     _startCallSequence();
   }
 
-  /// Sends the notification to the worker so they open their call screen
-  Future<void> _sendCallNotification() async {
-    final url = Uri.parse("https://fomoha8938hutudns.app.n8n.cloud/webhook/call-notification");
-    try {
-      await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "receiverId": widget.workerId,
-          "jobId": widget.jobId,
-          "callerName": "Client",
-          "type": "voice_call",
-          "goToCollection": "workers"
-        }),
-      );
-    } catch (e) {
-      debugPrint("FCM Notification Error: $e");
-    }
-  }
+  // Future<void> _sendCallNotification() async {
+  //   final url = Uri.parse("https://fomoha8938hutudns.app.n8n.cloud/webhook/call-notification");
+  //   try {
+  //     await http.post(
+  //       url,
+  //       headers: {"Content-Type": "application/json"},
+  //       body: jsonEncode({
+  //         "receiverId": widget.workerId,
+  //         "jobId": widget.jobId,
+  //         "callerName": "Client",
+  //         "type": "voice_call",
+  //         "goToCollection": "workers"
+  //       }),
+  //     );
+  //   } catch (e) {
+  //     debugPrint("FCM Notification Error: $e");
+  //   }
+  // }
 
   Future<void> _startCallSequence() async {
     // 1. Notify the worker
-    await _sendCallNotification();
+    // await _sendCallNotification();
     // 2. Initialize Agora
     _initAgora();
   }
 
   Future<void> _initAgora() async {
-    // Request permissions
     await [Permission.microphone].request();
 
     _engine = createAgoraRtcEngine();
 
-    // Initialize with Test App ID
     await _engine.initialize(const RtcEngineContext(
       appId: tempAppId,
       channelProfile: ChannelProfileType.channelProfileCommunication,
     ));
 
-    // Event Handlers
     _engine.registerEventHandler(RtcEngineEventHandler(
       onJoinChannelSuccess: (connection, elapsed) {
         debugPrint("CLIENT SUCCESS: Joined ${connection.channelId}");
@@ -97,10 +94,9 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
 
     await _engine.setAudioProfile(
       profile: AudioProfileType.audioProfileDefault,
-      scenario: AudioScenarioType.audioScenarioGameStreaming,
+      scenario: AudioScenarioType.audioScenarioChatroom,
     );
 
-    // Join the STATIC channel used for testing
     await _engine.joinChannel(
       token: tempToken,
       channelId: staticChannelName,
@@ -117,26 +113,52 @@ class _VoiceCallPageState extends State<VoiceCallPage> {
     if (await _audioRecorder.hasPermission()) {
       setState(() => _isTranslating = true);
 
-      final config = const RecordConfig(encoder: AudioEncoder.wav);
-      await _audioRecorder.start(config, path: 'live_translate.wav');
+      // 1. Use a proper temporary path for cross-platform reliability
+      final directory = await Directory.systemTemp.path;
+      final filePath = '$directory/live_translate.wav';
+
+      final config = const RecordConfig(
+          encoder: AudioEncoder.wav,
+          bitRate: 128000,
+          sampleRate: 16000 // Better for AI Speech-to-Text
+      );
+
+      await _audioRecorder.start(config, path: filePath);
       await Future.delayed(const Duration(seconds: 4));
       final path = await _audioRecorder.stop();
 
       if (path != null) {
         final url = Uri.parse("https://fomoha8938hutudns.app.n8n.cloud/webhook/translate-call");
+
         var request = http.MultipartRequest('POST', url);
-        request.fields['translate_to'] = 'hi';
-        request.files.add(await http.MultipartFile.fromPath('audio_to_translate', path));
+
+        // --- ADD THESE FIELDS FOR YOUR NEW AI WORKFLOW ---
+        request.fields['uid'] = widget.workerId; // The ID n8n needs for Firestore
+        request.fields['type'] = 'client';      // Identify the role
+        request.fields['translate_to'] = 'hi';  // Language preference
+
+        request.files.add(await http.MultipartFile.fromPath(
+          'audio_to_translate',
+          path,
+          contentType: http.MediaType('audio', 'wav'), // Helps n8n parse it correctly
+        ));
 
         try {
           var streamedResponse = await request.send();
           var response = await http.Response.fromStream(streamedResponse);
 
+          debugPrint("Status Code: ${response.statusCode}");
+
           if (response.statusCode == 200) {
-            await _audioPlayer.play(BytesSource(response.bodyBytes), mode: PlayerMode.lowLatency);
+            await _audioPlayer.play(
+                BytesSource(response.bodyBytes, mimeType: 'audio/wav'),
+                mode: PlayerMode.lowLatency
+            );
+          } else {
+            debugPrint("Server Error: ${response.body}");
           }
         } catch (e) {
-          debugPrint("Translation Webhook Error: $e");
+          debugPrint("Network/Webhook Error: $e");
         }
       }
       if (mounted) setState(() => _isTranslating = false);
