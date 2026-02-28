@@ -825,31 +825,34 @@ class JobRepository {
         .snapshots();
   }
 
-  Future<bool> sendMessage({
+  Future<String?> sendMessage({
     required String jobId,
     required String quotationId,
     required String senderUid,
     required String senderName,
-    required String text,
+    required String originalMsg,
     required bool isWorker,
   }) async {
     try {
-      await _jobs
+      final docRef = _firestore
+          .collection('jobs')
           .doc(jobId)
           .collection('quotations')
           .doc(quotationId)
           .collection('messages')
-          .add({
-            'sender_uid': senderUid,
-            'sender_name': senderName,
-            'text': text,
-            'is_worker': isWorker,
-            'sent_at': FieldValue.serverTimestamp(),
-          });
-      return true;
+          .doc();
+
+      await docRef.set({
+        'sender_uid': senderUid,
+        'sender_name': senderName,
+        'originalMsg': originalMsg,
+        'is_worker': isWorker,
+        'sent_at': FieldValue.serverTimestamp(),
+      });
+
+      return docRef.id;
     } catch (e) {
-      print('❌ sendMessage error: $e');
-      return false;
+      return null;
     }
   }
 

@@ -274,6 +274,11 @@ final clientPhoneProvider = FutureProvider.autoDispose.family<String?, String>((
   return ref.watch(jobRepositoryProvider).fetchClientPhone(clientUid);
 });
 
+final clientProfileProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, clientUid) async {
+  final snap = await FirebaseFirestore.instance.collection('users').doc(clientUid).get();
+  return snap.data();
+});
+
 // ── Verify OTP ────────────────────────────────────────────────────────────
 
 final verifyOtpProvider =
@@ -352,58 +357,69 @@ final chatMessagesProvider = StreamProvider.autoDispose
 // ── Send message ──────────────────────────────────────────────────────────
 
 final sendMessageProvider =
-    Provider<
-      Future<bool> Function({
-        required String jobId,
-        required String quotationId,
-        required String text,
-        required String senderName,
-      })
-    >((ref) {
-      return ({
-        required jobId,
-        required quotationId,
-        required text,
-        required senderName,
-      }) async {
-        final uid = ref.read(currentWorkerUidProvider);
-        if (uid.isEmpty) return false;
-        return ref
-            .read(jobRepositoryProvider)
-            .sendMessage(
-              jobId: jobId,
-              quotationId: quotationId,
-              senderUid: uid,
-              senderName: senderName,
-              text: text,
-              isWorker: true,
-            );
-      };
-    });
+Provider<
+    Future<String?> Function({
+    required String jobId,
+    required String quotationId,
+    required String originalMsg,
+    required String senderName,
+    })
+>((ref) {
+  return ({
+    required jobId,
+    required quotationId,
+    required originalMsg,
+    required senderName,
+  }) async {
+    final uid = ref.read(currentWorkerUidProvider);
+    if (uid.isEmpty) return null; // Return null if no user
+
+    return ref
+        .read(jobRepositoryProvider)
+        .sendMessage(
+      jobId: jobId,
+      quotationId: quotationId,
+      senderUid: uid,
+      senderName: senderName,
+      originalMsg: originalMsg,
+      isWorker: true,
+    );
+  };
+});
 
 // ── Chat message model ────────────────────────────────────────────────────
 
 class ChatMessage {
   final String senderUid;
   final String senderName;
-  final String text;
+  final String originalMsg;
+  final Map<String, String> translated; // Add this field
   final bool isWorker;
   final DateTime? sentAt;
 
   const ChatMessage({
     required this.senderUid,
     required this.senderName,
-    required this.text,
+    required this.originalMsg,
+    required this.translated,
     required this.isWorker,
     this.sentAt,
   });
 
   factory ChatMessage.fromDoc(DocumentSnapshot doc) {
     final map = doc.data() as Map<String, dynamic>;
+
+    // Parse the translated map safely
+    final translatedMap = Map<String, dynamic>.from(map['translated'] ?? {});
+    final Map<String, String> cleanTranslations = translatedMap.map(
+          (key, value) => MapEntry(key, value.toString()),
+    );
+
     return ChatMessage(
       senderUid: map['sender_uid'] as String? ?? '',
       senderName: map['sender_name'] as String? ?? '',
-      text: map['text'] as String? ?? '',
+      originalMsg: map['originalMsg'] as String? ?? '',
+      translated: cleanTranslations,
       isWorker: map['is_worker'] as bool? ?? false,
       sentAt: (map['sent_at'] as Timestamp?)?.toDate(),
     );

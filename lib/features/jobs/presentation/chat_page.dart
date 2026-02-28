@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
+
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
+import 'package:voicesewa_worker/features/jobs/presentation/voice_call_page.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
+import '../../../core/providers/language_provider.dart';
 
 class ChatPage extends ConsumerStatefulWidget {
   final JobModel job;
-  // messages live at jobs/{jobId}/quotations/{quotationId}/messages
   final String quotationId;
 
   const ChatPage({super.key, required this.job, required this.quotationId});
@@ -42,52 +46,82 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Future<void> _send() async {
-    final text = _msgCtrl.text.trim();
-    if (text.isEmpty || _sending) return;
+    final originalMsg = _msgCtrl.text.trim();
+    if (originalMsg.isEmpty || _sending) return;
+
     _msgCtrl.clear();
     setState(() => _sending = true);
 
-    final uid = ref.read(currentWorkerUidProvider);
-    final profile = ref.read(workerProfileStreamProvider(uid)).value;
+    try {
+      final uid = ref.read(currentWorkerUidProvider);
+      final profile = ref.read(workerProfileStreamProvider(uid)).value;
 
-    await ref.read(sendMessageProvider)(
-      jobId: widget.job.jobId,
-      quotationId: widget.quotationId,
-      text: text,
-      senderName: profile?.name ?? 'Worker',
-    );
+      final String? newMessageId = await ref.read(sendMessageProvider)(
+        jobId: widget.job.jobId,
+        quotationId: widget.quotationId,
+        originalMsg: originalMsg,
+        senderName: profile?.name ?? 'Worker',
+      );
 
-    if (mounted) {
-      setState(() => _sending = false);
-      _scrollToBottom();
+      if (newMessageId != null) {
+        await _chatTranslationN8NWebhook(
+          jobId: widget.job.jobId,
+          quotationId: widget.quotationId,
+          messageId: newMessageId,
+        );
+      }
+    } catch (e) {
+      debugPrint("Failed to send: $e");
+    } finally {
+      if (mounted) {
+        setState(() => _sending = false);
+        _scrollToBottom();
+      }
     }
   }
 
-  Future<void> _callClient() async {
-    String? phone = widget.job.clientPhone;
-    if (phone == null || phone.isEmpty) {
-      phone = await ref
-          .read(jobRepositoryProvider)
-          .fetchClientPhone(widget.job.clientUid);
-    }
-    if (phone == null || phone.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Client phone number not available'),
-            backgroundColor: ColorConstants.errorRed,
-          ),
+  Future<void> _chatTranslationN8NWebhook({
+   required String jobId,
+   required String quotationId,
+   required String messageId,
+  })async{
+      final url = Uri.parse("https://fomoha8938hutudns.app.n8n.cloud/webhook/translate");
+
+      try {
+        final response = await http.post(
+          url,
+          headers: {"Content-Type" : "application/json"},
+          body: jsonEncode({
+            "jobId": jobId,
+            "quotationId": quotationId,
+            "messageId": messageId,
+          }),
         );
+        if (response.statusCode != 200){
+          debugPrint("Chat Translation N8N Webhook Error: ${response.statusCode}");
+        }
       }
-      return;
+      catch(e){
+        debugPrint("Failed to reach N8N: $e");
+      }
     }
-    final uri = Uri(scheme: 'tel', path: phone);
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
+
+  Future<void> _callClient(String clientName) async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VoiceCallPage(
+          // channelId: widget.job.jobId,
+          clientName: clientName,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Watch messages at the correct sub-path via (jobId, quotationId) key
+    final clientAsync = ref.watch(clientProfileProvider(widget.job.clientUid));
+    final clientName = clientAsync.value?['name'] ?? 'Client';
     final messages = ref.watch(
       chatMessagesProvider((widget.job.jobId, widget.quotationId)),
     );
@@ -118,7 +152,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: GestureDetector(
-              onTap: _callClient,
+              onTap: () => _callClient(clientName),
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -266,94 +300,67 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
 // ── Chat Bubble ────────────────────────────────────────────────────────────
 
-class _Bubble extends StatelessWidget {
+class _Bubble extends ConsumerWidget { // Change to ConsumerWidget
   final ChatMessage msg;
   const _Bubble({required this.msg});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) { // Add WidgetRef
     final isMe = msg.isWorker;
     final time = msg.sentAt != null ? _fmt(msg.sentAt!) : '';
+
+    final currentLocale = ref.watch(localeProvider);
+    final String langCode = currentLocale.languageCode;
+
+    final String displayMsg = msg.translated[langCode] ?? msg.originalMsg;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
-        mainAxisAlignment: isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
-            CircleAvatar(
+            const CircleAvatar(
               radius: 14,
               backgroundColor: ColorConstants.dividerGrey,
-              child: const Icon(
-                Icons.person_outline,
-                size: 16,
-                color: ColorConstants.textGrey,
-              ),
+              child: Icon(Icons.person_outline, size: 16, color: ColorConstants.textGrey),
             ),
             const SizedBox(width: 8),
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: isMe
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 if (!isMe)
                   Padding(
                     padding: const EdgeInsets.only(left: 4, bottom: 3),
                     child: Text(
                       msg.senderName,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: ColorConstants.textGrey,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: const TextStyle(fontSize: 11, color: ColorConstants.textGrey, fontWeight: FontWeight.w500),
                     ),
                   ),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: isMe
-                        ? ColorConstants.primaryBlue
-                        : ColorConstants.pureWhite,
+                    color: isMe ? ColorConstants.primaryBlue : ColorConstants.pureWhite,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
                       bottomLeft: Radius.circular(isMe ? 16 : 4),
                       bottomRight: Radius.circular(isMe ? 4 : 16),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: ColorConstants.shadowBlack.withOpacity(0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                   child: Text(
-                    msg.text,
+                    displayMsg, // <--- Use the displayMsg variable here
                     style: TextStyle(
                       fontSize: 14,
-                      color: isMe
-                          ? ColorConstants.pureWhite
-                          : ColorConstants.textDark,
+                      color: isMe ? ColorConstants.pureWhite : ColorConstants.textDark,
                     ),
                   ),
                 ),
                 const SizedBox(height: 3),
-                Text(
-                  time,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: ColorConstants.textGrey,
-                  ),
-                ),
+                Text(time, style: const TextStyle(fontSize: 10, color: ColorConstants.textGrey)),
               ],
             ),
           ),
@@ -362,6 +369,7 @@ class _Bubble extends StatelessWidget {
       ),
     );
   }
+
 
   String _fmt(DateTime dt) {
     final h = dt.hour > 12

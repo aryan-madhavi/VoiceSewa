@@ -1,0 +1,3 @@
+-keep class io.agora.** { *; }
+-dontwarn io.agora.**
+-keep class com.google.firebase.** { *; }

@@ -60,6 +60,11 @@ dependencies:
   image_picker: ^1.2.1
   firebase_storage: ^13.0.6
   fl_chart: ^1.1.1
+  agora_rtc_engine: ^6.3.2
+  record: ^6.2.0
+  audioplayers: ^6.5.1
+#  flutter_phone_direct_caller: ^2.1.1
+
 
 
 dev_dependencies:
