@@ -97,6 +97,7 @@ class QuotationCard extends ConsumerWidget {
             jobId: jobId,
             quotationId: quotation.id,
             workerName: quotation.workerName,
+            workerId: quotation.workerUid,
           ),
         ),
       );

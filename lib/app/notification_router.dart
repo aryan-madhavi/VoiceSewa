@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_client/core/providers/navbar_page_provider.dart';
+import 'package:voicesewa_client/features/auth/providers/auth_provider.dart';
 import 'package:voicesewa_client/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_client/features/jobs/presentation/job_details_screen.dart';
 import 'package:voicesewa_client/features/quotations/prsentation/quotations_screen.dart';
@@ -40,7 +41,7 @@ class NotificationRouter {
 
       // ── New message from worker → open ChatScreen directly ────────────────
       case 'new_message':
-        await _openChat(context, ref, jobId, quotationId, workerName);
+        await _openChat(context, ref, jobId, quotationId, workerName, ref.read(currentUserIdProvider));
         break;
 
       default:
@@ -101,6 +102,7 @@ class NotificationRouter {
     String? jobId,
     String? quotationId,
     String? workerName,
+    String? workerId
   ) async {
     if (jobId == null || jobId.isEmpty) {
       print('⚠️ NotificationRouter — no jobId for chat, switching to history');
@@ -112,6 +114,14 @@ class NotificationRouter {
       // No quotation ID — fall back to job details
       print(
         '⚠️ NotificationRouter — no quotationId, falling back to job details',
+      );
+      _openJobDetails(context, ref, jobId);
+      return;
+    }
+
+    if (workerId == null) {
+      print(
+        '⚠️ NotificationRouter — no workerId, falling back to job details',
       );
       _openJobDetails(context, ref, jobId);
       return;
@@ -137,6 +147,7 @@ class NotificationRouter {
           jobId: jobId,
           quotationId: quotationId,
           workerName: resolvedWorkerName,
+          workerId: workerId,
         ),
       ),
     );

@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
 import 'package:voicesewa_client/features/quotations/providers/chat_provider.dart';
+import 'package:voicesewa_client/features/quotations/prsentation/voice_call_page.dart';
 import 'package:voicesewa_client/shared/models/quotation_model.dart';
+
+import '../../../core/providers/language_provider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String jobId;
   final String quotationId;
   final String workerName;
+  final String workerId;
 
   const ChatScreen({
     super.key,
     required this.jobId,
     required this.quotationId,
     required this.workerName,
+    required this.workerId,
   });
 
   @override
@@ -46,35 +54,76 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Future<void> _sendMessage() async {
-    final text = _textController.text.trim();
-    if (text.isEmpty || _isSending) return;
+    final originalMsg = _textController.text.trim();
+    if (originalMsg.isEmpty || _isSending) return;
 
     setState(() => _isSending = true);
     _textController.clear();
 
     try {
-      await ref
+      final String? newMessageId = await ref
           .read(chatActionsProvider)
           .sendMessage(
             jobId: widget.jobId,
             quotationId: widget.quotationId,
-            text: text,
+            originalMsg: originalMsg,
           );
+
+      if (newMessageId != null) {
+        await _chatTranslationN8NWebhook(
+          jobId: widget.jobId,
+          quotationId: widget.quotationId,
+          messageId: newMessageId,
+        );
+      }
+
       _scrollToBottom();
     } catch (e) {
       if (mounted) {
-        // Restore text if send failed
-        _textController.text = text;
+        _textController.text = originalMsg;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Failed to send: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
+  }
+
+  Future<void> _chatTranslationN8NWebhook({
+    required String jobId,
+    required String quotationId,
+    required String messageId,
+  }) async {
+    final url = Uri.parse("https://fomoha8938hutudns.app.n8n.cloud/webhook/translate");
+
+    try {
+      await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "jobId": jobId,
+          "quotationId": quotationId,
+          "messageId": messageId,
+        }),
+      );
+    } catch (e) {
+      debugPrint("Failed to reach N8N: $e");
+    }
+  }
+
+  Future<void> _callWorker(String workerName) async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VoiceCallPage(
+          jobId: widget.jobId,
+          workerId: widget.workerId,
+          // channelId: widget.jobId,
+          workerName: workerName,
+        ),
+      ),
+    );
   }
 
   @override
@@ -117,14 +166,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           IconButton(
             icon: const Icon(Icons.call),
             tooltip: 'Call worker',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Calling feature coming soon'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
+            onPressed: () => _callWorker(widget.workerName),
           ),
         ],
       ),
@@ -270,7 +312,7 @@ class _DateSeparator extends StatelessWidget {
 
 // ── Message bubble ─────────────────────────────────────────────────────────
 
-class _MessageBubble extends StatelessWidget {
+class _MessageBubble extends ConsumerWidget { // Changed to ConsumerWidget
   final ChatMessage message;
   final bool isMe;
 
@@ -283,7 +325,13 @@ class _MessageBubble extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+
+    final currentLocale = ref.watch(localeProvider);
+    final String langCode = currentLocale.languageCode;
+
+    final String displayMsg = message.translated[langCode] ?? message.originalMsg;
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -330,7 +378,7 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ),
             Text(
-              message.text,
+              displayMsg,
               style: TextStyle(
                 fontSize: 14,
                 color: isMe ? Colors.white : Colors.black87,

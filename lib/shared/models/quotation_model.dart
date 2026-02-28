@@ -8,7 +8,8 @@ class ChatMessage {
   final String id;
   final String senderUid;
   final String senderName;
-  final String text;
+  final String originalMsg;
+  final Map<String, dynamic> translated;
   final bool isWorker;
   final DateTime sentAt;
 
@@ -16,7 +17,8 @@ class ChatMessage {
     required this.id,
     required this.senderUid,
     required this.senderName,
-    required this.text,
+    required this.originalMsg,
+    required this.translated,
     required this.isWorker,
     required this.sentAt,
   });
@@ -26,7 +28,8 @@ class ChatMessage {
       id: id,
       senderUid: map['sender_uid'] as String? ?? '',
       senderName: map['sender_name'] as String? ?? '',
-      text: map['text'] as String? ?? '',
+      originalMsg: map['originalMsg'] as String? ?? '',
+      translated: map['translated'] as Map<String, dynamic>? ?? {},
       isWorker: map['is_worker'] as bool? ?? false,
       sentAt: map['sent_at'] != null
           ? (map['sent_at'] as Timestamp).toDate()
@@ -37,7 +40,8 @@ class ChatMessage {
   Map<String, dynamic> toMap() => {
     'sender_uid': senderUid,
     'sender_name': senderName,
-    'text': text,
+    'originalMsg': originalMsg,
+    'translated': translated,
     'is_worker': isWorker,
     'sent_at': Timestamp.fromDate(sentAt),
   };
