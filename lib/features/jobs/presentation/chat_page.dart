@@ -111,7 +111,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       context,
       MaterialPageRoute(
         builder: (context) => VoiceCallPage(
-          channelId: widget.job.jobId,
+          // channelId: widget.job.jobId,
           clientName: clientName,
         ),
       ),
