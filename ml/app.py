@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 import pickle
+import random
 import pandas as pd
 import datetime
 import os
@@ -68,13 +69,12 @@ def generate_forecast(season):
 
         for job in JOBS:
 
+          
+
             input_data = {
-                "district": district,
-                "season": season,
-                "jobType": job,
-                "jobsCompleted": 200,
-                "experienceYears": 8,
-                "isMultiTalented": 1
+                "jobsCompleted": random.randint(100, 400),
+                "experienceYears": random.randint(3, 15),
+                "isMultiTalented": random.choice([0, 1])
             }
 
             # Create dataframe
@@ -166,4 +166,4 @@ def next_forecast():
 # Run Server
 # ---------------------------------
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0", port=5000)
