@@ -9,7 +9,9 @@ import 'package:voicesewa_worker/core/constants/app_constants.dart';
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/core/providers/language_provider.dart';
 import 'package:voicesewa_worker/core/providers/session_provider.dart';
+import 'package:voicesewa_worker/features/auth/presentation/widgets/aadhaar_verification_section.dart';
 import 'package:voicesewa_worker/features/auth/providers/profile_form_provider.dart';
+import 'package:voicesewa_worker/features/auth/providers/aadhaar_verification_provider.dart';
 import 'package:voicesewa_worker/features/profile/data/services/profile_image_service.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/shared/data/service_data.dart';
@@ -278,6 +280,17 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
 
       final saveProfile = ref.read(saveWorkerProfileProvider);
       final success = await saveProfile(worker);
+
+      // ── Step 3: Merge Aadhaar verification data if verified ────────────
+      final aadhaarState = ref.read(aadhaarVerificationProvider);
+      if (success && aadhaarState.isVerified && aadhaarState.data != null) {
+        final repo = ref.read(workerProfileRepositoryProvider);
+        await repo.updateFields(
+          firebaseUser.uid,
+          aadhaarState.data!.toFirestoreMap(),
+        );
+        print('✅ Aadhaar verification saved to Firestore');
+      }
 
       if (!mounted) return;
 
@@ -569,6 +582,37 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                     Icons.description_outlined,
                     alignLabel: true,
                   ),
+                ),
+                const SizedBox(height: 32),
+
+                // ── Aadhaar Verification ──────────────────────────────────────
+                _sectionHeader(
+                  'Aadhaar Verification',
+                  Icons.verified_user_outlined,
+                ),
+                const SizedBox(height: 12),
+                AadhaarVerificationSection(
+                  onVerified: (data) {
+                    // Prefill name only if user hasn't typed anything yet
+                    if (data.name != null &&
+                        _nameController.text.trim().isEmpty) {
+                      _nameController.text = data.name!;
+                    }
+                    // Prefill pincode from Aadhaar if empty
+                    if (data.pincode != null &&
+                        _pincodeController.text.trim().isEmpty) {
+                      _pincodeController.text = data.pincode!;
+                    }
+                    // Prefill city (district) from Aadhaar if empty
+                    if (data.district != null &&
+                        _cityController.text.trim().isEmpty) {
+                      _cityController.text = data.district!;
+                    }
+                    _showSnackBar(
+                      '✅ Aadhaar verified! Fields pre-filled for you.',
+                      ColorConstants.successGreen,
+                    );
+                  },
                 ),
                 const SizedBox(height: 32),
 

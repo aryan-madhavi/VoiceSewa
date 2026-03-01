@@ -32,6 +32,7 @@ class WorkerModel {
   final WorkerAddress? address;
   final WorkerJobs jobs;
   final List<WorkerReview> reviews;
+  final bool isWorkerVerified;
 
   WorkerModel({
     required this.workerId,
@@ -46,6 +47,7 @@ class WorkerModel {
     this.address,
     WorkerJobs? jobs,
     this.reviews = const [],
+    this.isWorkerVerified = false,
   }) : jobs = jobs ?? WorkerJobs();
 
   Map<String, dynamic> toMap() => {
@@ -60,6 +62,7 @@ class WorkerModel {
     'address': address?.toMap(),
     'jobs': jobs.toMap(),
     'reviews': reviews.map((r) => r.toMap()).toList(),
+    'is_worker_verified': isWorkerVerified,
   };
 
   factory WorkerModel.fromMap(String uid, Map<String, dynamic> map) {
@@ -79,6 +82,7 @@ class WorkerModel {
       jobs: map['jobs'] != null
           ? WorkerJobs.fromMap(map['jobs'] as Map<String, dynamic>)
           : WorkerJobs(),
+      isWorkerVerified: map['is_worker_verified'] as bool? ?? false,
       reviews:
           (map['reviews'] as List?)
               ?.map((r) => WorkerReview.fromMap(r as Map<String, dynamic>))
@@ -102,6 +106,7 @@ class WorkerModel {
     WorkerAddress? address,
     WorkerJobs? jobs,
     List<WorkerReview>? reviews,
+    bool? isWorkerVerified,
   }) {
     return WorkerModel(
       workerId: workerId,
@@ -115,7 +120,9 @@ class WorkerModel {
       fcmToken: fcmToken ?? this.fcmToken,
       address: address ?? this.address,
       jobs: jobs ?? this.jobs,
+
       reviews: reviews ?? this.reviews,
+      isWorkerVerified: isWorkerVerified ?? this.isWorkerVerified,
     );
   }
 }
