@@ -15,6 +15,7 @@ import 'widgets/job_info_section.dart';
 import 'widgets/job_location_section.dart';
 import 'widgets/job_quotation_section.dart';
 import 'widgets/job_card_skeleton.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class JobDetailPage extends ConsumerStatefulWidget {
   final JobModel job;
@@ -141,7 +142,7 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
             Padding(
               padding: const EdgeInsets.only(right: 10),
               child: IconButton(
-                tooltip: 'Call client',
+                tooltip: context.loc.callClient,
                 icon: Container(
                   padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
@@ -291,8 +292,8 @@ class _JobDetailPageState extends ConsumerState<JobDetailPage> {
     if (phone == null || phone.isEmpty) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Client phone number not available'),
+          SnackBar(
+            content: Text(context.loc.clientPhoneNumberNotAvailable),
             backgroundColor: ColorConstants.errorRed,
           ),
         );
@@ -356,14 +357,14 @@ class _AcceptRejectCardState extends ConsumerState<_AcceptRejectCard> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Decline Job?'),
+        title: Text(context.loc.declineJob),
         content: const Text(
           'This job will be removed from your incoming list.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.loc.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -371,7 +372,7 @@ class _AcceptRejectCardState extends ConsumerState<_AcceptRejectCard> {
               backgroundColor: ColorConstants.errorRed,
               foregroundColor: ColorConstants.pureWhite,
             ),
-            child: const Text('Decline'),
+            child: Text(context.loc.decline),
           ),
         ],
       ),
@@ -530,7 +531,7 @@ class _QuotedChatCard extends ConsumerWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.chat_bubble_outline, size: 16),
-              label: const Text('Chat with Client'),
+              label: Text(context.loc.chatWithClient),
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) =>
@@ -603,7 +604,7 @@ class _ScheduledActionsCard extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.chat_bubble_outline, size: 16),
-              label: const Text('Chat with Client'),
+              label: Text(context.loc.chatWithClient),
               // ── FIX: messages path = jobs/{jobId}/quotations/{quotationId}/messages
               // job.finalizedQuotationId is always set for scheduled jobs
               onPressed: () => Navigator.of(context).push(
@@ -756,7 +757,7 @@ class _InProgressActionsCard extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.chat_bubble_outline, size: 16),
-              label: const Text('Chat with Client'),
+              label: Text(context.loc.chatWithClient),
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => ChatPage(
@@ -937,7 +938,7 @@ class _CompletedSummaryCard extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.edit_outlined, size: 16),
-                label: const Text('Edit Feedback'),
+                label: Text(context.loc.editFeedback),
                 onPressed: onFeedback,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: ColorConstants.ratingAmberDark,
@@ -1041,7 +1042,7 @@ class _DeclinedInfoCard extends StatelessWidget {
           ? quo.withdrawalReason!
           : 'You withdrew your quotation.';
     } else {
-      reasonTitle = 'Declined';
+      reasonTitle = context.loc.declined;
       reasonBody = 'This job is no longer available.';
     }
 
@@ -1089,14 +1090,14 @@ class _DeclinedInfoCard extends StatelessWidget {
             if (quo.createdAt != null)
               _DateRow(
                 icon: Icons.send_outlined,
-                label: 'Submitted',
+                label: context.loc.submitted,
                 date: quo.createdAt!,
               ),
             if (quo.rejectedAt != null) ...[
               const SizedBox(height: 6),
               _DateRow(
                 icon: Icons.cancel_outlined,
-                label: 'Rejected',
+                label: context.loc.rejected,
                 date: quo.rejectedAt!,
               ),
             ],
@@ -1104,7 +1105,7 @@ class _DeclinedInfoCard extends StatelessWidget {
               const SizedBox(height: 6),
               _DateRow(
                 icon: Icons.undo_outlined,
-                label: 'Withdrawn',
+                label: context.loc.withdrawn,
                 date: quo.withdrawnAt!,
               ),
             ],
@@ -1248,8 +1249,8 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
   Future<void> _submit() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a rating'),
+        SnackBar(
+          content: Text(context.loc.pleaseSelectARating),
           backgroundColor: ColorConstants.errorRed,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1384,7 +1385,7 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
             controller: _commentCtrl,
             maxLines: 3,
             decoration: InputDecoration(
-              labelText: 'Additional Comments (optional)',
+              labelText: context.loc.additionalCommentsOptional,
               hintText: 'e.g. Great client, clear instructions...',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),

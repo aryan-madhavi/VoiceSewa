@@ -47,7 +47,7 @@ class ProfilePage extends ConsumerWidget {
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (worker) {
           if (worker == null) {
-            return const Center(child: Text('No profile found'));
+            return Center(child: Text(context.loc.noProfileFound));
           }
           return _ProfileBody(worker: worker);
         },
@@ -234,21 +234,21 @@ class _ProfileBody extends ConsumerWidget {
         children: [
           _statItem(
             worker.jobs.completed.length.toString(),
-            'Completed',
+            context.loc.completed,
             Icons.check_circle_outline,
             Colors.green,
           ),
           _divider(),
           _statItem(
             worker.avgRating.toStringAsFixed(1),
-            'Rating',
+            context.loc.rating,
             Icons.star_outline,
             Colors.amber,
           ),
           _divider(),
           _statItem(
             worker.jobs.confirmed.length.toString(),
-            'Ongoing',
+            context.loc.ongoing,
             Icons.work_outline,
             Colors.blue,
           ),

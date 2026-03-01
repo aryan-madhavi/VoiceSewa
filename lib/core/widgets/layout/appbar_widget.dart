@@ -16,7 +16,7 @@ class AppBarWidget extends ConsumerWidget implements PreferredSizeWidget {
       actions: [
         PopupMenuButton<String>(
           icon: const Icon(Icons.translate),
-          tooltip: context.loc.selectLanguage, //'Select Language',
+          tooltip: context.loc.selectLanguage, //context.loc.selectLanguage,
           onSelected: (String languageCode) {
             ref.read(localeProvider.notifier).changeLanguage(languageCode);
           },
@@ -32,20 +32,20 @@ class AppBarWidget extends ConsumerWidget implements PreferredSizeWidget {
           // PopupMenuItem<String>(
           //   value: 'en',
           //     child: Text(
-          //         "English" //"🇺🇸 English"
+          //         context.loc.english //"🇺🇸 English"
           //     ),
           // ),
           // const PopupMenuItem<String>(
           //   value: 'hi',
-          //   child: Text('हिंदी'),
+          //   child: Text(context.loc.langHindi),
           // ),
           // const PopupMenuItem<String>(
           //    value: 'mr',
-          //    child: Text('मराठी'),
+          //    child: Text(context.loc.langMarathi),
           // ),
           // const PopupMenuItem<String>(
           //   value: 'gu',
-          //   child: Text('ગુજરાતી'),
+          //   child: Text(context.loc.langGujarati),
           // ),
           // ],
         ),

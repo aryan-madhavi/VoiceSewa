@@ -29,7 +29,7 @@ class _DashboardState extends State<Dashboard> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              context.loc.yearlyEarnings, // "Yearly Earnings",
+              context.loc.yearlyEarnings, // context.loc.yearlyEarnings,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -38,7 +38,7 @@ class _DashboardState extends State<Dashboard> {
             ),
             const SizedBox(height: 24,),
             Text(
-              context.loc.growthOverTheLastFiveYears, // "Growth over the last 5 years",
+              context.loc.growthOverTheLastFiveYears, // context.loc.growthOverTheLastFiveYears,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],

@@ -138,8 +138,8 @@ class _OverlayContent extends ConsumerWidget {
                 children: [
                   Text(
                     speechState.isListening ?
-                    context.loc.listening //'Listening'
-                        : context.loc.voiceRecognition, //'Voice Recognition',
+                    context.loc.listening //context.loc.listening
+                        : context.loc.voiceRecognition, //context.loc.voiceRecognition,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -148,7 +148,7 @@ class _OverlayContent extends ConsumerWidget {
                   ),
                   if (speechState.isListening)
                      Text(
-                       context.loc.speakNow, //'Speak now',
+                       context.loc.speakNow, //context.loc.speakNow,
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                 ],
@@ -185,7 +185,7 @@ class _OverlayContent extends ConsumerWidget {
               speechState.recognizedText.isEmpty
                   ? (speechState.isListening
                         ? '${context.loc.startSpeaking}...'//'Start speaking...'
-                        : context.loc.noTextRecognized//'No text recognized'
+                        : context.loc.noTextRecognized//context.loc.noTextRecognized
               )
                   : speechState.recognizedText,
               key: ValueKey(speechState.recognizedText),

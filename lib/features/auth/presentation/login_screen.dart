@@ -4,6 +4,7 @@ import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/core/providers/session_provider.dart';
 import 'package:voicesewa_worker/features/auth/presentation/widgets/auth_widgets.dart';
 import 'package:voicesewa_worker/features/auth/providers/auth_screen_provider.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -73,17 +74,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 const SizedBox(height: 40),
 
-                const AuthHeader(
-                  title: 'Welcome Back',
-                  subtitle: 'Sign in to continue to VoiceSewa',
+                AuthHeader(
+                  title: context.loc.welcomeBack,
+                  subtitle: context.loc.signInToContinueToVoiceSewa,
                 ),
 
                 const SizedBox(height: 48),
 
                 AuthTextField(
                   controller: _emailController,
-                  label: 'Email',
-                  hint: 'Enter your email',
+                  label: context.loc.email,
+                  hint: context.loc.enterYourEmail,
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
@@ -103,8 +104,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 AuthTextField(
                   controller: _passwordController,
-                  label: 'Password',
-                  hint: 'Enter your password',
+                  label: context.loc.password,
+                  hint: context.loc.enterYourPassword,
                   icon: Icons.lock_outline,
                   obscureText: _obscurePassword,
                   validator: (value) {
@@ -136,8 +137,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     text: 'Forgot Password?',
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Forgot password feature coming soon'),
+                        SnackBar(
+                          content: Text(context.loc.forgotPasswordFeatureComingSoon),
                         ),
                       );
                     },

@@ -13,7 +13,7 @@ class DangerZoneSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SettingsSectionHeader(title: 'Danger Zone', color: Colors.red),
+        SettingsSectionHeader(title: context.loc.dangerZone, color: Colors.red),
         const SizedBox(height: 10),
         settingsPageBuildActionTile(
           context.loc.deleteAccount,

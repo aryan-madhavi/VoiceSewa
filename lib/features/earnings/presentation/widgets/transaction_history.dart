@@ -4,6 +4,7 @@ import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/core/constants/string_constants.dart';
 import 'package:voicesewa_worker/features/earnings/providers/earnings_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class TransactionHistory extends ConsumerWidget {
   const TransactionHistory({super.key});
@@ -20,7 +21,7 @@ class TransactionHistory extends ConsumerWidget {
       error: (e, _) => Padding(
         padding: const EdgeInsets.all(20),
         child: Center(
-          child: Text('Could not load transactions',
+          child: Text(context.loc.couldNotLoadTransactions,
               style: TextStyle(color: Colors.grey[500])),
         ),
       ),

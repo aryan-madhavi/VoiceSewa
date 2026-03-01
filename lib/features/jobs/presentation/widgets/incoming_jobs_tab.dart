@@ -9,6 +9,7 @@ import 'job_filter_bar.dart';
 import 'job_empty_state.dart';
 import 'job_card_skeleton.dart';
 import 'service_filter_row.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class IncomingJobsTab extends ConsumerStatefulWidget {
   final String sort;
@@ -221,9 +222,9 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
       case 'new':
         return 'New';
       case 'quoted':
-        return 'Quoted';
+        return context.loc.quoted;
       case 'declined':
-        return 'Declined';
+        return context.loc.declined;
       default:
         return '';
     }
@@ -286,7 +287,7 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
         child: Row(
           children: [
             _StatusChip(
-              label: 'All',
+              label: context.loc.all,
               count: cleanIncoming.length,
               selected: _statusFilter == null,
               color: ColorConstants.primaryBlue,
@@ -302,7 +303,7 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
             ),
             const SizedBox(width: 8),
             _StatusChip(
-              label: 'Quoted',
+              label: context.loc.quoted,
               count: cleanIncoming.where((j) => j.isQuoted).length,
               selected: _statusFilter == 'quoted',
               color: ColorConstants.chipPurple,
@@ -310,7 +311,7 @@ class _IncomingJobsTabState extends ConsumerState<IncomingJobsTab> {
             ),
             const SizedBox(width: 8),
             _StatusChip(
-              label: 'Declined',
+              label: context.loc.declined,
               count: declined.length,
               selected: _statusFilter == 'declined',
               color: ColorConstants.chipRedSoft,

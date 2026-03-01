@@ -4,6 +4,7 @@ import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
 import 'bill_form_page.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class OtpVerificationPage extends ConsumerStatefulWidget {
   final JobModel job;
@@ -70,8 +71,8 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage> {
     } else {
       setState(() => _verifying = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to start job. Please try again.'),
+        SnackBar(
+          content: Text(context.loc.failedToStartJobPleaseTryAgain),
           backgroundColor: ColorConstants.errorRed,
         ),
       );

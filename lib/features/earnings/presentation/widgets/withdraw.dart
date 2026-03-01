@@ -40,7 +40,7 @@ class _WithdrawState extends State<Withdraw> {
             child: Column(
               children: [
                 Text(
-                  context.loc.availableForWithdrawal, // "Available for Withdrawal",
+                  context.loc.availableForWithdrawal, // context.loc.availableForWithdrawal,
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
@@ -73,7 +73,7 @@ class _WithdrawState extends State<Withdraw> {
                       padding: const EdgeInsets.symmetric(vertical: 12,),
                     ),
                       child: Text(
-                        context.loc.withdrawMoney, // "Withdraw Money",
+                        context.loc.withdrawMoney, // context.loc.withdrawMoney,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                         ),
@@ -84,12 +84,12 @@ class _WithdrawState extends State<Withdraw> {
                 Row(
                   children: [
                     withdrawBuildStatCard(
-                        context.loc.pending, // "Pending",
+                        context.loc.pending, // context.loc.pending,
                         "${StringConstants.rupee}${(pendingAmount).toInt()}",
                         Colors.orange),
                     const SizedBox(width: 12,),
                     withdrawBuildStatCard(
-                        context.loc.totalEarned, // "Total Earned",
+                        context.loc.totalEarned, // context.loc.totalEarned,
                         "${StringConstants.rupee}${(totalAmountEarned).toInt()}",
                         Colors.green)
                   ],

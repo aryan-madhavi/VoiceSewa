@@ -4,6 +4,7 @@ import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/core/constants/helper_function.dart';
 import 'package:voicesewa_worker/core/constants/string_constants.dart';
 import 'package:voicesewa_worker/features/earnings/providers/earnings_provider.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 /// Shows total earned + pending amount cards.
 /// Withdraw button removed as per requirements.
@@ -87,7 +88,7 @@ class EarningsSummary extends ConsumerWidget {
             children: [
               // Pending — scheduled/inProgress jobs (quotation amount)
               withdrawBuildStatCard(
-                'Pending',
+                context.loc.pending,
                 isLoading
                     ? '—'
                     : '${StringConstants.rupee}${pendingAmount.toInt()}',

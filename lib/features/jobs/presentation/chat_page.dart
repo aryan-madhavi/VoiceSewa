@@ -10,6 +10,7 @@ import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
 import '../../../core/providers/language_provider.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class ChatPage extends ConsumerStatefulWidget {
   final JobModel job;
@@ -121,7 +122,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   @override
   Widget build(BuildContext context) {
     final clientAsync = ref.watch(clientProfileProvider(widget.job.clientUid));
-    final clientName = clientAsync.value?['name'] ?? 'Client';
+    final clientName = clientAsync.value?['name'] ?? context.loc.client;
     final messages = ref.watch(
       chatMessagesProvider((widget.job.jobId, widget.quotationId)),
     );
@@ -249,7 +250,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 textCapitalization: TextCapitalization.sentences,
                 onSubmitted: (_) => _send(),
                 decoration: InputDecoration(
-                  hintText: 'Type a message...',
+                  hintText: context.loc.typeAMessage,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,

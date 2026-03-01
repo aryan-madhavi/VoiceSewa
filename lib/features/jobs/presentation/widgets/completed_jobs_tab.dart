@@ -9,6 +9,7 @@ import 'job_filter_bar.dart';
 import 'job_empty_state.dart';
 import 'job_card_skeleton.dart';
 import 'service_filter_row.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class CompletedJobsTab extends ConsumerStatefulWidget {
   final String sort;
@@ -303,12 +304,12 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
               await Future.delayed(const Duration(milliseconds: 800));
             },
             child: ListView(
-              children: const [
+              children: [
                 SizedBox(
                   height: 400,
                   child: JobEmptyState(
                     icon: Icons.undo_outlined,
-                    title: 'No Withdrawn Quotations',
+                    title: context.loc.noWithdrawnQuotations,
                     subtitle:
                         'Jobs where you withdrew your quotation will appear here.',
                   ),
@@ -345,7 +346,7 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
       child: Row(
         children: [
           _CompletedChip(
-            label: 'Completed',
+            label: context.loc.completed,
             count: completedJobs.length,
             selected: _statusFilter == null,
             color: ColorConstants.successGreen,
@@ -354,7 +355,7 @@ class _CompletedJobsTabState extends ConsumerState<CompletedJobsTab> {
           ),
           const SizedBox(width: 8),
           _CompletedChip(
-            label: 'Withdrawn',
+            label: context.loc.withdrawn,
             // Count shown is the raw stream length — the actual filtered
             // count is resolved asynchronously per card via quotation fetch.
             count: withdrawnJobs.length,
@@ -454,7 +455,7 @@ class _WithdrawnJobCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Withdrawn',
+                              context.loc.withdrawn,
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,

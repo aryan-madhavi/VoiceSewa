@@ -4,6 +4,7 @@ import 'package:voicesewa_worker/shared/models/job_model.dart';
 import 'widgets/incoming_jobs_tab.dart';
 import 'widgets/ongoing_jobs_tab.dart';
 import 'widgets/completed_jobs_tab.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class MyJobsPage extends StatefulWidget {
   const MyJobsPage({super.key});
@@ -16,11 +17,11 @@ class _MyJobsPageState extends State<MyJobsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  String _incomingSort = 'Newest First';
-  String _ongoingSort = 'Newest First';
-  String _completedSort = 'Newest First';
+  String _incomingSort = 'newest';
+  String _ongoingSort = 'newest';
+  String _completedSort = 'newest';
 
-  static const sortOptions = ['Newest First', 'Oldest First'];
+  static const sortOptions = ['newest', 'oldest'];
 
   @override
   void initState() {
@@ -39,7 +40,7 @@ class _MyJobsPageState extends State<MyJobsPage>
     sorted.sort((a, b) {
       final aDate = a.createdAt ?? DateTime(0);
       final bDate = b.createdAt ?? DateTime(0);
-      return sort == 'Newest First'
+      return sort == 'newest'
           ? bDate.compareTo(aDate)
           : aDate.compareTo(bDate);
     });
@@ -93,13 +94,12 @@ class _MyJobsPageState extends State<MyJobsPage>
         indicatorColor: ColorConstants.primaryBlue,
         indicatorWeight: 3,
         labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-        tabs: const [
-          Tab(text: 'Incoming'),
-          Tab(text: 'Ongoing'),
-          Tab(text: 'Completed'),
+        tabs: [
+          Tab(text: context.loc.incoming),
+          Tab(text: context.loc.ongoing),
+          Tab(text: context.loc.completed),
         ],
       ),
     );
   }
 }
-  

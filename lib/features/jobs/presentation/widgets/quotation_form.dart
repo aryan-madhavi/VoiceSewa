@@ -4,6 +4,7 @@ import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/shared/models/quotation_model.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 // ── Price Breakdown Row ────────────────────────────────────────────────────
 
@@ -167,7 +168,7 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _Spinner(
-                    label: 'Hours',
+                    label: context.loc.hours,
                     value: tempH,
                     min: 0,
                     max: 23,
@@ -184,7 +185,7 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
                     ),
                   ),
                   _Spinner(
-                    label: 'Minutes',
+                    label: context.loc.minutes,
                     value: tempM,
                     min: 0,
                     max: 59,
@@ -217,7 +218,7 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
+              child: Text(context.loc.cancel),
             ),
             ElevatedButton(
               onPressed: () {
@@ -231,7 +232,7 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
                 backgroundColor: ColorConstants.primaryBlue,
                 foregroundColor: ColorConstants.pureWhite,
               ),
-              child: const Text('Set'),
+              child: Text(context.loc.set),
             ),
           ],
         ),
@@ -367,7 +368,7 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
         children: [
           _textField(
             controller: _costController,
-            label: 'Estimated Cost (₹)',
+            label: context.loc.estimatedCost,
             hint: 'e.g. 1500',
             icon: Icons.currency_rupee,
             keyboardType: TextInputType.number,
@@ -383,7 +384,7 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
 
           _textField(
             controller: _descriptionController,
-            label: 'Work Description',
+            label: context.loc.workDescription,
             hint: 'Describe what you\'ll do...',
             icon: Icons.description_outlined,
             maxLines: 3,
@@ -396,8 +397,8 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
 
           _textField(
             controller: _notesController,
-            label: 'Additional Notes (optional)',
-            hint: 'Any extra info...',
+            label: context.loc.additionalNotesOptional,
+            hint: context.loc.anyExtraInfo,
             icon: Icons.sticky_note_2_outlined,
             maxLines: 2,
           ),
@@ -414,7 +415,7 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('Cancel'),
+                  child: Text(context.loc.cancel),
                 ),
               ),
               const SizedBox(width: 12),
@@ -441,7 +442,7 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
                           ),
                         )
                       : Text(
-                          _isEditMode ? 'Update Quotation' : 'Submit Quotation',
+                          _isEditMode ? 'Update Quotation' : context.loc.submitQuotation,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                 ),
@@ -462,7 +463,7 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
       onTap: _pickDuration,
       child: _pickerTile(
         icon: Icons.timer_outlined,
-        label: 'Estimated Time',
+        label: context.loc.estimatedTime,
         value: hasTime ? _durationString : null,
         placeholder: 'Tap to set duration',
         active: hasTime,
@@ -502,7 +503,7 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
                 onTap: _pickAvailFrom,
                 child: _pickerTile(
                   icon: Icons.access_time,
-                  label: 'From',
+                  label: context.loc.from,
                   value: _availFrom != null ? _formatTod(_availFrom!) : null,
                   placeholder: 'Select',
                   active: _availFrom != null,
@@ -524,7 +525,7 @@ class _QuotationFormState extends ConsumerState<QuotationForm> {
                 onTap: _pickAvailTo,
                 child: _pickerTile(
                   icon: Icons.access_time,
-                  label: 'To',
+                  label: context.loc.to,
                   value: _availTo != null ? _formatTod(_availTo!) : null,
                   placeholder: 'Select',
                   active: _availTo != null,

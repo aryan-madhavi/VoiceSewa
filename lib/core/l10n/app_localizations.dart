@@ -611,6 +611,570 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap the mic to start talking'**
   String get tapTheMicToStartTalking;
+
+  /// No description provided for @loadingProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading profile...'**
+  String get loadingProfile;
+
+  /// No description provided for @createAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Account'**
+  String get createAccount;
+
+  /// No description provided for @signUpToGetStartedWithVoiceSewa.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign up to get started with VoiceSewa'**
+  String get signUpToGetStartedWithVoiceSewa;
+
+  /// No description provided for @username.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get username;
+
+  /// No description provided for @enterYourUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your username'**
+  String get enterYourUsername;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @enterYourEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email'**
+  String get enterYourEmail;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @createAPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a password'**
+  String get createAPassword;
+
+  /// No description provided for @confirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
+  String get confirmPassword;
+
+  /// No description provided for @reenterYourPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-enter your password'**
+  String get reenterYourPassword;
+
+  /// No description provided for @welcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome Back'**
+  String get welcomeBack;
+
+  /// No description provided for @signInToContinueToVoiceSewa.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to continue to VoiceSewa'**
+  String get signInToContinueToVoiceSewa;
+
+  /// No description provided for @enterYourPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get enterYourPassword;
+
+  /// No description provided for @forgotPasswordFeatureComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password feature coming soon'**
+  String get forgotPasswordFeatureComingSoon;
+
+  /// No description provided for @openScanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Scanner'**
+  String get openScanner;
+
+  /// No description provided for @whereIsTheQRCodeOnMyAadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Where is the QR code on my Aadhaar?'**
+  String get whereIsTheQRCodeOnMyAadhaar;
+
+  /// No description provided for @findingYourAadhaarQR.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your Aadhaar QR'**
+  String get findingYourAadhaarQR;
+
+  /// No description provided for @physicalCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Physical card'**
+  String get physicalCard;
+
+  /// No description provided for @mAadhaarApp.
+  ///
+  /// In en, this message translates to:
+  /// **'mAadhaar app'**
+  String get mAadhaarApp;
+
+  /// No description provided for @eAadhaarPDF.
+  ///
+  /// In en, this message translates to:
+  /// **'e-Aadhaar PDF'**
+  String get eAadhaarPDF;
+
+  /// No description provided for @gotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get gotIt;
+
+  /// No description provided for @scanAadhaarQR.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Aadhaar QR'**
+  String get scanAadhaarQR;
+
+  /// No description provided for @toggleFlash.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle flash'**
+  String get toggleFlash;
+
+  /// No description provided for @rescan.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-scan'**
+  String get rescan;
+
+  /// No description provided for @name.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get name;
+
+  /// No description provided for @gender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get gender;
+
+  /// No description provided for @dateOfBirth.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of Birth'**
+  String get dateOfBirth;
+
+  /// No description provided for @location.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get location;
+
+  /// No description provided for @aadhaar.
+  ///
+  /// In en, this message translates to:
+  /// **'Aadhaar'**
+  String get aadhaar;
+
+  /// No description provided for @tryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get tryAgain;
+
+  /// No description provided for @typeAMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a message...'**
+  String get typeAMessage;
+
+  /// No description provided for @failedToStartJobPleaseTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start job. Please try again.'**
+  String get failedToStartJobPleaseTryAgain;
+
+  /// No description provided for @addAtLeastOneItemToTheBill.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one item to the bill'**
+  String get addAtLeastOneItemToTheBill;
+
+  /// No description provided for @additionalNotesOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional Notes (optional)'**
+  String get additionalNotesOptional;
+
+  /// No description provided for @anyRemarksAboutTheWorkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Any remarks about the work done...'**
+  String get anyRemarksAboutTheWorkDone;
+
+  /// No description provided for @callClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Call client'**
+  String get callClient;
+
+  /// No description provided for @clientPhoneNumberNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Client phone number not available'**
+  String get clientPhoneNumberNotAvailable;
+
+  /// No description provided for @declineJob.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline Job?'**
+  String get declineJob;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @decline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get decline;
+
+  /// No description provided for @chatWithClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat with Client'**
+  String get chatWithClient;
+
+  /// No description provided for @editFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Feedback'**
+  String get editFeedback;
+
+  /// No description provided for @submitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get submitted;
+
+  /// No description provided for @rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get rejected;
+
+  /// No description provided for @withdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawn'**
+  String get withdrawn;
+
+  /// No description provided for @pleaseSelectARating.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a rating'**
+  String get pleaseSelectARating;
+
+  /// No description provided for @additionalCommentsOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional Comments (optional)'**
+  String get additionalCommentsOptional;
+
+  /// No description provided for @clientLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Client Location'**
+  String get clientLocation;
+
+  /// No description provided for @openInMaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Maps'**
+  String get openInMaps;
+
+  /// No description provided for @hours.
+  ///
+  /// In en, this message translates to:
+  /// **'Hours'**
+  String get hours;
+
+  /// No description provided for @minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes'**
+  String get minutes;
+
+  /// No description provided for @set.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get set;
+
+  /// No description provided for @estimatedCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated Cost (₹)'**
+  String get estimatedCost;
+
+  /// No description provided for @workDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Work Description'**
+  String get workDescription;
+
+  /// No description provided for @anyExtraInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Any extra info...'**
+  String get anyExtraInfo;
+
+  /// No description provided for @estimatedTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated Time'**
+  String get estimatedTime;
+
+  /// No description provided for @from.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get from;
+
+  /// No description provided for @to.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get to;
+
+  /// No description provided for @markAsCompleted2.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as Completed?'**
+  String get markAsCompleted2;
+
+  /// No description provided for @confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// No description provided for @yourQuotation.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Quotation'**
+  String get yourQuotation;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @withdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw'**
+  String get withdraw;
+
+  /// No description provided for @submitQuotation.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit Quotation'**
+  String get submitQuotation;
+
+  /// No description provided for @withdrawQuotation.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw Quotation'**
+  String get withdrawQuotation;
+
+  /// No description provided for @confirmWithdrawal.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Withdrawal'**
+  String get confirmWithdrawal;
+
+  /// No description provided for @noWithdrawnQuotations.
+  ///
+  /// In en, this message translates to:
+  /// **'No Withdrawn Quotations'**
+  String get noWithdrawnQuotations;
+
+  /// No description provided for @all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// No description provided for @quoted.
+  ///
+  /// In en, this message translates to:
+  /// **'Quoted'**
+  String get quoted;
+
+  /// No description provided for @declined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get declined;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @upcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get upcoming;
+
+  /// No description provided for @inProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get inProgress;
+
+  /// No description provided for @jobDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Job Details'**
+  String get jobDetails;
+
+  /// No description provided for @chooseFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from Gallery'**
+  String get chooseFromGallery;
+
+  /// No description provided for @pickAnExistingPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an existing photo'**
+  String get pickAnExistingPhoto;
+
+  /// No description provided for @takeAPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a Photo'**
+  String get takeAPhoto;
+
+  /// No description provided for @useYourCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your camera'**
+  String get useYourCamera;
+
+  /// No description provided for @noProfileFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No profile found'**
+  String get noProfileFound;
+
+  /// No description provided for @session.
+  ///
+  /// In en, this message translates to:
+  /// **'Session'**
+  String get session;
+
+  /// No description provided for @dangerZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger Zone'**
+  String get dangerZone;
+
+  /// No description provided for @couldNotLoadTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load transactions'**
+  String get couldNotLoadTransactions;
+
+  /// No description provided for @listening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get listening;
+
+  /// No description provided for @noTextRecognized.
+  ///
+  /// In en, this message translates to:
+  /// **'No text recognized'**
+  String get noTextRecognized;
+
+  /// No description provided for @speakNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Speak now'**
+  String get speakNow;
+
+  /// No description provided for @startSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Start speaking'**
+  String get startSpeaking;
+
+  /// No description provided for @voiceRecognition.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Recognition'**
+  String get voiceRecognition;
+
+  /// No description provided for @langHindi.
+  ///
+  /// In en, this message translates to:
+  /// **'हिंदी'**
+  String get langHindi;
+
+  /// No description provided for @langMarathi.
+  ///
+  /// In en, this message translates to:
+  /// **'मराठी'**
+  String get langMarathi;
+
+  /// No description provided for @langGujarati.
+  ///
+  /// In en, this message translates to:
+  /// **'ગુજરાતી'**
+  String get langGujarati;
+
+  /// No description provided for @incoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming'**
+  String get incoming;
+
+  /// No description provided for @yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get yesterday;
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'days ago'**
+  String get daysAgo;
 }
 
 class _AppLocalizationsDelegate

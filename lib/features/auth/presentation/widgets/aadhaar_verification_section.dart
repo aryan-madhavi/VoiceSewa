@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:voicesewa_worker/features/auth/providers/aadhaar_verification_provider.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN WIDGET — drop this inside WorkerProfileFormPage
@@ -252,7 +253,7 @@ class _ScanCard extends ConsumerWidget {
             FilledButton.icon(
               onPressed: () => _openScanner(context, ref),
               icon: const Icon(Icons.camera_alt_rounded, size: 18),
-              label: const Text('Open Scanner'),
+              label: Text(context.loc.openScanner),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -275,7 +276,7 @@ class _ScanCard extends ConsumerWidget {
                 ).colorScheme.onSurface.withOpacity(0.45),
                 textStyle: const TextStyle(fontSize: 12),
               ),
-              child: const Text('Where is the QR code on my Aadhaar?'),
+              child: Text(context.loc.whereIsTheQRCodeOnMyAadhaar),
             ),
           ],
         ),
@@ -301,26 +302,26 @@ class _ScanCard extends ConsumerWidget {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Finding your Aadhaar QR'),
-        content: const Column(
+        title: Text(context.loc.findingYourAadhaarQR),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _HowToItem(
               icon: '🪪',
-              title: 'Physical card',
+              title: context.loc.physicalCard,
               desc: 'The QR code is on the back of your Aadhaar card.',
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             _HowToItem(
               icon: '📱',
-              title: 'mAadhaar app',
+              title: context.loc.mAadhaarApp,
               desc: 'Open mAadhaar → tap your profile → tap "Show QR Code".',
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             _HowToItem(
               icon: '🖨️',
-              title: 'e-Aadhaar PDF',
+              title: context.loc.eAadhaarPDF,
               desc:
                   'Download from uidai.gov.in and scan the QR on the last page.',
             ),
@@ -329,7 +330,7 @@ class _ScanCard extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Got it'),
+            child: Text(context.loc.gotIt),
           ),
         ],
       ),
@@ -428,12 +429,12 @@ class _AadhaarQrScannerPageState extends State<_AadhaarQrScannerPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
-        title: const Text('Scan Aadhaar QR'),
+        title: Text(context.loc.scanAadhaarQR),
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on_rounded),
             onPressed: () => _controller.toggleTorch(),
-            tooltip: 'Toggle flash',
+            tooltip: context.loc.toggleFlash,
           ),
         ],
       ),
@@ -691,7 +692,7 @@ class _VerifiedCard extends ConsumerWidget {
                   textStyle: const TextStyle(fontSize: 12),
                   padding: EdgeInsets.zero,
                 ),
-                child: const Text('Re-scan'),
+                child: Text(context.loc.rescan),
               ),
             ],
           ),
@@ -701,21 +702,21 @@ class _VerifiedCard extends ConsumerWidget {
           const SizedBox(height: 12),
 
           // Decoded data rows
-          if (data.name != null) _InfoRow(label: 'Name', value: data.name!),
+          if (data.name != null) _InfoRow(label: context.loc.name, value: data.name!),
           if (data.gender != null)
-            _InfoRow(label: 'Gender', value: data.gender!),
+            _InfoRow(label: context.loc.gender, value: data.gender!),
           if (data.dob != null)
-            _InfoRow(label: 'Date of Birth', value: data.dob!),
+            _InfoRow(label: context.loc.dateOfBirth, value: data.dob!),
           if (data.district != null || data.state != null)
             _InfoRow(
-              label: 'Location',
+              label: context.loc.location,
               value: [
                 data.district,
                 data.state,
               ].where((e) => e != null).join(', '),
             ),
           if (data.uidLast4 != null)
-            _InfoRow(label: 'Aadhaar', value: 'XXXX XXXX ${data.uidLast4}'),
+            _InfoRow(label: context.loc.aadhaar, value: 'XXXX XXXX ${data.uidLast4}'),
 
           const SizedBox(height: 14),
 
@@ -817,7 +818,7 @@ class _FailedCard extends ConsumerWidget {
             onPressed: () =>
                 ref.read(aadhaarVerificationProvider.notifier).reset(),
             icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text('Try Again'),
+            label: Text(context.loc.tryAgain),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red,
               shape: RoundedRectangleBorder(

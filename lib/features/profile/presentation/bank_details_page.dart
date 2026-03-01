@@ -10,8 +10,8 @@ class BankDetailsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-            "Bank Details",
+        title: Text(
+            context.loc.bankDetails,
             style: TextStyle(
                 color: Colors.black
             )
@@ -44,7 +44,7 @@ class BankDetailsPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                      context.loc.primaryAccount,// "Primary Account",
+                      context.loc.primaryAccount,// context.loc.primaryAccount,
                       style: TextStyle(
                           color: Colors.white70,
                           fontSize: 12
@@ -87,7 +87,7 @@ class BankDetailsPage extends StatelessWidget {
                 onPressed: () {},
                 icon: const Icon(Icons.add),
                 label: Text(
-                  context.loc.addNewBankAccount,// "Add New Bank Account"
+                  context.loc.addNewBankAccount,// context.loc.addNewBankAccount
                 ),
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

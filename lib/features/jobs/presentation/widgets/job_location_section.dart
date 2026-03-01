@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
 import 'job_section_card.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class JobLocationSection extends StatelessWidget {
   final JobModel job;
@@ -18,7 +19,7 @@ class JobLocationSection extends StatelessWidget {
     final hasLocation = location != null;
 
     return JobSectionCard(
-      title: 'Client Location',
+      title: context.loc.clientLocation,
       icon: Icons.location_on_outlined,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -97,7 +98,7 @@ class JobLocationSection extends StatelessWidget {
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.open_in_new, size: 16),
                   onPressed: () => _openInMaps(location),
-                  label: const Text('Open in Maps'),
+                  label: Text(context.loc.openInMaps),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: ColorConstants.primaryBlue,
                     side: BorderSide(

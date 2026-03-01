@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class MarkCompleteButton extends ConsumerWidget {
   final String jobId;
@@ -74,14 +75,14 @@ class MarkCompleteButton extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Mark as Completed?'),
+        title: Text(context.loc.markAsCompleted2),
         content: const Text(
           'Confirm that you have finished this job. This cannot be undone.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.loc.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -89,7 +90,7 @@ class MarkCompleteButton extends ConsumerWidget {
               backgroundColor: ColorConstants.successTeal,
               foregroundColor: ColorConstants.pureWhite,
             ),
-            child: const Text('Confirm'),
+            child: Text(context.loc.confirm),
           ),
         ],
       ),

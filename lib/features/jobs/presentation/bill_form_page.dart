@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class BillFormPage extends ConsumerStatefulWidget {
   final JobModel job;
@@ -35,8 +36,8 @@ class _BillFormPageState extends ConsumerState<BillFormPage> {
     final valid = _rows.where((r) => r.isValid).toList();
     if (valid.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Add at least one item to the bill'),
+        SnackBar(
+          content: Text(context.loc.addAtLeastOneItemToTheBill),
           backgroundColor: ColorConstants.errorRed,
         ),
       );
@@ -375,9 +376,9 @@ class _BillFormPageState extends ConsumerState<BillFormPage> {
               child: TextField(
                 controller: _notesCtrl,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Additional Notes (optional)',
-                  hintText: 'Any remarks about the work done...',
+                decoration: InputDecoration(
+                  labelText: context.loc.additionalNotesOptional,
+                  hintText: context.loc.anyRemarksAboutTheWorkDone,
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.sticky_note_2_outlined, size: 18),
                 ),

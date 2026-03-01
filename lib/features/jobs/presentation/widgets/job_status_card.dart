@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class JobStatusCard extends StatelessWidget {
   final JobModel job;
@@ -12,7 +13,7 @@ class JobStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // For declined jobs override badge regardless of real Firestore status
     final color = isDeclined ? ColorConstants.errorRed : job.statusColor;
-    final label = isDeclined ? 'Declined' : job.statusLabel;
+    final label = isDeclined ? context.loc.declined : job.statusLabel;
 
     return Container(
       padding: const EdgeInsets.all(16),

@@ -12,7 +12,7 @@ class SupportPage extends StatelessWidget {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(
-            context.loc.helpAndSupport, // "Help & Support",
+            context.loc.helpAndSupport, // context.loc.helpAndSupport,
             style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -22,7 +22,7 @@ class SupportPage extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         children: [
           Text(
-              context.loc.frequentlyAskedQuestions, // "Frequently Asked Questions",
+              context.loc.frequentlyAskedQuestions, // context.loc.frequentlyAskedQuestions,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(height: 15),
           snhPageBuildFaqTile("How do I withdraw money?", "Go to Bank Details and select your primary account..."),
@@ -31,13 +31,13 @@ class SupportPage extends StatelessWidget {
 
           const SizedBox(height: 30),
           Text(
-              context.loc.contactUs, // "Contact Us",
+              context.loc.contactUs, // context.loc.contactUs,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(height: 15),
           ListTile(
             leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.phone, color: Colors.green)),
             title: Text(
-              context.loc.callSupport, // "Call Support"
+              context.loc.callSupport, // context.loc.callSupport
             ),
             subtitle: const Text("+91 1800-123-456"),
             onTap: () {},
@@ -45,10 +45,10 @@ class SupportPage extends StatelessWidget {
           ListTile(
             leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.email, color: Colors.red)),
             title: Text(
-              context.loc.emailSupport, // "Email Support"
+              context.loc.emailSupport, // context.loc.emailSupport
             ),
             subtitle: Text(
-              context.loc.helpADRATEVoicesewaDOTCom, // "help@voicesewa.com"
+              context.loc.helpADRATEVoicesewaDOTCom, // context.loc.helpADRATEVoicesewaDOTCom
             ),
             onTap: () {},
           ),

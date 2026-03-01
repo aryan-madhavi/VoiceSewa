@@ -11,6 +11,7 @@ import 'package:voicesewa_worker/features/profile/presentation/worker_profile_fo
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/core/providers/session_provider.dart';
 import 'package:voicesewa_worker/core/providers/session_provider.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 /// Determines whether to show profile setup or the main app.
 ///
@@ -71,14 +72,14 @@ class ProfileCheckHandler extends ConsumerWidget {
         print('📝 No Firestore profile → Profile Setup');
         return const WorkerProfileFormPage();
       },
-      loading: () => const Scaffold(
+      loading: () => Scaffold(
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Loading profile...'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(context.loc.loadingProfile),
             ],
           ),
         ),

@@ -5,6 +5,7 @@ import 'package:voicesewa_worker/core/providers/session_provider.dart';
 import 'package:voicesewa_worker/features/auth/presentation/widgets/auth_widgets.dart';
 import 'package:voicesewa_worker/features/auth/providers/auth_provider.dart';
 import 'package:voicesewa_worker/features/auth/providers/auth_screen_provider.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -80,17 +81,17 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               children: [
                 const SizedBox(height: 40),
 
-                const AuthHeader(
-                  title: 'Create Account',
-                  subtitle: 'Sign up to get started with VoiceSewa',
+                AuthHeader(
+                  title: context.loc.createAccount,
+                  subtitle: context.loc.signUpToGetStartedWithVoiceSewa,
                 ),
 
                 const SizedBox(height: 40),
 
                 AuthTextField(
                   controller: _usernameController,
-                  label: 'Username',
-                  hint: 'Enter your username',
+                  label: context.loc.username,
+                  hint: context.loc.enterYourUsername,
                   icon: Icons.person_outline,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -107,8 +108,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                 AuthTextField(
                   controller: _emailController,
-                  label: 'Email',
-                  hint: 'Enter your email',
+                  label: context.loc.email,
+                  hint: context.loc.enterYourEmail,
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
@@ -128,8 +129,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                 AuthTextField(
                   controller: _passwordController,
-                  label: 'Password',
-                  hint: 'Create a password',
+                  label: context.loc.password,
+                  hint: context.loc.createAPassword,
                   icon: Icons.lock_outline,
                   obscureText: _obscurePassword,
                   validator: (value) {
@@ -157,8 +158,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                 AuthTextField(
                   controller: _confirmPasswordController,
-                  label: 'Confirm Password',
-                  hint: 'Re-enter your password',
+                  label: context.loc.confirmPassword,
+                  hint: context.loc.reenterYourPassword,
                   icon: Icons.lock_outline,
                   obscureText: _obscureConfirmPassword,
                   validator: (value) {
@@ -186,7 +187,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 const SizedBox(height: 32),
 
                 AuthButton(
-                  text: 'Create Account',
+                  text: context.loc.createAccount,
                   onPressed: _handleSignup,
                   isLoading: isLoading,
                 ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
 import 'job_section_card.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class JobInfoSection extends StatelessWidget {
   final JobModel job;
@@ -12,7 +13,7 @@ class JobInfoSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return JobSectionCard(
-      title: 'Job Details',
+      title: context.loc.jobDetails,
       icon: Icons.description_outlined,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),

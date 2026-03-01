@@ -72,8 +72,8 @@ class WorkHistoryPage extends ConsumerWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Total Earned',
+                        Text(
+                          context.loc.totalEarned,
                           style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                         const SizedBox(height: 4),

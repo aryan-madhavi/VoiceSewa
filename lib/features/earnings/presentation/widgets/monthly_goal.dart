@@ -29,7 +29,7 @@ class _MonthlyGoalState extends State<MonthlyGoal> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  context.loc.monthlyGoal, // "Monthly Goal",
+                  context.loc.monthlyGoal, // context.loc.monthlyGoal,
                   style: TextStyle(
                     color: ColorConstants.textDark,
                     fontSize: 16,

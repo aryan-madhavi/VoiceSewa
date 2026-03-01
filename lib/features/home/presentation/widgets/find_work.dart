@@ -154,7 +154,7 @@ class FindWorkCard extends StatelessWidget {
                             elevation: 0,
                           ),
                           child: Text(
-                              context.loc.applyNow,// "Apply Now",
+                              context.loc.applyNow,// context.loc.applyNow,
                               style: TextStyle(
                                   fontWeight: FontWeight.bold
                               )
@@ -172,7 +172,7 @@ class FindWorkCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           child: Text(
-                              context.loc.viewDetails,  // "View Details"
+                              context.loc.viewDetails,  // context.loc.viewDetails
                           ),
                         ),
                       ),

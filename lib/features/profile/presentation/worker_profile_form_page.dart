@@ -16,6 +16,7 @@ import 'package:voicesewa_worker/features/profile/data/services/profile_image_se
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/shared/data/service_data.dart';
 import 'package:voicesewa_worker/shared/models/worker_model.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class WorkerProfileFormPage extends ConsumerStatefulWidget {
   const WorkerProfileFormPage({super.key});
@@ -888,8 +889,8 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                     color: Colors.blue,
                   ),
                 ),
-                title: const Text('Choose from Gallery'),
-                subtitle: const Text('Pick an existing photo'),
+                title: Text(context.loc.chooseFromGallery),
+                subtitle: Text(context.loc.pickAnExistingPhoto),
                 onTap: () async {
                   Navigator.pop(ctx);
                   final file = await ProfileImageService.pickFromGallery();
@@ -909,8 +910,8 @@ class _WorkerProfileFormPageState extends ConsumerState<WorkerProfileFormPage> {
                     color: Colors.green,
                   ),
                 ),
-                title: const Text('Take a Photo'),
-                subtitle: const Text('Use your camera'),
+                title: Text(context.loc.takeAPhoto),
+                subtitle: Text(context.loc.useYourCamera),
                 onTap: () async {
                   Navigator.pop(ctx);
                   final file = await ProfileImageService.captureFromCamera();

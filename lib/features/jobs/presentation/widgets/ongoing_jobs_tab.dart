@@ -9,6 +9,7 @@ import 'job_filter_bar.dart';
 import 'job_empty_state.dart';
 import 'job_card_skeleton.dart';
 import 'service_filter_row.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class OngoingJobsTab extends ConsumerStatefulWidget {
   final String sort;
@@ -234,9 +235,9 @@ class _OngoingJobsTabState extends ConsumerState<OngoingJobsTab> {
       case 'today':
         return 'Today\'s';
       case 'upcoming':
-        return 'Upcoming';
+        return context.loc.upcoming;
       case 'inProgress':
-        return 'In Progress';
+        return context.loc.inProgress;
       default:
         return '';
     }
@@ -261,7 +262,7 @@ class _OngoingJobsTabState extends ConsumerState<OngoingJobsTab> {
         child: Row(
           children: [
             _OngoingChip(
-              label: 'All',
+              label: context.loc.all,
               count: jobs.length,
               selected: _statusFilter == null,
               color: ColorConstants.primaryBlue,
@@ -270,7 +271,7 @@ class _OngoingJobsTabState extends ConsumerState<OngoingJobsTab> {
             ),
             const SizedBox(width: 8),
             _OngoingChip(
-              label: 'Today',
+              label: context.loc.today,
               count: todayCount,
               selected: _statusFilter == 'today',
               color: ColorConstants.successTeal,
@@ -279,7 +280,7 @@ class _OngoingJobsTabState extends ConsumerState<OngoingJobsTab> {
             ),
             const SizedBox(width: 8),
             _OngoingChip(
-              label: 'Upcoming',
+              label: context.loc.upcoming,
               count: upcomingCount,
               selected: _statusFilter == 'upcoming',
               color: ColorConstants.primaryBlue,
@@ -288,7 +289,7 @@ class _OngoingJobsTabState extends ConsumerState<OngoingJobsTab> {
             ),
             const SizedBox(width: 8),
             _OngoingChip(
-              label: 'In Progress',
+              label: context.loc.inProgress,
               count: inProgressCount,
               selected: _statusFilter == 'inProgress',
               color: ColorConstants.chipOrange,

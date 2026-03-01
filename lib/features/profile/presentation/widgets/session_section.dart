@@ -13,7 +13,7 @@ class SessionSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SettingsSectionHeader(title: 'Session'),
+        SettingsSectionHeader(title: context.loc.session),
         const SizedBox(height: 10),
         settingsPageBuildActionTile(
           context.loc.logOut,

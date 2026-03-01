@@ -3,6 +3,7 @@ import 'package:voicesewa_worker/core/constants/color_constants.dart';
 import 'package:voicesewa_worker/core/constants/helper_function.dart';
 import 'package:voicesewa_worker/features/jobs/presentation/job_details_page.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 enum JobTabType { incoming, ongoing, completed }
 
@@ -24,7 +25,7 @@ class MyJobCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // Declined bucket always shows red badge regardless of real job status
     final color = isDeclined ? ColorConstants.errorRed : job.statusColor;
-    final badgeLabel = isDeclined ? 'Declined' : job.statusLabel;
+    final badgeLabel = isDeclined ? context.loc.declined : job.statusLabel;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -100,7 +101,7 @@ class MyJobCard extends StatelessWidget {
                   myJobBuildIconText(
                     Icons.calendar_today_outlined,
                     job.createdAt != null
-                        ? _formatDate(job.createdAt!)
+                        ? _formatDate(job.createdAt!, context)
                         : 'Date unknown',
                   ),
                   if (!isDeclined && job.finalizedQuotationAmount != null) ...[
@@ -147,14 +148,14 @@ class MyJobCard extends StatelessWidget {
       case JobTabType.incoming:
       case JobTabType.ongoing:
         return _ActionButton(
-          label: 'View Details',
+          label: context.loc.viewDetails,
           icon: Icons.remove_red_eye_outlined,
           color: ColorConstants.primaryBlue,
           onTap: () => _openDetails(context),
         );
       case JobTabType.completed:
         return _ActionButton(
-          label: 'View Receipt',
+          label: context.loc.viewReceipt,
           icon: Icons.receipt_long_outlined,
           color: ColorConstants.successGreen,
           outlined: true,
@@ -175,10 +176,10 @@ class MyJobCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime dt) {
+  String _formatDate(DateTime dt, BuildContext context) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inDays == 0) return 'Today';
+    if (diff.inDays == 0) return context.loc.today;
     if (diff.inDays == 1) return 'Yesterday';
     if (diff.inDays < 7) return '${diff.inDays} days ago';
     const m = [

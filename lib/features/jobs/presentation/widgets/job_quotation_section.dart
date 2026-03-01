@@ -6,6 +6,7 @@ import 'package:voicesewa_worker/shared/models/quotation_model.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
 import 'job_section_card.dart';
 import 'quotation_form.dart';
+import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 
 class JobQuotationSection extends ConsumerStatefulWidget {
   final String jobId;
@@ -72,7 +73,7 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
         quotation.status == QuotationStatus.rejected;
 
     return JobSectionCard(
-      title: 'Your Quotation',
+      title: context.loc.yourQuotation,
       icon: Icons.request_quote_outlined,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -250,7 +251,7 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
                     Expanded(
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.edit_outlined, size: 16),
-                        label: const Text('Edit'),
+                        label: Text(context.loc.edit),
                         onPressed: () => setState(() {
                           _showForm = true;
                           _isEditMode = true;
@@ -273,7 +274,7 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
                     Expanded(
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.undo_outlined, size: 16),
-                        label: const Text('Withdraw'),
+                        label: Text(context.loc.withdraw),
                         onPressed: () => _showWithdrawDialog(quotation),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: ColorConstants.errorRed,
@@ -300,7 +301,7 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
 
   Widget _buildFormTile(QuotationModel existing) {
     return JobSectionCard(
-      title: _isEditMode ? 'Edit Quotation' : 'Submit Quotation',
+      title: _isEditMode ? 'Edit Quotation' : context.loc.submitQuotation,
       icon: Icons.request_quote_outlined,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -332,7 +333,7 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
 
   Widget _buildSubmitTile() {
     return JobSectionCard(
-      title: 'Submit Quotation',
+      title: context.loc.submitQuotation,
       icon: Icons.request_quote_outlined,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -367,8 +368,8 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
                     child: ElevatedButton.icon(
                       icon: const Icon(Icons.add_circle_outline, size: 16),
                       onPressed: () => setState(() => _showForm = true),
-                      label: const Text(
-                        'Submit Quotation',
+                      label: Text(
+                        context.loc.submitQuotation,
                         style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -402,11 +403,11 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: const Row(
+          title: Row(
             children: [
               Icon(Icons.undo_outlined, color: ColorConstants.errorRed),
               SizedBox(width: 8),
-              Text('Withdraw Quotation'),
+              Text(context.loc.withdrawQuotation),
             ],
           ),
           content: Column(
@@ -438,7 +439,7 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
+              child: Text(context.loc.cancel),
             ),
             ElevatedButton(
               onPressed: reasonController.text.trim().isEmpty
@@ -454,7 +455,7 @@ class _JobQuotationSectionState extends ConsumerState<JobQuotationSection> {
                   0.3,
                 ),
               ),
-              child: const Text('Confirm Withdrawal'),
+              child: Text(context.loc.confirmWithdrawal),
             ),
           ],
         ),
