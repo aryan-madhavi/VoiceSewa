@@ -5,6 +5,7 @@ import 'package:voicesewa_worker/features/home/presentation/home_page.dart';
 import 'package:voicesewa_worker/features/jobs/presentation/my_jobs_page.dart';
 import 'package:voicesewa_worker/features/profile/presentation/profile_page.dart';
 import 'package:voicesewa_worker/features/profile/presentation/worker_profile_form_page.dart';
+import 'package:voicesewa_worker/features/voicebot/presentation/voicebot_chat.dart';
 
 class AppRoutes {
   static Map<String, WidgetBuilder> routes = {
@@ -15,6 +16,7 @@ class AppRoutes {
     '/earnings': (context) => const EarningsPage(),
     '/profile': (context) => const ProfilePage(),
     '/profile_form': (context) => const WorkerProfileFormPage(),
+    '/voicebot': (context) => VoiceBotPage(),
     '/comingSoonPage': (context) => const ComingSoonPage(),
   };
 }

@@ -22,6 +22,7 @@ class VoiceBotController extends Notifier<bool> {
     if (msg.trim().isEmpty) return;
 
     state = true;
+
     try {
       final response = await http.post(
         Uri.parse(
@@ -31,7 +32,7 @@ class VoiceBotController extends Notifier<bool> {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({'uid': uid, 'msg': msg, 'lang': lang, 'type': 'worker'}),
+        body: jsonEncode({'uid': uid, 'msg': msg, 'lang': lang, 'type': 'client'}),
       );
 
       if (response.statusCode != 200) {

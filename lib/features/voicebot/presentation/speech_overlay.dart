@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/* import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voicesewa_worker/core/extensions/context_extensions.dart';
 import 'package:voicesewa_worker/features/voicebot/providers/speech_provider.dart';
@@ -138,8 +138,8 @@ class _OverlayContent extends ConsumerWidget {
                 children: [
                   Text(
                     speechState.isListening ?
-                    'Listening' //context.loc.listening
-                      : 'Voice Recognition', //context.loc.voiceRecognition
+                    context.loc.listening //'Listening'
+                        : context.loc.voiceRecognition, //'Voice Recognition',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -148,7 +148,7 @@ class _OverlayContent extends ConsumerWidget {
                   ),
                   if (speechState.isListening)
                      Text(
-                       'Speak now', //context.loc.speakNow
+                       context.loc.speakNow, //'Speak now',
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                 ],
@@ -184,8 +184,8 @@ class _OverlayContent extends ConsumerWidget {
             child: Text(
               speechState.recognizedText.isEmpty
                   ? (speechState.isListening
-                        ? 'Start speaking...' //'${context.loc.startSpeaking}...'
-                        : 'No text recognized' //context.loc.noTextRecognized
+                        ? '${context.loc.startSpeaking}...'//'Start speaking...'
+                        : context.loc.noTextRecognized//'No text recognized'
               )
                   : speechState.recognizedText,
               key: ValueKey(speechState.recognizedText),
@@ -273,3 +273,4 @@ class _OverlayContent extends ConsumerWidget {
     return const SizedBox(width: 48, height: 48);
   }
 }
+ */
