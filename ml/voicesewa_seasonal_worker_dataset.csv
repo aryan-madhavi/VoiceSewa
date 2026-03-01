@@ -1,0 +1,101 @@
+district,season,jobType,jobsCompleted,experienceYears,isMultiTalented,seasonalDemandScore,highDemandNextSeason
+Ambernath,Summer,Appliance Technician,162,4,0,0.52,1
+Dombivli,Summer,Masonry,50,1,1,0.31,0
+Thane,Summer,Mechanic,685,12,0,0.42,0
+Nerul,Monsoon,Cook,910,13,1,0.5,1
+Dadar,Festival,House Cleaner,240,3,1,0.8,1
+Vashi,Summer,Plumber,387,2,1,0.38,0
+Mira Road,Winter,Electrician,147,9,1,0.5,0
+Nerul,Summer,Mechanic,663,14,1,0.56,1
+Vashi,Monsoon,Plumber,253,11,0,0.68,1
+Ambernath,Monsoon,Plumber,484,5,1,0.71,1
+Vashi,Monsoon,House Cleaner,706,4,1,0.43,0
+Ambernath,Monsoon,Mechanic,493,3,0,0.19,0
+Dombivli,Monsoon,House Cleaner,861,4,0,0.25,0
+Vashi,Festival,Appliance Technician,955,4,0,0.34,0
+Vashi,Monsoon,Cook,956,15,1,0.56,1
+Dadar,Winter,Carpenter,594,12,0,0.4,0
+Mira Road,Festival,Masonry,244,6,1,0.4,0
+Dadar,Festival,Plumber,132,14,0,0.27,0
+Dadar,Festival,Masonry,410,7,0,0.21,0
+Panvel,Winter,Mechanic,758,11,0,0.36,0
+Dombivli,Winter,House Cleaner,465,5,0,0.17,0
+Andheri,Winter,Mechanic,954,9,0,0.36,0
+Virar,Monsoon,Carpenter,185,13,1,0.45,0
+Dombivli,Summer,Masonry,39,8,1,0.41,0
+Vashi,Winter,Painter,919,4,0,0.31,0
+Ambernath,Summer,Cook,565,13,0,0.43,0
+Dadar,Festival,Mechanic,560,5,0,0.34,0
+Nerul,Monsoon,Mechanic,339,12,0,0.29,0
+Vashi,Festival,Mechanic,273,2,1,0.32,0
+Vashi,Summer,Masonry,245,10,0,0.25,0
+Andheri,Monsoon,Plumber,358,14,0,0.61,1
+Thane,Winter,Cook,155,9,0,0.52,1
+Mira Road,Festival,Painter,436,13,1,0.82,1
+Ambernath,Festival,House Cleaner,498,7,1,0.79,1
+Andheri,Summer,Electrician,367,12,1,0.78,1
+Ambernath,Monsoon,Painter,479,9,0,0.26,0
+Dadar,Winter,Cook,965,14,0,0.56,1
+Dombivli,Summer,Electrician,968,2,0,0.63,1
+Thane,Monsoon,Driver,238,8,1,0.49,0
+Andheri,Monsoon,Driver,291,7,0,0.24,0
+Panvel,Winter,Driver,214,3,1,0.53,1
+Andheri,Summer,House Cleaner,618,1,0,0.3,0
+Dombivli,Monsoon,Electrician,210,14,0,0.61,1
+Ambernath,Monsoon,Driver,603,15,0,0.37,0
+Mira Road,Summer,Masonry,693,7,0,0.31,0
+Dombivli,Winter,Appliance Technician,753,11,0,0.38,0
+Virar,Festival,Carpenter,343,8,1,0.89,1
+Ambernath,Summer,Cook,570,2,0,0.27,0
+Virar,Monsoon,House Cleaner,270,15,0,0.29,0
+Dadar,Festival,Mechanic,846,10,1,0.57,1
+Andheri,Winter,Plumber,138,5,0,0.24,0
+Dombivli,Monsoon,Appliance Technician,235,10,1,0.47,0
+Thane,Winter,Mechanic,947,5,1,0.49,0
+Andheri,Summer,Driver,23,1,1,0.33,0
+Dadar,Winter,Carpenter,742,9,1,0.54,1
+Andheri,Summer,Plumber,56,9,0,0.33,0
+Mira Road,Monsoon,Driver,335,1,0,0.19,0
+Andheri,Winter,Painter,125,11,0,0.29,0
+Dombivli,Festival,Masonry,972,15,0,0.37,0
+Dadar,Monsoon,Driver,774,3,0,0.34,0
+Nerul,Monsoon,Appliance Technician,738,13,0,0.36,0
+Andheri,Festival,Painter,960,14,0,0.8,1
+Virar,Monsoon,Painter,217,11,0,0.29,0
+Virar,Summer,Appliance Technician,541,11,1,0.84,1
+Dombivli,Winter,Electrician,287,15,0,0.27,0
+Virar,Summer,Plumber,766,6,1,0.48,0
+Nerul,Summer,Driver,65,5,0,0.22,0
+Andheri,Monsoon,House Cleaner,991,2,1,0.47,0
+Vashi,Winter,Plumber,336,9,1,0.47,0
+Vashi,Festival,Appliance Technician,450,4,0,0.22,0
+Nerul,Monsoon,Masonry,581,7,1,0.83,1
+Virar,Winter,Painter,613,13,1,0.56,1
+Vashi,Festival,Cook,238,11,1,0.45,0
+Dadar,Summer,Appliance Technician,858,2,1,0.8,1
+Thane,Winter,Painter,45,3,0,0.15,0
+Panvel,Summer,Cook,664,15,1,0.56,1
+Nerul,Festival,Driver,691,3,0,0.32,0
+Ambernath,Festival,Painter,1000,13,0,0.82,1
+Panvel,Summer,Mechanic,888,15,0,0.36,0
+Dadar,Festival,Mechanic,932,13,1,0.54,1
+Dombivli,Festival,Mechanic,182,15,1,0.47,0
+Panvel,Festival,Appliance Technician,672,14,0,0.38,0
+Dombivli,Festival,Painter,99,8,1,0.87,1
+Thane,Winter,House Cleaner,573,15,1,0.51,1
+Dadar,Monsoon,Driver,239,12,0,0.26,0
+Nerul,Winter,Mechanic,83,7,1,0.32,0
+Nerul,Festival,Masonry,921,14,0,0.43,0
+Nerul,Festival,Electrician,791,5,1,0.44,0
+Nerul,Monsoon,Cook,466,5,0,0.2,0
+Nerul,Winter,Driver,498,14,0,0.54,1
+Mira Road,Summer,Driver,678,2,0,0.29,0
+Panvel,Monsoon,Electrician,355,7,1,0.67,1
+Vashi,Winter,Driver,994,13,1,0.78,1
+Virar,Summer,Cook,572,12,0,0.36,0
+Vashi,Monsoon,Plumber,51,13,0,0.69,1
+Thane,Summer,Masonry,149,4,0,0.2,0
+Ambernath,Monsoon,Cook,397,13,1,0.42,0
+Mira Road,Summer,Carpenter,612,2,1,0.4,0
+Virar,Festival,Driver,626,2,0,0.32,0
+Thane,Summer,Appliance Technician,599,13,0,0.73,1
