@@ -5,17 +5,17 @@ class ChatController extends Notifier<List<ChatMessage>> {
   @override
   List<ChatMessage> build() => [];
 
-  void addUserMessage(String text) {
+  void addUserMessage({String? text, String? audioPath}) {
     state = [
       ...state,
-      ChatMessage(role: ChatRole.user, text: text),
+      ChatMessage(role: ChatRole.user, text: text, audioPath: audioPath),
     ];
   }
 
-  void addBotMessage(String text) {
+  void addBotMessage({String? text, String? audioPath}) {
     state = [
       ...state,
-      ChatMessage(role: ChatRole.bot, text: text),
+      ChatMessage(role: ChatRole.bot, text: text, audioPath: audioPath),
     ];
   }
 

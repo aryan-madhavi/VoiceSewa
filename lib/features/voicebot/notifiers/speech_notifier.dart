@@ -100,8 +100,8 @@ class SpeechNotifier extends Notifier<SpeechState> {
     if (result.finalResult) {
       final text = result.recognizedWords.trim();
       stopListening();
-      ref.read(chatControllerProvider.notifier).addUserMessage(text);
-      ref.read(voiceBotControllerProvider.notifier).processSpeech(text);
+      ref.read(chatControllerProvider.notifier).addUserMessage();
+      ref.read(voiceBotControllerProvider.notifier).processAudio(text);
     }
   }
 
