@@ -102,5 +102,8 @@
 
   "rating": "Rating",
   "jobs": "Jobs",
-  "experience": "Experience"
+  "experience": "Experience",
+  "voiceAssistant": "Voice Assistant",
+  "assistantIsResponding": "Assistant is responding...",
+  "tapTheMicToStartTalking": "Tap the mic to start talking"
 }

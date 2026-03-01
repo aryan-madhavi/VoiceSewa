@@ -101,5 +101,8 @@
 
   "rating": "रेटिंग",
   "jobs": "कामे",
-  "experience": "अनुभव"
+  "experience": "अनुभव",
+  "voiceAssistant": "व्हॉइस असिस्टंट",
+  "assistantIsResponding": "असिस्टंट प्रतिसाद देत आहे...",
+  "tapTheMicToStartTalking": "बोलणे सुरू करण्यासाठी माइक टॅप करा"
 }

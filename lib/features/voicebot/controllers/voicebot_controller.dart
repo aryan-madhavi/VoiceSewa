@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:voicesewa_worker/core/providers/session_provider.dart';
 import 'package:voicesewa_worker/features/auth/providers/auth_provider.dart';
 import 'package:voicesewa_worker/features/voicebot/providers/audio_provider.dart';
 import 'package:voicesewa_worker/features/voicebot/providers/chat_provider.dart';
@@ -12,7 +13,7 @@ class VoiceBotController extends Notifier<bool> {
 
   Future<void> processAudio(String audioPath) async {
     final audioNotifier = ref.read(audioProvider.notifier);
-    final uid = ref.read(currentUserIdProvider);
+    final uid = ref.read(currentUserProvider)?.uid;
 
     final file = File(audioPath);
     if (!await file.exists()) return;
@@ -29,7 +30,7 @@ class VoiceBotController extends Notifier<bool> {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({'uid': uid, 'audio': base64Input, 'type': 'client'}),
+        body: jsonEncode({'uid': uid, 'audio': base64Input, 'type': 'worker'}),
       );
 
       if (response.statusCode != 200) {

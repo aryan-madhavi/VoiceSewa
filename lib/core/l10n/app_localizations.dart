@@ -593,6 +593,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Experience'**
   String get experience;
+
+  /// No description provided for @voiceAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice Assistant'**
+  String get voiceAssistant;
+
+  /// No description provided for @assistantIsResponding.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant is responding...'**
+  String get assistantIsResponding;
+
+  /// No description provided for @tapTheMicToStartTalking.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the mic to start talking'**
+  String get tapTheMicToStartTalking;
 }
 
 class _AppLocalizationsDelegate

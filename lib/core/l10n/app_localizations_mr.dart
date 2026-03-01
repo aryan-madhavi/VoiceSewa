@@ -254,4 +254,13 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get experience => 'अनुभव';
+
+  @override
+  String get voiceAssistant => 'व्हॉइस असिस्टंट';
+
+  @override
+  String get assistantIsResponding => 'असिस्टंट प्रतिसाद देत आहे...';
+
+  @override
+  String get tapTheMicToStartTalking => 'बोलणे सुरू करण्यासाठी माइक टॅप करा';
 }

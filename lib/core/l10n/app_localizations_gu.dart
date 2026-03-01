@@ -254,4 +254,13 @@ class AppLocalizationsGu extends AppLocalizations {
 
   @override
   String get experience => 'અનુભવ';
+
+  @override
+  String get voiceAssistant => 'વૉઇસ આસિસ્ટન્ટ';
+
+  @override
+  String get assistantIsResponding => 'આસિસ્ટન્ટ જવાબ આપી રહ્યો છે...';
+
+  @override
+  String get tapTheMicToStartTalking => 'વાત શરૂ કરવા માઇક ટૅપ કરો';
 }

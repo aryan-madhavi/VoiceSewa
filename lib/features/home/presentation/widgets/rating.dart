@@ -12,7 +12,6 @@ class Rating extends StatefulWidget {
 }
 
 class _RatingState extends State<Rating> {
-
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -27,7 +26,7 @@ class _RatingState extends State<Rating> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              context.loc.yourCurrentRating,// "Your Current Rating",
+              context.loc.yourCurrentRating,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -43,7 +42,7 @@ class _RatingState extends State<Rating> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  "$rating",
+                  rating.toStringAsFixed(1),
                   style: const TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.bold,
@@ -59,20 +58,23 @@ class _RatingState extends State<Rating> {
                   children: [
                     Row(
                       children: List.generate(
-                          starCount,
-                              (index) => buildStar(context, index)
+                        starCount,
+                        (index) => _buildStar(index),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        context.loc.excellentJob, // "Excellent Job!",
-                        style: TextStyle(
+                        context.loc.excellentJob,
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: Colors.green,
@@ -89,28 +91,20 @@ class _RatingState extends State<Rating> {
     );
   }
 
-  Widget buildStar(BuildContext context, int index) {
-    Icon icon;
+  /// Renders a full star, half star, or empty star based on [index] vs [rating].
+  Widget _buildStar(int index) {
+    // index is 0-based; compare against the 1-based rating value
+    final starPosition = index + 1; // e.g. index 0 → star 1
 
-    if (index >= rating) {
-      icon = const Icon(
-        Icons.star_rounded,
-        color: Colors.grey,
-        size: 24,
-      );
-    } else if (index > rating - 1 && index < rating) {
-      icon = const Icon(
-        Icons.star_half_rounded,
-        color: Colors.amber,
-        size: 24,
-      );
+    if (rating >= starPosition) {
+      // Fully filled star
+      return const Icon(Icons.star_rounded, color: Colors.amber, size: 24);
+    } else if (rating > index && rating < starPosition) {
+      // Half star
+      return const Icon(Icons.star_half_rounded, color: Colors.amber, size: 24);
     } else {
-      icon = const Icon(
-        Icons.star_rounded,
-        color: Colors.amber,
-        size: 24,
-      );
+      // Empty star
+      return const Icon(Icons.star_rounded, color: Colors.grey, size: 24);
     }
-    return icon;
   }
 }

@@ -254,4 +254,13 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get experience => 'अनुभव';
+
+  @override
+  String get voiceAssistant => 'वॉयस असिस्टेंट';
+
+  @override
+  String get assistantIsResponding => 'असिस्टेंट जवाब दे रहा है...';
+
+  @override
+  String get tapTheMicToStartTalking => 'बात शुरू करने के लिए माइक टैप करें';
 }

@@ -254,4 +254,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get experience => 'Experience';
+
+  @override
+  String get voiceAssistant => 'Voice Assistant';
+
+  @override
+  String get assistantIsResponding => 'Assistant is responding...';
+
+  @override
+  String get tapTheMicToStartTalking => 'Tap the mic to start talking';
 }

@@ -101,5 +101,8 @@
 
   "rating": "રેટિંગ",
   "jobs": "નોકરીઓ",
-  "experience": "અનુભવ"
+  "experience": "અનુભવ",
+  "voiceAssistant": "વૉઇસ આસિસ્ટન્ટ",
+  "assistantIsResponding": "આસિસ્ટન્ટ જવાબ આપી રહ્યો છે...",
+  "tapTheMicToStartTalking": "વાત શરૂ કરવા માઇક ટૅપ કરો"
 }
