@@ -1,0 +1,161 @@
+district,season,jobType,jobsCompleted,experienceYears,isMultiTalented,seasonalDemandScore
+Andheri,Summer,Electrician,62,12,1,5.639426798457884
+Andheri,Summer,Plumber,121,12,0,1.2448918538034763
+Andheri,Summer,Carpenter,329,2,1,1.6766994874229113
+Andheri,Summer,Painter,97,4,0,1.0317826794817835
+Andheri,Summer,Appliance Technician,63,9,0,7.505355288103362
+Andheri,Summer,House Cleaner,329,7,0,1.7160196129224035
+Andheri,Summer,Driver,192,13,0,1.4492090462838536
+Andheri,Summer,Cook,131,12,1,1.7588073671297673
+Andheri,Summer,Mechanic,129,4,1,1.3402505165179919
+Andheri,Summer,Masonry,244,2,1,1.1022102765198487
+Andheri,Monsoon,Electrician,359,5,0,6.84749436634746
+Andheri,Monsoon,Plumber,324,2,1,9.729731786693819
+Andheri,Monsoon,Carpenter,200,14,1,1.0788001980784583
+Andheri,Monsoon,Painter,85,1,0,1.577352145256762
+Andheri,Monsoon,Appliance Technician,90,14,0,1.7730683407886918
+Andheri,Monsoon,House Cleaner,244,5,1,1.8664836667552698
+Andheri,Monsoon,Driver,236,3,1,1.6356844442644003
+Andheri,Monsoon,Cook,393,5,0,1.3552707002275215
+Andheri,Monsoon,Mechanic,137,9,0,1.6091310056669883
+Andheri,Monsoon,Masonry,244,5,0,5.163402493761929
+Andheri,Winter,Electrician,78,4,0,1.6846142509898745
+Andheri,Winter,Plumber,255,5,0,1.8050458007712145
+Andheri,Winter,Carpenter,340,15,1,1.2109828435863266
+Andheri,Winter,Painter,305,7,1,1.2126265440541406
+Andheri,Winter,Appliance Technician,121,4,1,1.1428715904420628
+Andheri,Winter,House Cleaner,269,15,1,1.7470138116522578
+Andheri,Winter,Driver,120,9,1,4.361996443713611
+Andheri,Winter,Cook,74,14,0,5.090909412173794
+Andheri,Winter,Mechanic,131,13,1,1.1528413193482612
+Andheri,Winter,Masonry,247,7,1,1.5964090307319738
+Andheri,Festival,Electrician,333,14,0,1.5291143450991371
+Andheri,Festival,Plumber,108,11,1,1.6802834102565185
+Andheri,Festival,Carpenter,224,2,1,6.768598732657446
+Andheri,Festival,Painter,282,1,1,8.434765250669106
+Andheri,Festival,Appliance Technician,141,9,0,1.9718880988701142
+Andheri,Festival,House Cleaner,202,14,0,5.870518569836767
+Andheri,Festival,Driver,132,9,0,1.1528392685496347
+Andheri,Festival,Cook,300,1,0,1.598944584460229
+Andheri,Festival,Mechanic,207,4,0,1.929098616264617
+Andheri,Festival,Masonry,340,2,0,1.240871592447233
+Panvel,Summer,Electrician,85,13,0,5.731907594844627
+Panvel,Summer,Plumber,293,9,0,1.1283914644997628
+Panvel,Summer,Carpenter,360,7,0,1.265056628940059
+Panvel,Summer,Painter,152,12,1,1.928913493002177
+Panvel,Summer,Appliance Technician,393,11,1,7.398992299997429
+Panvel,Summer,House Cleaner,314,8,0,1.4381000839145042
+Panvel,Summer,Driver,82,6,0,1.247905613666008
+Panvel,Summer,Cook,167,10,0,1.5883087184572333
+Panvel,Summer,Mechanic,373,1,0,1.0071908389850934
+Panvel,Summer,Masonry,66,14,1,1.0674003281103075
+Panvel,Monsoon,Electrician,171,5,1,6.070857349888653
+Panvel,Monsoon,Plumber,117,12,1,9.214236807370439
+Panvel,Monsoon,Carpenter,292,13,1,1.2429972423957245
+Panvel,Monsoon,Painter,99,11,1,1.1904099143618776
+Panvel,Monsoon,Appliance Technician,260,8,0,1.3542975665895538
+Panvel,Monsoon,House Cleaner,380,2,0,1.6733645472933016
+Panvel,Monsoon,Driver,223,13,0,1.4026212821022688
+Panvel,Monsoon,Cook,147,9,1,1.2486563339202856
+Panvel,Monsoon,Mechanic,143,5,1,1.1401822970947744
+Panvel,Monsoon,Masonry,88,8,0,5.249806447882101
+Panvel,Winter,Electrician,326,14,0,1.0505883295248812
+Panvel,Winter,Plumber,171,3,1,1.9689962572847513
+Panvel,Winter,Carpenter,159,14,1,1.4856411254507185
+Panvel,Winter,Painter,134,7,0,1.9024428655105488
+Panvel,Winter,Appliance Technician,185,15,1,1.985308843779726
+Panvel,Winter,House Cleaner,334,11,1,1.2852492289469204
+Panvel,Winter,Driver,201,4,0,4.154796825274064
+Panvel,Winter,Cook,327,1,1,5.579180290816256
+Panvel,Winter,Mechanic,349,8,0,1.0571652729074832
+Panvel,Winter,Masonry,310,2,0,1.0568795797286845
+Panvel,Festival,Electrician,84,11,0,1.0685213327037923
+Panvel,Festival,Plumber,341,4,0,1.4037755513182775
+Panvel,Festival,Carpenter,264,11,1,6.619381510332103
+Panvel,Festival,Painter,154,11,1,8.934706257736428
+Panvel,Festival,Appliance Technician,252,3,1,1.238685952615846
+Panvel,Festival,House Cleaner,87,1,1,5.457224572570452
+Panvel,Festival,Driver,338,2,0,1.621159255493093
+Panvel,Festival,Cook,309,5,0,1.5376344041016274
+Panvel,Festival,Mechanic,85,15,0,1.933259377993709
+Panvel,Festival,Masonry,130,8,1,1.369527088738884
+Thane,Summer,Electrician,384,9,0,5.6116777657259505
+Thane,Summer,Plumber,333,5,0,1.6678632037125836
+Thane,Summer,Carpenter,118,5,0,1.938930003927104
+Thane,Summer,Painter,333,3,1,1.8897127070057091
+Thane,Summer,Appliance Technician,157,12,1,7.281756271457894
+Thane,Summer,House Cleaner,374,14,1,1.203597312327453
+Thane,Summer,Driver,178,15,0,1.505409058097987
+Thane,Summer,Cook,266,14,1,1.0922984677127334
+Thane,Summer,Mechanic,220,13,0,1.0440867617990501
+Thane,Summer,Masonry,184,3,1,1.6371133773013797
+Thane,Monsoon,Electrician,268,9,0,6.551680421126392
+Thane,Monsoon,Plumber,126,9,0,9.111873880589336
+Thane,Monsoon,Carpenter,348,9,0,1.8345950198860166
+Thane,Monsoon,Painter,71,5,1,1.4297867128807717
+Thane,Monsoon,Appliance Technician,70,15,1,1.89898148874259
+Thane,Monsoon,House Cleaner,177,11,0,1.210076538339754
+Thane,Monsoon,Driver,336,15,1,1.3536786346146183
+Thane,Monsoon,Cook,129,15,0,1.973837022637289
+Thane,Monsoon,Mechanic,140,15,1,1.864605696219964
+Thane,Monsoon,Masonry,220,13,1,5.0247863618981885
+Thane,Winter,Electrician,177,5,0,1.802235138937139
+Thane,Winter,Plumber,105,7,0,1.7873745091354711
+Thane,Winter,Carpenter,163,4,1,1.8585932513377816
+Thane,Winter,Painter,166,4,0,1.3496584244459187
+Thane,Winter,Appliance Technician,254,6,1,1.660033182748629
+Thane,Winter,House Cleaner,192,6,1,1.8643529420302865
+Thane,Winter,Driver,324,6,0,4.679518118360264
+Thane,Winter,Cook,183,3,1,5.115341751851427
+Thane,Winter,Mechanic,355,7,1,1.0382571973532628
+Thane,Winter,Masonry,210,7,0,1.7285450606527042
+Thane,Festival,Electrician,345,4,1,1.3851954333447272
+Thane,Festival,Plumber,273,1,0,1.0443865337132312
+Thane,Festival,Carpenter,85,11,1,6.364221471781264
+Thane,Festival,Painter,389,14,0,8.62315540994641
+Thane,Festival,Appliance Technician,203,9,1,1.7197542630139502
+Thane,Festival,House Cleaner,217,7,1,5.66689290410573
+Thane,Festival,Driver,148,7,1,1.5544124776667938
+Thane,Festival,Cook,139,10,1,1.677317945272733
+Thane,Festival,Mechanic,50,5,1,1.406075168758163
+Thane,Festival,Masonry,346,10,1,1.2101826848826418
+Virar,Summer,Electrician,276,11,0,5.4649881902470145
+Virar,Summer,Plumber,136,11,0,1.5111739968745872
+Virar,Summer,Carpenter,389,11,1,1.2837864049930274
+Virar,Summer,Painter,170,11,1,1.0933872000755627
+Virar,Summer,Appliance Technician,151,3,0,7.224640665997288
+Virar,Summer,House Cleaner,293,10,0,1.0462137180927584
+Virar,Summer,Driver,372,10,0,1.455416168380089
+Virar,Summer,Cook,246,8,1,1.7183459154989886
+Virar,Summer,Mechanic,385,12,0,1.2439844395784387
+Virar,Summer,Masonry,104,13,1,1.8926598262113665
+Virar,Monsoon,Electrician,315,8,0,6.218841136812319
+Virar,Monsoon,Plumber,112,8,0,9.557405794033395
+Virar,Monsoon,Carpenter,391,9,1,1.8014166017222646
+Virar,Monsoon,Painter,276,10,1,1.950039608443156
+Virar,Monsoon,Appliance Technician,330,8,0,1.830569169721415
+Virar,Monsoon,House Cleaner,293,8,1,1.743655442159585
+Virar,Monsoon,Driver,376,5,1,1.7517767865005114
+Virar,Monsoon,Cook,190,8,0,1.6267484369817813
+Virar,Monsoon,Mechanic,170,5,1,1.7135448626110565
+Virar,Monsoon,Masonry,326,2,0,5.319709568418762
+Virar,Winter,Electrician,246,12,0,1.1508306580130867
+Virar,Winter,Plumber,82,7,1,1.7064191416945522
+Virar,Winter,Carpenter,288,7,0,1.3308813910380834
+Virar,Winter,Painter,265,7,0,1.2068343895144102
+Virar,Winter,Appliance Technician,344,7,1,1.8567320323039342
+Virar,Winter,House Cleaner,230,5,1,1.005896083583993
+Virar,Winter,Driver,264,9,0,4.853447950569104
+Virar,Winter,Cook,189,7,1,5.4882294775502505
+Virar,Winter,Mechanic,222,11,1,1.0290248199467151
+Virar,Winter,Masonry,289,15,0,1.7241813776272887
+Virar,Festival,Electrician,323,1,1,1.980721977518923
+Virar,Festival,Plumber,389,1,0,1.5918927756279109
+Virar,Festival,Carpenter,119,14,1,6.642749648009335
+Virar,Festival,Painter,183,7,1,8.181729026513432
+Virar,Festival,Appliance Technician,217,6,1,1.2116602842114816
+Virar,Festival,House Cleaner,265,5,0,5.278256615638806
+Virar,Festival,Driver,326,1,1,1.470306836213047
+Virar,Festival,Cook,85,13,0,1.2242221657197483
+Virar,Festival,Mechanic,176,4,0,1.7542332040595263
+Virar,Festival,Masonry,172,3,1,1.6213356565861579

@@ -3,6 +3,7 @@ from flask_cors import CORS
 import pickle
 import pandas as pd
 import datetime
+import os
 
 # ---------------------------------
 # Initialize App
@@ -11,20 +12,21 @@ app = Flask(__name__)
 CORS(app)
 
 # ---------------------------------
-# Load Trained Model
+# Load Model & Feature List Safely
 # ---------------------------------
-model = pickle.load(open("voicesewa_model.pkl", "rb"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+model = pickle.load(open(os.path.join(BASE_DIR, "voicesewa_model.pkl"), "rb"))
+model_features = pickle.load(open(os.path.join(BASE_DIR, "model_features.pkl"), "rb"))
 
 # ---------------------------------
 # Static Config
 # ---------------------------------
 DISTRICTS = [
-    "Mumbai - Andheri",
-    "Mumbai - Borivali",
-    "Thane - Ghodbunder",
-    "Thane - Kalyan",
-    "Navi Mumbai - Vashi",
-    "Panvel"
+    "Andheri",
+    "Panvel",
+    "Thane",
+    "Virar"
 ]
 
 JOBS = [
@@ -58,38 +60,61 @@ def get_season(month):
 # ---------------------------------
 def generate_forecast(season):
 
-    results = []
+    final_results = []
 
     for district in DISTRICTS:
+
+        job_scores = []
+
         for job in JOBS:
 
             input_data = {
                 "district": district,
                 "season": season,
-                "primarySkill": job,
+                "jobType": job,
+                "jobsCompleted": 200,
                 "experienceYears": 8,
-                "jobsCompleted": 500,
                 "isMultiTalented": 1
             }
 
-            df = pd.DataFrame([input_data])
-            df = pd.get_dummies(df)
+            # Create dataframe
+            df_test = pd.DataFrame([input_data])
 
-            # Align with training features
-            df = df.reindex(columns=model.feature_names_in_, fill_value=0)
+            # One-hot encode
+            df_test = pd.get_dummies(df_test)
 
-            probability = model.predict_proba(df)[0][1]
+            # Add missing columns from training
+            for col in model_features:
+                if col not in df_test.columns:
+                    df_test[col] = 0
 
-            results.append({
-                "district": district,
+            # Ensure exact column order
+            df_test = df_test[model_features]
+
+            # Predict RAW regression score
+            score = model.predict(df_test)[0]
+
+            job_scores.append({
                 "job": job,
-                "demandProbability": round(float(probability), 3)
+                "rawScore": float(score)
+            })
+
+        # Normalize to 100%
+        total_score = sum(j["rawScore"] for j in job_scores)
+
+        for j in job_scores:
+            percentage = (j["rawScore"] / total_score) * 100 if total_score > 0 else 0
+
+            final_results.append({
+                "district": district,
+                "job": j["job"],
+                "demandPercentage": round(percentage, 2)
             })
 
     # Sort by highest demand
-    results = sorted(results, key=lambda x: x["demandProbability"], reverse=True)
+    final_results = sorted(final_results, key=lambda x: x["demandPercentage"], reverse=True)
 
-    return results
+    return final_results
 
 # ---------------------------------
 # Health Check
