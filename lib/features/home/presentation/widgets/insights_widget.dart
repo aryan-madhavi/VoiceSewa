@@ -20,7 +20,8 @@ class _ForecastItem {
   factory _ForecastItem.fromJson(Map<String, dynamic> json) => _ForecastItem(
     district: json['district'] as String,
     job: json['job'] as String,
-    demandProbability: (json['demandProbability'] as num).toDouble(),
+    // API changed field name: demandPercentage (e.g. 11.76), fallback to old name
+    demandProbability: ((json['demandPercentage'] ?? json['demandProbability'] ?? 0) as num).toDouble(),
   );
 }
 
@@ -65,12 +66,14 @@ const _jobColors = <String, Color>{
 };
 
 const _areaColors = <String, Color>{
-  'Panvel': Color(0xFF00BFA5),
-  'Andheri': Color(0xFF3949AB),
-  'Borivali': Color(0xFFD81B60),
-  'Ghodbunder': Color(0xFFFF8F00),
-  'Kalyan': Color(0xFF00897B),
-  'Vashi': Color(0xFF8E24AA),
+  'Panvel':    Color(0xFF00BFA5),
+  'Andheri':   Color(0xFF3949AB),
+  'Borivali':  Color(0xFFD81B60),
+  'Ghodbunder':Color(0xFFFF8F00),
+  'Kalyan':    Color(0xFF00897B),
+  'Vashi':     Color(0xFF8E24AA),
+  'Thane':     Color(0xFFE65100),  // deep orange
+  'Virar':     Color(0xFF00695C),  // dark teal
 };
 
 Color _jobColor(String job) => _jobColors[job] ?? const Color(0xFF607D8B);
@@ -304,20 +307,20 @@ class _InsightsBody extends StatelessWidget {
         const SizedBox(height: 20),
 
         // Job legend
-        const Text(
-          'Job Types',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1A1A2E),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: uniqueJobs.map((job) => _JobChip(job: job)).toList(),
-        ),
+        // const Text(
+        //   'Job Types',
+        //   style: TextStyle(
+        //     fontSize: 13,
+        //     fontWeight: FontWeight.bold,
+        //     color: Color(0xFF1A1A2E),
+        //   ),
+        // ),
+        // const SizedBox(height: 10),
+        // Wrap(
+        //   spacing: 8,
+        //   runSpacing: 8,
+        //   children: uniqueJobs.map((job) => _JobChip(job: job)).toList(),
+        // ),
 
         const SizedBox(height: 24),
 
@@ -450,10 +453,12 @@ class _AreaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final areaColor = _areaColor(district);
     final avg = jobDemand.values.reduce((a, b) => a + b) / jobDemand.length;
-    final pct = (avg * 100).round();
+    final pct = avg.toStringAsFixed(1); // already a percentage like 10.2
 
-    final sortedJobs = jobDemand.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final sortedJobs = (jobDemand.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value)))
+        .take(3)
+        .toList();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -530,7 +535,8 @@ class _AreaCard extends StatelessWidget {
             child: Column(
               children: sortedJobs.map((entry) {
                 final jColor = _jobColor(entry.key);
-                final jPct = (entry.value * 100).round();
+                final jPct = entry.value.toStringAsFixed(1); // e.g. "11.7"
+                final barValue = (entry.value / 100.0).clamp(0.0, 1.0);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 9),
                   child: Row(
@@ -554,7 +560,7 @@ class _AreaCard extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
-                            value: entry.value,
+                            value: barValue,
                             backgroundColor: jColor.withOpacity(0.10),
                             valueColor: AlwaysStoppedAnimation<Color>(jColor),
                             minHeight: 7,
@@ -563,7 +569,7 @@ class _AreaCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       SizedBox(
-                        width: 30,
+                        width: 36,
                         child: Text(
                           '$jPct%',
                           textAlign: TextAlign.right,
