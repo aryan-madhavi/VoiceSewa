@@ -1,0 +1,209 @@
+{
+  "name": "Call_Translation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "translate-call",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -368,
+        -208
+      ],
+      "id": "37cf9d00-1e7e-4164-99c5-20d6eb6184d6",
+      "name": "Webhook",
+      "webhookId": "347ac19a-a7b6-4173-9a16-601ac2e2d64b"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "text": "={{ $json.text }}",
+        "translateTo": "={{ $('Webhook').item.json.body.translate_to }}"
+      },
+      "type": "n8n-nodes-base.googleTranslate",
+      "typeVersion": 2,
+      "position": [
+        144,
+        -192
+      ],
+      "id": "f683b51e-189d-4e99-b6b1-4f4954174ce7",
+      "name": "Translate a language",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "audio_to_translate"
+            },
+            {
+              "name": "model",
+              "value": "whisper-large-v3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "08eed6a6-df81-4a24-85fc-5ef94c815860",
+      "name": "HTTP Request",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "mYvSvapFe0JubzFx",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "enableResponseOutput": true,
+        "respondWith": "binary",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        832,
+        -16
+      ],
+      "id": "58132860-7371-4dc8-a42f-eb1c725f6d09",
+      "name": "Respond to Webhook",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sarvam.ai/text-to-speech",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{ $json.translatedText }}\", \n  \"target_language_code\": \"{{ $('Webhook').item.json.body.translate_to }}-IN\", \n  \"model\": \"bulbul:v3\",\n  \"speaker\": \"shubh\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        368,
+        -32
+      ],
+      "id": "efa3c038-fa70-4839-a092-f771a78e0c67",
+      "name": "HTTP Request2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pVqtQu2jf9iKkGX9",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Grab the base64 string from the Sarvam response\nconst base64Audio = $input.first().json.audios[0];\n\n// 2. Convert to Buffer\nconst fullWavBuffer = Buffer.from(base64Audio, 'base64');\n\n// 3. Strip the 44-byte WAV header to get Raw PCM 16-bit\n// This is required for Agora's pushExternalAudioFrame to sound clear\nconst rawPcmData = fullWavBuffer.subarray(44); \n\nreturn [\n  {\n    json: {},\n    binary: {\n      data: await this.helpers.prepareBinaryData(\n        rawPcmData, \n        'translated.raw', \n        'audio/l16' // MIME type for Raw PCM 16-bit\n      )\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -144
+      ],
+      "id": "c394e892-3aa8-44c3-abed-ebf8a182d413",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Translate a language",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Translate a language": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3d88fb14-6af3-4ba5-b27a-e8cc81a06b2a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cb840271ce94bb7fd9c6793b8082b2d29d9bc8dbac834b10a25330e393e00f0d"
+  },
+  "id": "bGku9stMOI4NgXbe",
+  "tags": []
+}

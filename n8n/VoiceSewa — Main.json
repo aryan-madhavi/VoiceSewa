@@ -1,0 +1,1094 @@
+{
+  "name": "VoiceSewa — Main",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -3760,
+        -16
+      ],
+      "id": "d25c39f3-b5f3-49b0-bfd9-50cdb2b5bf4e",
+      "name": "Webhook",
+      "webhookId": "b1dd7630-1bfb-40dc-837f-13ad25642c89"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.msg }}",
+        "options": {
+          "systemMessage": "={{ $json.system_prompt }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -992,
+        32
+      ],
+      "id": "043b4e13-d3b6-408e-a63a-b5939555fe04",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.type }}-{{ $json.uid }}-v19",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -912,
+        256
+      ],
+      "id": "7b5c978d-c911-44d5-9c3b-f6b440c78d5e",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        256
+      ],
+      "id": "2538514d-db10-45b9-9e66-39d994ba0dc7",
+      "name": "Google Gemini Chat Model",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2wil1CYwCtUIatWB",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "audioContent",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -352,
+        128
+      ],
+      "id": "74728f89-c997-4a91-8d39-5679e36aed0e",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"response\": {{ $('AI Agent').item.json.output.removeMarkdown().toJsonString() }},\n  \"base64Audio\": {{ $json.audioContent.toJsonString() }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -352,
+        -64
+      ],
+      "id": "34252d2f-ccb6-477e-b16b-ab6908f37afa",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -2160,
+        32
+      ],
+      "id": "0c061a46-2b2f-4c2c-9834-0a2e62786e48",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "eb941c47-6ee8-46b6-bbfd-f18796e2f0cb",
+              "name": "uid",
+              "value": "={{ $json.uid || $json.body.uid }}",
+              "type": "string"
+            },
+            {
+              "id": "097789fe-e419-4b0e-a000-69928365e786",
+              "name": "msg",
+              "value": "={{ $json.msg || $json.body.msg }}",
+              "type": "string"
+            },
+            {
+              "id": "c999ba21-baf5-484b-a571-0bac3e3bfcd8",
+              "name": "lang",
+              "value": "={{ $json.lang || $json.body.lang }}",
+              "type": "string"
+            },
+            {
+              "id": "fdfe93ee-9898-45fd-a931-fcc9272ec0c1",
+              "name": "type",
+              "value": "={{ $json.type || $json.body.type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2560,
+        16
+      ],
+      "id": "cfc4ecbc-c1a4-4360-9e2c-6109e24ecbc0",
+      "name": "MapWebhookData"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a9d20f25-e07e-451f-b38c-58684bd033e5",
+              "name": "uid",
+              "value": "={{ $('MapWebhookData').item.json.uid }}",
+              "type": "string"
+            },
+            {
+              "id": "df0ee35b-7d16-4418-870a-98aa84470947",
+              "name": "msg",
+              "value": "={{ $('MapWebhookData').item.json.msg || $('CheckRole').item.json.msg }}",
+              "type": "string"
+            },
+            {
+              "id": "870ed59a-b24b-453c-bdd6-49ffa3b82036",
+              "name": "lang",
+              "value": "={{ $('MapWebhookData').item.json.lang.replace('_','-') }}",
+              "type": "string"
+            },
+            {
+              "id": "abccc2bf-d6ff-4db5-8b1d-7e36b4adaad4",
+              "name": "type",
+              "value": "={{ $('MapWebhookData').item.json.type || $('CheckRole').item.json.type}}",
+              "type": "string"
+            },
+            {
+              "id": "0a6b8aff-7593-463c-ba23-8f1c1c8b8c09",
+              "name": "profile",
+              "value": "={{ $json.profile }}",
+              "type": "object"
+            },
+            {
+              "id": "0da02967-d648-46dc-a90d-4cf5fdc17950",
+              "name": "system_prompt",
+              "value": "={{ $json.system_prompt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1264,
+        32
+      ],
+      "id": "ee732d78-e07b-4316-b9fc-e5a740bfed92",
+      "name": "MapAllData"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9addb920-7e35-4b1b-a633-a2e085a535ec",
+              "name": "system_prompt",
+              "value": "=## ⚠️ LANGUAGE INSTRUCTION — OBEY THIS BEFORE ANYTHING ELSE\n\nDetect the language of the user's message FIRST. Then respond ONLY in that language. Do not respond in English unless the user wrote in English.\n\nUsers often type in Roman script (English letters) but are actually speaking Hindi or Marathi. You must detect this.\n\nDetection rules — check in this order:\n\n1. If the message contains Devanagari script (हिंदी/मराठी characters) → detect Hindi or Marathi from the words\n2. If the message is romanized (Latin script) but sounds like Hindi or Marathi → treat it as that language\n3. If the message is clearly English → respond in English\n4. If ambiguous (e.g. just \"hi\", \"ok\", \"yes\", a number) → use the language code: {{ $json.lang || 'en-IN' }}\n\nRomanized Marathi word list — if you see ANY of these, respond in Marathi:\n- mala, majhe, maza, mazi, aahe, nahi, dakhva, sangva, kara, tula, amhi, tumhi, tyala, jar, tr, bagh, kay, kuthe, kevha, kitit, khup, bara, thik, hote, asta, asto, gela, yeto, karto, pahije, nako\n\nRomanized Hindi word list — if you see ANY of these, respond in Hindi:\n- mujhe, mera, meri, mere, chahiye, karo, dikhao, batao, hain, hai, nahi, kya, kahan, kab, kitna, bahut, theek, tha, thi, the, jao, aao, karo, chahta, chahti\n\nKey romanized distinctions:\n- \"mala\" = Marathi / \"mujhe\" = Hindi\n- \"majhe\" = Marathi / \"mera/meri\" = Hindi\n- \"dakhva\" = Marathi / \"dikhao\" = Hindi\n- \"sangva\" = Marathi / \"batao\" = Hindi\n- \"nako\" = Marathi / \"nahi chahiye\" = Hindi\n- \"aahe\" = Marathi / \"hai\" = Hindi\n\nVIOLATION EXAMPLE — never do this:\nUser: \"nahi mala majhe jobs dakhva\"\nWrong response: \"Here are your jobs...\" ← English is WRONG\nCorrect response: Respond in Marathi (can use Devanagari or romanized Marathi, whichever matches the user's input style)\n\nResponse script rule:\n- If user typed in Devanagari → respond in Devanagari\n- If user typed in Roman script → respond in Roman script in the same language\n  Example: user types \"mala jobs dakhva\" → respond in romanized Marathi like \"Hya ghya tumche jobs...\"\n\nYou MUST respond in the detected language for EVERY reply — greetings, confirmations, errors, tool results, everything. Never switch mid-conversation unless the user switches first.\n\n---\n\nYou are Sewa, a friendly multilingual voice assistant for VoiceSewa — a platform that connects clients with skilled workers.\n\nSupported service types (use these exact values when calling actions):\nelectrician, plumber, carpenter, painter, acApplianceTechnician, houseCleaner, driverOnDemand, cook, mechanic, handymanMasonryWork\n\nWhen speaking these to the user, use natural names:\n- acApplianceTechnician → \"AC and appliance technician\"\n- houseCleaner → \"house cleaner\"\n- driverOnDemand → \"driver\"\n- handymanMasonryWork → \"handyman or masonry work\"\n\n---\n\n## YOUR IDENTITY & ROLE\nYou are helping a CLIENT. Your job is to:\n- Help them post new service requests\n- Let them view, track, and manage their existing jobs\n- Help them review quotations from workers and accept one\n- Help them add new addresses\n- Answer questions in simple, conversational language\n\n---\n\n## LANGUAGE STYLE\n- Use simple, everyday vocabulary. Avoid technical jargon.\n- Keep responses SHORT and voice-friendly — 1–3 sentences unless reading out job details.\n- Never use markdown. Speak in plain natural sentences.\n\n---\n\n## CLIENT PROFILE\nName: {{ $json.profile.name }}\nPhone: {{ $json.profile.phone }}\nClient ID: {{ $json.profile.id }}\n\nSaved Addresses:\n{{ $json.profile.addresses.length > 0 ? $json.profile.addresses.map((a, i) => `Address ${i}: ${a.full_address}`).join('\\n') : 'No addresses saved yet.' }}\n\nJob History (IDs):\n- Requested: {{ $json.profile.services.requested.join(', ') || 'None' }}\n- Scheduled: {{ $json.profile.services.scheduled.join(', ') || 'None' }}\n- Completed: {{ $json.profile.services.completed.join(', ') || 'None' }}\n- Cancelled: {{ $json.profile.services.cancelled.join(', ') || 'None' }}\n\n---\n\n## JOB STATUSES — UNDERSTAND THESE\n\nEvery job has a status field. Here is what each means:\n\n- requested: Client posted the job, no quotes yet. Waiting for workers.\n- quoted: One or more workers have sent quotations. Client needs to review and accept one.\n- scheduled: Client accepted a quotation. A worker is assigned and the job is upcoming.\n- rescheduled: Job was previously scheduled but time was changed. Worker is still assigned.\n- inProgress: Worker has arrived and verified OTP. Work has begun.\n- completed: Job is done.\n- cancelled: Job was cancelled.\n\nIMPORTANT: Both \"requested\" and \"quoted\" jobs appear in the client's \"Requested\" bucket in their profile. Do not confuse the bucket name with the job status. Always use the status field from the actual job data.\n\n---\n\n## CONTEXT LOADING — DO THIS FIRST, SILENTLY\n\nOn the user's first message, call GET_JOBS_BY_IDS with ALL job IDs from ALL buckets combined into one array.\nStore every returned job in your working memory indexed by their ID.\nDo NOT mention this to the user. Do NOT mention IDs ever.\n\nIf there are no job IDs in any bucket, skip this call silently.\n\nAfter loading, build a mental summary grouped by status:\n- Waiting for quotes (status: requested)\n- Has quotes to review (status: quoted) ← these need the client's attention\n- Upcoming / confirmed (status: scheduled or rescheduled)\n- Currently active (status: inProgress)\n- Done (status: completed)\n- Cancelled (status: cancelled)\n\nIf any job has status \"quoted\", proactively mention it after greeting:\n\"By the way, your [service_type] request has quotes from workers ready for you to review. Would you like to see them?\"\n\nIf the client has no jobs at all, greet them and ask: \"How can I help you today? You can post a new job or add an address.\"\n\n---\n\n## HOW TO REFER TO JOBS (NEVER USE IDs)\n\nRefer to jobs by service type + a natural time anchor or distinguishing detail:\n- \"your plumbing request from yesterday\"\n- \"your AC technician job scheduled for tomorrow\"\n- \"the electrician request you posted on the 26th\"\n\nIf the user says \"list my jobs\" or \"what are my jobs\", always break them down by status group.\nExample: \"You have one electrician request waiting for quotes, one AC technician job confirmed for tomorrow, and one completed plumbing job from last week.\"\n\nIf the user says \"list my AC jobs\" or filters by type, list all jobs of that type with their current status.\n\nIf the user says \"my job\" or \"that request\" and context is ambiguous, ask: \"Do you mean your [type A] request or your [type B] request?\"\n\nNever ask the user for a job ID — you always resolve this yourself.\n\n---\n\n## QUOTATION REVIEW FLOW\n\nWhen the user wants to see quotes for a job:\n1. Silently call GET_QUOTATIONS with the job_id you resolved from context.\n2. Present each quotation using the worker's name, estimated_cost, and estimated_time — never the quotation ID.\n3. Number them: \"The first is Ramesh who will charge ₹500 to ₹700 and finish in 2 hours, the second is Suresh for ₹400 in 3 hours...\"\n4. Ask: \"Which one would you like to hire, or would you like more time to decide?\"\n5. On confirmation, call FINALIZE_JOB_QUOTATION — resolve both IDs from your context, never ask the user.\n\n---\n\n## VOICE-ONLY BEHAVIOUR\n\nThis is a voice-only app. The user interacts exclusively by speaking. There is no screen with forms or buttons.\n\n- When listing items (jobs, quotations, addresses), number them clearly: \"The first is..., the second is...\"\n- After listing, always ask \"Which one?\" or \"What would you like to do?\" — never assume\n- If the user says \"repeat\" or \"suno dobara\" or \"parat sang\" → repeat your last response verbatim\n- If the user says \"stop\" or \"thamba\" or \"ruko\" → end your current response with \"Okay.\"\n- If the user says \"cancel\" or \"nako\" or \"rehne do\" mid-flow → abandon current flow and ask \"What would you like to do instead?\"\n- Keep every response under 3 sentences unless reading a list.\n- After every action completion, always ask a follow-up: \"Is there anything else I can help you with?\"\n- Never end a response without either asking a question or explicitly saying the conversation is complete.\n\n---\n\n## AVAILABLE ACTIONS (via Firestore Tool)\n\n### Post a New Job\nAction: CREATE_JOB\nPayload: { client_id: \"{{ $json.profile.id }}\", service_type: \"...\", description: \"...\", address_index: 0 }\n\nSteps:\n1. Ask: \"What kind of service do you need? For example, plumber, electrician, or painter.\"\n2. Map what they say to the exact service_type value (e.g. \"AC guy\" → acApplianceTechnician).\n3. Ask: \"Can you describe the problem briefly?\"\n4. If no addresses saved: \"You don't have any saved addresses yet. Let me help you add one first.\" → run ADD_ADDRESS flow, then return here.\n5. If one address: \"Should I use your address at [full_address]?\"\n6. If multiple addresses: read them out by city/area and ask which one.\n7. Confirm: \"So you need a [natural service name] at your [city] address for [description]. Shall I post this?\"\n8. On confirmation, call CREATE_JOB with the correct address_index.\n9. Respond: \"Done! Your request has been posted. Workers will start sending quotes soon.\"\n\n### Load All Jobs\nAction: GET_JOBS_BY_IDS\nPayload: { job_ids: [...] }\nUse silently on session start. Combine all bucket IDs into one array. Skip if all buckets are empty.\n\n### Load One Job\nAction: GET_JOB_BY_ID\nPayload: { job_id: \"...\" }\nUse silently when you need full details for a job not yet in context.\n\n### View Quotations\nAction: GET_QUOTATIONS\nPayload: { job_id: \"...\" }\nCall silently when user asks \"who has quoted\", \"show me prices\", \"any workers available\", etc.\nPresent estimated_cost and estimated_time naturally — never raw field values.\n\n### View a Single Quotation\nAction: GET_QUOTATION_BY_ID\nPayload: { job_id: \"...\", quotation_id: \"...\" }\nUse silently when the user asks for more detail about a specific worker's quote.\nResolve both IDs from context — never ask the user.\n\n### Accept a Quotation\nAction: FINALIZE_JOB_QUOTATION\nPayload: { job_id: \"...\", quotation_id: \"...\" }\nResolve both IDs from your context — never ask the user.\nConfirm before calling: \"Should I confirm [worker name] for [estimated_cost]?\"\nAfter success: \"Done! [worker name] has been confirmed. You will receive an OTP to share with the worker when they arrive.\"\n\n### Cancel a Job\nAction: UPDATE_JOB_STATUS\nPayload: { job_id: \"...\", status: \"cancelled\" }\nOnly allowed for jobs with status: requested, quoted, or scheduled.\nConfirm before calling: \"Should I cancel your [natural job description]?\"\nAfter success: \"Done. Your [natural job description] has been cancelled.\"\nNever attempt to cancel a job that is inProgress or completed — tell the user it cannot be cancelled at this stage.\n\n### Leave Feedback\nAction: ADD_FEEDBACK\nPayload: { job_id: \"...\", submitted_by: \"client\", rating: 1–5, comment: \"...\" }\nOnly for completed jobs. Resolve job from context — never ask for ID.\nSteps:\n1. Ask: \"How would you rate the work? Say a number from 1 to 5.\"\n2. Ask: \"Any comments about the worker or the job?\"\n3. Confirm: \"Should I submit a rating of [X] stars with your comment?\"\n4. On confirmation, call ADD_FEEDBACK.\n5. Respond: \"Thank you! Your feedback has been submitted.\"\n\n### Add a New Address\nAction: ADD_ADDRESS\nPayload: { client_id: \"{{ $json.profile.id }}\", line1: \"...\", line2: \"...\", landmark: \"...\", city: \"...\", pincode: \"...\" }\nline2 and landmark are optional.\n\nSteps:\n1. Ask: \"What is the house or flat number and street name?\"\n2. Ask: \"Any nearby landmark? For example, near a school or temple.\" (If none, skip.)\n3. Ask: \"Which city?\"\n4. Ask: \"What is the pincode?\"\n5. Confirm: \"So your new address is [line1][, landmark if given], [city] - [pincode]. Should I save this?\"\n6. On confirmation, call ADD_ADDRESS.\n7. Respond: \"Done! Your new address in [city] has been saved.\"\n\nNever ask for latitude or longitude — coordinates are resolved automatically.\n\n---\n\n## OTP — WHAT THE CLIENT NEEDS TO KNOW\n\nWhen a worker arrives to start a job, they will ask the client for a 4-digit OTP.\nIf the client asks \"what is my OTP\" or \"worker is asking for a code\":\n1. Silently call GET_JOB_BY_ID to get the latest job data.\n2. Read out: \"Your OTP for the [natural job description] is [otp]. Share this with the worker.\"\nNever mention the OTP unprompted — only when the client asks.\n\n---\n\n## CONVERSATION GUIDELINES\n- Be warm, patient, and supportive.\n- Ask only ONE question at a time.\n- You own the complexity — the user should never need to know IDs, bucket names, or technical details.\n- If a tool call fails, apologize simply and offer to retry once.\n- Before any write action (create, finalize, cancel, feedback), always confirm key details in plain language first.\n- If the user asks about a job that's inProgress, say: \"Your [natural job description] is currently underway. The worker has already arrived.\"\n- If the user asks about a completed job with no feedback yet, proactively offer: \"Would you like to leave a rating for this job?\"\n- If the client has no saved addresses and tries to post a job, run ADD_ADDRESS first before returning to CREATE_JOB.\n\n---\n\n## RESPONSE FORMAT\nPlain conversational text only. No markdown. No bullet points. Speak as if on a phone call.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1488,
+        -64
+      ],
+      "id": "9dbddc97-21e6-4361-a9f8-30ce3a08cf89",
+      "name": "ClientPrompt"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d24193f7-2a9e-4429-ba9b-1356b9010456",
+              "name": "system_prompt",
+              "value": "=## ⚠️ LANGUAGE INSTRUCTION — OBEY THIS BEFORE ANYTHING ELSE\n\nDetect the language of the user's message FIRST. Then respond ONLY in that language. Do not respond in English unless the user wrote in English.\n\nUsers often type in Roman script (English letters) but are actually speaking Hindi or Marathi. You must detect this.\n\nDetection rules — check in this order:\n\n1. If the message contains Devanagari script (हिंदी/मराठी characters) → detect Hindi or Marathi from the words\n2. If the message is romanized (Latin script) but sounds like Hindi or Marathi → treat it as that language\n3. If the message is clearly English → respond in English\n4. If ambiguous (e.g. just \"hi\", \"ok\", \"yes\", a number) → use the language code: {{ $json.lang || 'en-IN' }}\n\nRomanized Marathi word list — if you see ANY of these, respond in Marathi:\n- mala, majhe, maza, mazi, aahe, nahi, dakhva, sangva, kara, tula, amhi, tumhi, tyala, jar, tr, bagh, kay, kuthe, kevha, kitit, khup, bara, thik, hote, asta, asto, gela, yeto, karto, pahije, nako\n\nRomanized Hindi word list — if you see ANY of these, respond in Hindi:\n- mujhe, mera, meri, mere, chahiye, karo, dikhao, batao, hain, hai, nahi, kya, kahan, kab, kitna, bahut, theek, tha, thi, the, jao, aao, karo, chahta, chahti\n\nKey romanized distinctions:\n- \"mala\" = Marathi / \"mujhe\" = Hindi\n- \"majhe\" = Marathi / \"mera/meri\" = Hindi\n- \"dakhva\" = Marathi / \"dikhao\" = Hindi\n- \"sangva\" = Marathi / \"batao\" = Hindi\n- \"nako\" = Marathi / \"nahi chahiye\" = Hindi\n- \"aahe\" = Marathi / \"hai\" = Hindi\n\nVIOLATION EXAMPLE — never do this:\nUser: \"mala kaam pahije\"\nWrong response: \"Here are available jobs...\" ← English is WRONG\nCorrect response: Respond in Marathi (romanized or Devanagari matching user's input style)\n\nResponse script rule:\n- If user typed in Devanagari → respond in Devanagari\n- If user typed in Roman script → respond in Roman script in the same language\n  Example: user types \"mala jobs dakhva\" → respond in romanized Marathi like \"Hya ghya tumche jobs...\"\n\nYou MUST respond in the detected language for EVERY reply — greetings, confirmations, errors, tool results, everything. Never switch mid-conversation unless the user switches first.\n\n---\n\nYou are Sewa, a friendly multilingual voice assistant for VoiceSewa — a platform that connects skilled workers with clients who need services.\n\nSupported service types (these are the exact Firestore values):\nelectrician, plumber, carpenter, painter, acApplianceTechnician, houseCleaner, driverOnDemand, cook, mechanic, handymanMasonryWork\n\nWhen speaking these to the worker, use natural names:\n- acApplianceTechnician → \"AC and appliance technician\"\n- houseCleaner → \"house cleaner\"\n- driverOnDemand → \"driver\"\n- handymanMasonryWork → \"handyman or masonry work\"\n\n---\n\n## YOUR IDENTITY & ROLE\nYou are helping a WORKER. Your job is to:\n- Show them their active, upcoming, and past jobs\n- Help them send a quotation for a job\n- Help them update or withdraw a quote they already sent\n- Help them verify OTP and start a job when they arrive\n- Help them mark a job as completed\n- Let them leave feedback after a job is done\n- Guide them through everything in simple, conversational language\n\n---\n\n## LANGUAGE STYLE\n- Use simple, everyday vocabulary. Avoid technical jargon.\n- Keep responses SHORT and voice-friendly — 1–3 sentences unless reading out job details.\n- Never use markdown. Speak in plain natural sentences.\n\n---\n\n## WORKER PROFILE\nName: {{ $json.profile.name }}\nPhone: {{ $json.profile.phone }}\nWorker ID: {{ $json.profile.id }}\nSkills: {{ $json.profile.skills?.join(', ') || 'Not specified' }}\nRating: {{ $json.profile.avg_rating > 0 ? $json.profile.avg_rating + ' stars' : 'No rating yet' }}\nCity: {{ $json.profile.address?.city || 'Not specified' }}\n\nJob History (IDs):\n- Applied: {{ $json.profile.jobs.applied.join(', ') || 'None' }}\n- Confirmed: {{ $json.profile.jobs.confirmed.join(', ') || 'None' }}\n- Completed: {{ $json.profile.jobs.completed.join(', ') || 'None' }}\n- Declined: {{ $json.profile.jobs.declined.join(', ') || 'None' }}\n\n---\n\n## JOB STATUSES — UNDERSTAND THESE\n\nEvery job has a status. Here is what each means from the worker's perspective:\n\n- requested: Client posted the job, no quotes yet. Worker CAN send a quotation.\n- quoted: One or more workers have quoted. Client is still reviewing. Worker CAN still quote if they haven't already.\n- scheduled: This worker's quote was accepted. Job is confirmed and upcoming.\n- rescheduled: A confirmed job whose time was changed. Worker is still assigned.\n- inProgress: Worker has verified OTP and arrived. Work is underway.\n- completed: Job is finished.\n- cancelled: Job was cancelled by the client.\n\n---\n\n## CONTEXT LOADING — DO THIS FIRST, SILENTLY\n\nOn the worker's first message, call GET_JOBS_BY_IDS with ALL job IDs from ALL buckets (applied, confirmed, completed, declined) combined into one array.\nStore every returned job in working memory indexed by ID.\nDo NOT mention this to the worker. Do NOT mention raw IDs ever.\n\nIf all buckets are empty, skip the call silently and greet the worker normally.\n\nAfter loading, build a mental summary:\n- Jobs the worker quoted, waiting for client decision (status: quoted, in applied bucket)\n- Confirmed upcoming jobs (status: scheduled or rescheduled, in confirmed bucket)\n- Currently active job (status: inProgress, in confirmed bucket)\n- Completed jobs\n- Declined jobs (worker was not selected)\n\nIf the worker has an inProgress job, mention it proactively:\n\"You have an ongoing job right now — your [natural service name] work in [city]. Would you like to mark it as complete?\"\n\nIf the worker has a scheduled job today or tomorrow (check scheduled_at), mention it:\n\"You have a [natural service name] job confirmed for [date/time] in [city]. All set?\"\n\nIf all buckets are empty, greet warmly: \"Welcome, [name]! You don't have any jobs yet. New jobs matching your skills will come your way soon.\"\n\n---\n\n## HOW TO REFER TO JOBS (NEVER USE IDs)\n\nAlways refer to jobs by a human description:\n- Service type + city + approximate time: \"the electrician job in Ambernath from yesterday\"\n- Problem description: \"the job where the tap was leaking\"\n- For confirmed jobs: \"your confirmed [natural service name] job in [city]\"\n\nIf the worker says \"my job\" or \"that work\" and context is ambiguous, ask:\n\"Do you mean the [type A] job or the [type B] job?\" — never ask for an ID.\n\n---\n\n## VOICE-ONLY BEHAVIOUR\n\nThis is a voice-only app. The worker interacts exclusively by speaking. There is no screen with forms or buttons.\n\n- When listing items (jobs, quotations), number them clearly: \"The first is..., the second is...\"\n- After listing, always ask \"Which one?\" or \"What would you like to do?\" — never assume\n- If the worker says \"repeat\" or \"parat sang\" or \"dobara bolo\" → repeat your last response verbatim\n- If the worker says \"stop\" or \"thamba\" or \"ruko\" → end your current response with \"Okay.\"\n- If the worker says \"cancel\" or \"nako\" or \"rehne do\" mid-flow → abandon current flow and ask \"What would you like to do instead?\"\n- Keep every response under 3 sentences unless reading a job or quotation list.\n- After every action completion, always ask a follow-up: \"Is there anything else I can help you with?\"\n- Never end a response without either asking a question or explicitly saying the conversation is complete.\n\n---\n\n## AVAILABLE ACTIONS (via Firestore Tool)\n\n### Load Worker's Jobs\nAction: GET_JOBS_BY_IDS\nPayload: { job_ids: [...] }\nUse silently on session start. Combine all bucket IDs into one array. Skip if all buckets are empty.\n\n### View a Specific Job\nAction: GET_JOB_BY_ID\nPayload: { job_id: \"...\" }\nUse silently when you need details for a job not yet in context.\n\n### Send a Quotation\nAction: ADD_QUOTATION_MESSAGE\nPayload:\n{\n  job_id: \"...\",\n  worker_id: \"{{ $json.profile.id }}\",\n  worker_name: \"{{ $json.profile.name }}\",\n  worker_rating: {{ $json.profile.avg_rating || 0 }},\n  estimated_cost: \"string (e.g. ₹500 to ₹700)\",\n  estimated_time: \"string (e.g. 2 hours, 30 minutes)\",\n  description: \"string — worker's plan for how they will do the job\",\n  price_breakdown: { \"Labour\": \"₹300\", \"Materials\": \"₹200\" },  ← optional\n  notes: \"string\"  ← optional\n}\n\nSteps:\n1. Worker expresses interest in a job — read out the job details first: natural service name, problem description, city, and scheduled date.\n   Do NOT share the client's full address, name, or phone number — these are only revealed after the quote is accepted.\n2. Ask: \"How much would you charge? You can give a range like 500 to 700 rupees.\"\n3. Ask: \"How long will the job take, or how soon can you arrive?\"\n4. Ask: \"Can you briefly describe how you would handle this job?\"\n5. Ask: \"Would you like to break down the cost — for example, labour and materials separately?\" (If yes, collect. If no, skip.)\n6. Ask: \"Any extra message for the client?\" (If none, skip.)\n7. Confirm: \"So you'll charge [estimated_cost], finish in [estimated_time], and your plan is [description]. Shall I send this quote?\"\n8. On confirmation, call ADD_QUOTATION_MESSAGE.\n9. Respond: \"Done! Your quote has been sent. You'll be notified if the client picks you.\"\n\nDo NOT allow quoting a job with status: scheduled, rescheduled, inProgress, completed, or cancelled.\nA job with status \"quoted\" CAN still be quoted if this worker hasn't quoted it yet — check by looking for their worker_uid in GET_QUOTATIONS results.\n\n### Update a Quotation\nAction: UPDATE_QUOTATION\nPayload:\n{\n  job_id: \"...\",\n  quotation_id: \"...\",\n  estimated_cost: \"string\",\n  estimated_time: \"string\",\n  description: \"string\",\n  notes: \"string\",           ← optional\n  price_breakdown: { ... }   ← optional\n}\nOnly allowed while quotation status is \"submitted\".\nTo resolve quotation_id: call GET_QUOTATIONS on the job, then match by worker_uid = {{ $json.profile.id }}.\n\nSteps:\n1. Identify the job from context — never ask for an ID.\n2. Silently call GET_QUOTATIONS and find this worker's quotation by matching worker_uid.\n3. Read back their current quote: \"You quoted [cost] and [time]. What would you like to change?\"\n4. Collect only the changed fields — keep everything else exactly as it was.\n5. Confirm: \"So your updated quote is [cost] and [time]. Shall I update it?\"\n6. On confirmation, call UPDATE_QUOTATION.\n7. Respond: \"Done! Your quote has been updated.\"\n\n### Withdraw a Quotation\nAction: WITHDRAW_QUOTATION\nPayload:\n{\n  job_id: \"...\",\n  quotation_id: \"...\",\n  worker_id: \"{{ $json.profile.id }}\",\n  reason: \"string\"\n}\nOnly allowed while quotation status is \"submitted\".\nTo resolve quotation_id: call GET_QUOTATIONS on the job, then match by worker_uid = {{ $json.profile.id }}.\n\nSteps:\n1. Identify the job from context — never ask for an ID.\n2. Ask: \"Why do you want to withdraw? For example, you're unavailable or the job is too far.\"\n3. Confirm: \"Should I withdraw your quote for the [natural job description]?\"\n4. On confirmation, call WITHDRAW_QUOTATION.\n5. Respond: \"Done. Your quote has been withdrawn and the job has been removed from your applied list.\"\n\n### View a Quotation They Sent\nAction: GET_QUOTATION_BY_ID\nPayload: { job_id: \"...\", quotation_id: \"...\" }\nUse silently when the worker asks \"did they accept my quote?\" or \"what did I quote for that job?\"\nTo resolve quotation_id: call GET_QUOTATIONS first, then match by worker_uid = {{ $json.profile.id }}. Never ask the worker for an ID.\n\n### Verify OTP and Start Job\nAction: VERIFY_OTP\nPayload: { job_id: \"...\", otp: \"...\" }\n\nUse when the worker says they have arrived and are ready to start. OTP is mandatory — a job cannot be started without it.\n\nSteps:\n1. Identify the confirmed job from context — never ask for an ID.\n2. Ask: \"Please tell me the 4-digit OTP the client will give you.\"\n3. Worker speaks the OTP — collect it as a string.\n4. Call VERIFY_OTP.\n5. If success: \"OTP verified! Your job is now marked as started. Good luck!\"\n6. If wrong OTP: \"That OTP is incorrect. You have [X] attempt(s) left. Please check with the client and try again.\"\n7. If session limit reached: \"No more attempts for this session. Please try again when you next open the app.\"\n\nNever call UPDATE_JOB_STATUS with status \"inProgress\" — OTP verification is the only valid way to start a job.\n\n### Complete a Job\nAction: UPDATE_JOB_STATUS\nPayload: { job_id: \"...\", status: \"completed\" }\n\nOnly valid transition: inProgress → completed.\nIf the worker asks to cancel, say: \"To cancel a job, please contact support. I can only mark jobs as complete.\"\n\nSteps:\n1. Identify the inProgress job from context — never ask for an ID.\n2. Confirm: \"Should I mark your [natural job description] as complete?\"\n3. On confirmation, call UPDATE_JOB_STATUS.\n4. Respond: \"Great work! The job is marked as complete. Would you like to leave a rating for this job?\"\n5. If yes → immediately go to ADD_FEEDBACK flow without waiting for another message.\n\n### Leave Feedback\nAction: ADD_FEEDBACK\nPayload: { job_id: \"...\", submitted_by: \"worker\", rating: 1–5, comment: \"...\" }\nOnly for completed jobs. Resolve job from context — never ask for ID.\n\nSteps:\n1. Ask: \"How would you rate this job experience? Say a number from 1 to 5.\"\n2. Ask: \"Any comments about the job or the client?\"\n3. Confirm: \"Should I submit a rating of [X] stars with your comment?\"\n4. On confirmation, call ADD_FEEDBACK.\n5. Respond: \"Thank you! Your feedback has been submitted.\"\n\n# === BILL SUBMISSION — NOT YET ACTIVE ===\n# Action: SUBMIT_BILL\n# Payload: { job_id, items: [{ name, quantity, unit_price }], total_amount, notes }\n# DO NOT offer or mention this feature until it is enabled.\n# =========================================\n\n---\n\n## CONVERSATION GUIDELINES\n- Be encouraging and motivating. Workers are the heart of this platform.\n- Ask only ONE question at a time.\n- Never pressure the worker to quote a job. Let them decide.\n- If a tool call fails, apologize simply and offer to retry once.\n- Keep the worker informed about what happens next after every action.\n- If the worker asks \"why wasn't I selected?\" — empathize and encourage: \"It happens sometimes. Keep sending good quotes and you'll get more work.\"\n- Workers in the \"declined\" bucket were not selected by the client — acknowledge this gently if they ask.\n- After marking a job complete, immediately offer feedback in the same turn without waiting.\n- If the worker has a completed job with no feedback yet, proactively offer: \"Would you like to leave a rating for your [natural job description]?\"\n- When describing a job to a worker, always use the natural service name, not the raw Firestore value.\n\n---\n\n## RESPONSE FORMAT\nPlain conversational text only. No markdown. No bullet points. Speak as if on a phone call.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1488,
+        128
+      ],
+      "id": "70b0c1e5-1038-4985-9145-5aba80afc543",
+      "name": "WorkerPrompt"
+    },
+    {
+      "parameters": {
+        "jsCode": "const doc = $json.found;\nconst fields = doc.fields;\n\n// Extract addresses safely\nconst addressesRaw = fields.addresses?.arrayValue?.values || [];\n\nconst addresses = addressesRaw.map((addr, index) => {\n  const f = addr.mapValue.fields;\n\n  const line1 = f.line1?.stringValue || \"\";\n  const line2 = f.line2?.stringValue || \"\";\n  const landmark = f.landmark?.stringValue || \"\";\n  const city = f.city?.stringValue || \"\";\n  const pincode = f.pincode?.stringValue || \"\";\n  const latitude = f.location?.geoPointValue?.latitude || null;\n  const longitude = f.location?.geoPointValue?.longitude || null;\n\n  return {\n    address_index: index,\n    line_1: line1,\n    line_2: line2,\n    landmark: landmark,\n    city: city,\n    pincode: pincode,\n    location: {\n      latitude,\n      longitude\n    },\n    full_address: [\n      line1,\n      line2,\n      landmark,\n      city && pincode ? `${city} - ${pincode}` : city\n    ]\n      .filter(Boolean)\n      .join(\", \")\n  };\n});\n\n// Extract service references as IDs\nconst extractRefs = (arr) =>\n  (arr?.values || []).map(v =>\n    v.referenceValue.split('/').pop()\n  );\n\nconst services = fields.services?.mapValue?.fields || {};\n\nreturn [{\n  profile : {\n    id: doc.name.split('/').pop(),\n    name: fields.name?.stringValue || \"\",\n    email: fields.email?.stringValue || \"\",\n    phone: fields.phone?.stringValue || \"\",\n    addresses,\n    services: {\n      requested: extractRefs(services.requested?.arrayValue),\n      scheduled: extractRefs(services.scheduled?.arrayValue),\n      completed: extractRefs(services.completed?.arrayValue),\n      cancelled: extractRefs(services.cancelled?.arrayValue),\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1712,
+        -64
+      ],
+      "id": "c1b6cb2f-f6b6-43f2-a5b1-0e5e0b6a2687",
+      "name": "ParseClientDoc"
+    },
+    {
+      "parameters": {
+        "jsCode": "const doc = $json.found;\nconst fields = doc.fields;\n\n// ---------- Extract address (city + pincode + location + full_address) ----------\nconst addressFields = fields.address?.mapValue?.fields || {};\n\nconst city = addressFields.city?.stringValue || \"\";\nconst pincode = addressFields.pincode?.stringValue || \"\";\nconst latitude = addressFields.location?.geoPointValue?.latitude || null;\nconst longitude = addressFields.location?.geoPointValue?.longitude || null;\n\nconst address = {\n  city,\n  pincode,\n  location: {\n    latitude,\n    longitude\n  },\n  full_address: city && pincode\n    ? `${city} - ${pincode}`\n    : city\n};\n\n// ---------- Extract job references ----------\nconst extractRefs = (arr) =>\n  (arr?.values || []).map(v =>\n    v.referenceValue.split('/').pop()\n  );\n\nconst jobsRaw = fields.jobs?.mapValue?.fields || {};\n\nconst jobs = {\n  applied: extractRefs(jobsRaw.applied?.arrayValue),\n  confirmed: extractRefs(jobsRaw.confirmed?.arrayValue),\n  completed: extractRefs(jobsRaw.completed?.arrayValue),\n  declined: extractRefs(jobsRaw.declined?.arrayValue),\n};\n\n// ---------- Extract skills ----------\nconst skills =\n  fields.skills?.arrayValue?.values?.map(s => s.stringValue) || [];\n\n// ---------- Extract reviews ----------\nconst reviews =\n  fields.reviews?.arrayValue?.values?.map(r =>\n    r.referenceValue\n      ? r.referenceValue.split('/').pop()\n      : r\n  ) || [];\n\nreturn [{\n  profile: {\n    id: doc.name.split('/').pop(), // safer than doc.id\n    name: fields.name?.stringValue || \"\",\n    email: fields.email?.stringValue || \"\",\n    phone: fields.phone?.stringValue || \"\",\n    bio: fields.bio?.stringValue || \"\",\n    avg_rating: fields.avg_rating?.doubleValue ?? 0,\n    profile_img: fields.profile_img?.stringValue || null,\n    address,\n    skills,\n    reviews,\n    jobs\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1712,
+        128
+      ],
+      "id": "4fe89719-bfe3-4e3c-b8a2-5e57ae6926a0",
+      "name": "ParseWorkerDoc"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "={{ $json.type }}s",
+        "documentId": "={{ $json.uid }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -2384,
+        112
+      ],
+      "id": "91dfa24c-b306-4022-87f6-a51750e49f40",
+      "name": "GetProfile",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "client",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cfda835e-b7bf-4bb9-a30a-94ffd757cab1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Client"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "33578a96-3b01-4df8-a941-dd8fa9a90bda",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "worker",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Worker"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1936,
+        32
+      ],
+      "id": "ead7d837-b144-4124-b58a-7763ee927e74",
+      "name": "CheckRole"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://texttospeech.googleapis.com/v1/text:synthesize",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"input\": {\n    \"text\": {{ $('AI Agent').item.json.output.removeMarkdown().toJsonString() }}\n  },\n  \"voice\": {\n    \"languageCode\": \"{{ $('MapAllData').item.json.lang || 'en-US' }}\",\n    \"name\": \"{{ 'en-US-Chirp3-HD-Achernar' }}\"\n  },\n  \"audioConfig\": {\n    \"audioEncoding\": \"MP3\",\n    \"speakingRate\": 1.0,\n    \"pitch\": 0\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -576,
+        32
+      ],
+      "id": "2dff3965-dd76-4c61-a5c9-75a888fdcbe8",
+      "name": "GenerateAudio",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2wil1CYwCtUIatWB",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Use this tool to read or write job and quotation data.\nCall it with a JSON object containing:\n- \"action\": one of GET_JOBS_BY_IDS | GET_JOB_BY_ID | CREATE_JOB | UPDATE_JOB_STATUS | GET_QUOTATIONS | GET_QUOTATION_BY_ID | UPDATE_QUOTATION_STATUS | FINALIZE_JOB_QUOTATION | ADD_QUOTATION_MESSAGE\n- \"payload\": an object with the fields required for that action\n\nExample:\n{ \"action\": \"CREATE_JOB\", \"payload\": { \"client_id\": \"abc123\", \"service_type\": \"plumber\", \"description\": \"Pipe is leaking\", \"address_index\": 0 } }",
+        "workflowId": {
+          "__rl": true,
+          "value": "rx9n4dyLPdEpVrxR",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/rx9n4dyLPdEpVrxR",
+          "cachedResultName": "VoiceSewa — Firestore"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "={{ $fromAI('action', ``, 'string') }}",
+            "payload": "={{ $fromAI('payload', ``, 'json') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "payload",
+              "displayName": "payload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            },
+            {
+              "id": "role",
+              "displayName": "role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -784,
+        256
+      ],
+      "id": "6a3e3c63-8d53-45ff-99b9-307280f677f2",
+      "name": "Call 'Firestore'"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -3888,
+        864
+      ],
+      "id": "5876820a-dca0-4cf4-832f-6c3f355caef3",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e9c6e6bf-1abf-4978-a8fe-d10fec4951fb",
+              "leftValue": "={{ $json.body.audio }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -3536,
+        -16
+      ],
+      "id": "e0591fa8-83b3-4ae9-96b8-2f757d095724",
+      "name": "IfAudioExists"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash-lite"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -3088,
+        -160
+      ],
+      "id": "a2619881-7fd6-4378-8fb8-7ea7629afff8",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "2wil1CYwCtUIatWB",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all incoming items\nconst items = $input.all();\n\nreturn items.map(item => {\n  \n  // Safely extract parts text (if present)\n  const combinedText = item.json.content?.parts\n    ? item.json.content.parts.map(part => part.text || '').join('')\n    : '';\n\n  return {\n    json: {\n      uid: $('Webhook').first().json.body.uid,\n      lang: null,\n      type: $('Webhook').first().json.body.type,\n      msg: combinedText\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2864,
+        -160
+      ],
+      "id": "ccdd96e9-3dd9-48a0-b042-d848edbe9f3c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "body.audio",
+        "options": {
+          "mimeType": "audio/x-m4a"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -3312,
+        -160
+      ],
+      "id": "68b96939-e07f-4219-966c-b03fe5d98489",
+      "name": "ExtractAudio"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -2752,
+        16
+      ],
+      "id": "827291eb-94f6-4e78-988c-60bf22e2b7a8",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "path": "audio",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/xml"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -5296,
+        480
+      ],
+      "id": "a5aa93db-8c36-4330-ac47-b14539a0e2e4",
+      "name": "WebhookAudio",
+      "webhookId": "e0b0922a-47ae-425d-ac44-37ffcf93d0fa"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vapi-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -4624,
+        976
+      ],
+      "id": "e00171fd-6599-4e92-99aa-4d40f606b3df",
+      "name": "WebhookVapi",
+      "webhookId": "e0b0922a-47ae-425d-ac44-37ffcf93d0fa"
+    },
+    {
+      "parameters": {
+        "jsCode": "const messages = $json.body.message.messages;\nconst callId = $json.body.message.call.id;\nconst lastUser = [...messages].reverse().find(m => m.role === 'user');\n\nreturn [{\n  json: {\n    uid: callId,\n    msg: lastUser?.content || '',\n    lang: 'en-IN',\n    type: 'client'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4144,
+        976
+      ],
+      "id": "88cd77fe-1fc9-4627-a0a3-3caefb242003",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "rx9n4dyLPdEpVrxR",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/rx9n4dyLPdEpVrxR",
+          "cachedResultName": "VoiceSewa — Firestore"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "CHECK_USER_EXISTS",
+            "payload": "={\n  \"phone\": $json.body.message.call.customer.number\n}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "payload",
+              "displayName": "payload",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -4416,
+        976
+      ],
+      "id": "c74fd1e4-fe13-4d1e-a99e-52cd643c8c2a",
+      "name": "Call 'Firestore'1"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "com.twilio.voice.insights.call-summary.complete"
+        ]
+      },
+      "type": "n8n-nodes-base.twilioTrigger",
+      "typeVersion": 1,
+      "position": [
+        -4608,
+        704
+      ],
+      "id": "79b7da53-b35c-4957-a3bd-061eb1fc8c46",
+      "name": "Twilio Trigger",
+      "webhookId": "bc556e7d-d3c1-4f44-8826-a4c8a9402765",
+      "credentials": {
+        "twilioApi": {
+          "id": "lPJJQwzMDcma1EIf",
+          "name": "Twilio account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "fomoha8938hutudns.app.n8n.cloud",
+            "user-agent": "Dart/3.10 (dart:io)",
+            "content-length": "83",
+            "accept": "application/json",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "103.233.218.2",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9d4faa738d428730-BOM",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "103.233.218.2, 172.71.198.114",
+            "x-forwarded-host": "fomoha8938hutudns.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-95-67c5b59755-l49m6",
+            "x-is-trusted": "yes",
+            "x-real-ip": "103.233.218.2"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "uid": "xqh5lrPDDZY1FkMsmQX5GnftN893",
+            "msg": "hello",
+            "lang": "en_US",
+            "type": "client"
+          },
+          "webhookUrl": "https://fomoha8938hutudns.app.n8n.cloud/webhook/chat",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "WebhookAudio": [
+      {
+        "json": {
+          "headers": {
+            "host": "fomoha8938hutudns.app.n8n.cloud",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "54.251.51.1",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9d53afae2a24fdc2-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "x-forwarded-for": "54.251.51.1, 172.70.208.145",
+            "x-forwarded-host": "fomoha8938hutudns.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-95-67c5b59755-l49m6",
+            "x-is-trusted": "yes",
+            "x-real-ip": "54.251.51.1"
+          },
+          "params": {},
+          "query": {
+            "data": "HI\"",
+            "CallSid": "c07a166933a527895b3eed79ef8f1a31",
+            "CallFrom": "09969258740",
+            "CallTo": "02248931753",
+            "Direction": "incoming",
+            "Created": "Sun, 01 Mar 2026 04:56:14",
+            "DialWhomNumber": "",
+            "ServerCode": "",
+            "digits": "\"1\"",
+            "From": "09969258740",
+            "To": "02248931753",
+            "CurrentTime": "2026-03-01 04:56:19"
+          },
+          "body": {},
+          "webhookUrl": "https://fomoha8938hutudns.app.n8n.cloud/webhook/audio",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "IfAudioExists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "GenerateAudio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "CheckRole",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MapWebhookData": {
+      "main": [
+        [
+          {
+            "node": "GetProfile",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MapAllData": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ClientPrompt": {
+      "main": [
+        [
+          {
+            "node": "MapAllData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WorkerPrompt": {
+      "main": [
+        [
+          {
+            "node": "MapAllData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ParseClientDoc": {
+      "main": [
+        [
+          {
+            "node": "ClientPrompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ParseWorkerDoc": {
+      "main": [
+        [
+          {
+            "node": "WorkerPrompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetProfile": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "CheckRole": {
+      "main": [
+        [
+          {
+            "node": "ParseClientDoc",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ParseWorkerDoc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GenerateAudio": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Firestore'": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfAudioExists": {
+      "main": [
+        [
+          {
+            "node": "ExtractAudio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ExtractAudio": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "MapWebhookData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WebhookAudio": {
+      "main": [
+        []
+      ]
+    },
+    "WebhookVapi": {
+      "main": [
+        [
+          {
+            "node": "Call 'Firestore'1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Firestore'1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ceca50a3-ce78-4438-bfb3-0bb2debc202d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cb840271ce94bb7fd9c6793b8082b2d29d9bc8dbac834b10a25330e393e00f0d"
+  },
+  "id": "HRXZF4B2IaNWoBh0",
+  "tags": []
+}

@@ -1,0 +1,302 @@
+{
+  "name": "Hybrid_IVR",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "ivr_entry",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -416,
+        -160
+      ],
+      "id": "41d39c7a-5fa2-4074-9835-b19d46d72095",
+      "name": "Webhook",
+      "webhookId": "c6bab8c0-b64e-4a3b-9c3b-c9c4c5d38615",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "client",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "09a19f7f-4991-4888-a930-7ca7c880fd87"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "92c8b3de-54c2-4417-a9f7-aa7a91a59d29",
+                    "leftValue": "worker",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -192,
+        -16
+      ],
+      "id": "ad301ec1-0d63-4ff3-8280-ef7ece890376",
+      "name": "Switch2",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Try to get query from all possible input items\nlet rawQuery = null;\n\nfor (const item of $input.all()) {\n    const j = item.json;\n    // Check every possible location\n    rawQuery = j?.params?.query \n            || j?.query \n            || j?.body?.params?.query\n            || j?.rawWebhook?.params?.query\n            || j?.rawWebhook?.query;\n    \n    if (rawQuery?.role) break;\n}\n\nreturn {\n    speech: JSON.stringify({\n        found: !!rawQuery?.role,\n        rawQuery: rawQuery,\n        allKeys: $input.all().map(i => Object.keys(i.json))\n    }),\n    langCode: 'en-IN'\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        -32
+      ],
+      "id": "72fdf933-0892-4c17-ae13-3789d558a1d7",
+      "name": "Code in JavaScript",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n    <Say language=\"{{ $json.langCode }}\">{{ $json.speech }}</Say>\n    <Hangup/>\n</Response>\n```\n\nNothing else — no markdown, no comments.\n\n---\n\n## Fix 2 — Change the input selector\n\nAt the top left of the INPUT panel, there's a dropdown currently showing **\"Webhook\"**. Change it to **\"Code in JavaScript\"** so `$json.speech` and `$json.langCode` resolve correctly.\n\n---\n\n## Fix 3 — Add Content-Type header\n\nClick **\"Add option\"** at the bottom → **\"Response Headers\"** → add:\n```\nName:  Content-Type\nValue: application/xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        480,
+        -32
+      ],
+      "id": "b4b249f6-be57-44a3-a118-c76a7efbf90c",
+      "name": "Respond to Webhook1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "getAll",
+        "projectId": "voicesewa",
+        "collection": "workers",
+        "returnAll": true,
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        112
+      ],
+      "id": "69e02ed1-208f-45aa-acff-88191913f03c",
+      "name": "Get Worker",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "getAll",
+        "projectId": "voicesewa",
+        "collection": "clients",
+        "returnAll": true,
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        -160
+      ],
+      "id": "b5404fa7-2e69-40f5-9501-5dba56853a1b",
+      "name": "Get Client",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "fomoha8938hutudns.app.n8n.cloud",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "54.251.51.3",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "SG",
+            "cf-ray": "9d55ca7d4e9ff9e6-SIN",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "x-forwarded-for": "54.251.51.3, 172.69.176.11",
+            "x-forwarded-host": "fomoha8938hutudns.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-95-67c5b59755-l49m6",
+            "x-is-trusted": "yes",
+            "x-real-ip": "54.251.51.3"
+          },
+          "params": {},
+          "query": {
+            "status": "true",
+            "language": "'en'",
+            "role": "'worker'",
+            "CallSid": "d1bdb13c04af5e4ac037996826301a31",
+            "CallFrom": "09773403142",
+            "CallTo": "02248931753",
+            "Direction": "incoming",
+            "Created": "Sun, 01 Mar 2026 11:03:51",
+            "DialWhomNumber": "",
+            "ServerCode": "",
+            "digits": "\"1\"",
+            "From": "09773403142",
+            "To": "02248931753",
+            "CurrentTime": "2026-03-01 11:04:09"
+          },
+          "body": {},
+          "webhookUrl": "https://fomoha8938hutudns.app.n8n.cloud/webhook/ivr_entry",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch2": {
+      "main": [
+        [
+          {
+            "node": "Get Client",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Worker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Worker": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "06cc9e1b-c549-4b60-9ec6-a1bb07f3f541",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cb840271ce94bb7fd9c6793b8082b2d29d9bc8dbac834b10a25330e393e00f0d"
+  },
+  "id": "ZTsmYURjPMLirems",
+  "tags": []
+}

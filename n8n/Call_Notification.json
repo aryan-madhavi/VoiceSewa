@@ -1,0 +1,150 @@
+{
+  "name": "Call_Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "call-notification",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        64
+      ],
+      "id": "71c42203-3c3a-4501-a46a-c61d8b846f9a",
+      "name": "Webhook",
+      "webhookId": "549dcc66-81eb-48e4-b24f-0f452193303e"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "={{ $json.body.goToCollection }}",
+        "documentId": "={{ $json.body.receiverId }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        64
+      ],
+      "id": "5381f922-f12d-4255-b24a-b62814f9aebc",
+      "name": "Get a document",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://fcm.googleapis.com/fcm/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"{{ $node[\"Get a document\"].json.fields.fcm_token.stringValue }}\",\n  \"priority\": \"high\",\n  \"data\": {\n    \"type\": \"voice_call\",\n    \"jobId\": \"{{ $node[\"Webhook\"].json.body.jobId }}\",\n    \"callerName\": \"Client\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        592,
+        64
+      ],
+      "id": "a747d4dd-bb50-4597-a777-8aa6c3c0a7d8",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pVqtQu2jf9iKkGX9",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "fomoha8938hutudns.app.n8n.cloud",
+            "user-agent": "Dart/3.10 (dart:io)",
+            "content-length": "145",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "45.119.30.173",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9d4991c07cee6ecb-BOM",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "45.119.30.173, 162.158.235.84",
+            "x-forwarded-host": "fomoha8938hutudns.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-95-67c5b59755-wdqlf",
+            "x-is-trusted": "yes",
+            "x-real-ip": "45.119.30.173"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "receiverId": "NoYsL4GUoKOaHFMaq3Ct7ovn6h43",
+            "jobId": "3J1YJsEDVhaR4qskfQzc",
+            "callerName": "Client",
+            "type": "voice_call",
+            "goToCollection": "workers"
+          },
+          "webhookUrl": "https://fomoha8938hutudns.app.n8n.cloud/webhook-test/call-notification",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a document": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "23f86a89-af36-4360-9757-779c5e1dfa4a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cb840271ce94bb7fd9c6793b8082b2d29d9bc8dbac834b10a25330e393e00f0d"
+  },
+  "id": "8B857PpFuD5N6EUg",
+  "tags": []
+}

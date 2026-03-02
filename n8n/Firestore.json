@@ -1,0 +1,3320 @@
+{
+  "name": "Firestore",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "action"
+            },
+            {
+              "name": "payload",
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -10224,
+        1008
+      ],
+      "id": "70d71a18-4072-4ec4-842b-31e5d3b679fa",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * FIRESTORE_SUBWORKFLOW - VALIDATION NODE (TOOL-SAFE)\n * ---------------------------------------------------\n * Never throws.\n * Always returns structured JSON.\n */\n\nconst input = $json;\n\n// --------------------------------------------------\n// SAFE ERROR HELPER\n// --------------------------------------------------\n\nfunction fail(message) {\n  return [\n    {\n      json: {\n        success: false,\n        error: message\n      }\n    }\n  ];\n}\n\n// --------------------------------------------------\n// 1️⃣ BASIC STRUCTURE VALIDATION\n// --------------------------------------------------\n\nif (!input || typeof input !== \"object\") {\n  return fail(\"Invalid request: body must be an object.\");\n}\n\nconst { action, payload } = input;\n\nif (!action || typeof action !== \"string\") {\n  return fail(\"Invalid request: 'action' is required and must be a string.\");\n}\n\n// --------------------------------------------------\n// 2️⃣ SUPPORTED ACTIONS\n// --------------------------------------------------\n\nconst SUPPORTED_ACTIONS = [\n  \"GET_JOBS_BY_IDS\",\n  \"GET_JOB_BY_ID\",\n  \"CREATE_JOB\",\n  \"UPDATE_JOB_STATUS\",\n  \"GET_QUOTATIONS\",\n  \"GET_QUOTATION_BY_ID\",\n  \"UPDATE_QUOTATION_STATUS\",\n  \"FINALIZE_JOB_QUOTATION\",\n  \"ADD_QUOTATION_MESSAGE\",\n  \"VERIFY_OTP\",\n  \"ADD_FEEDBACK\",\n  \"UPDATE_QUOTATION\",\n  \"WITHDRAW_QUOTATION\",\n  \"ADD_ADDRESS\",\n  \"CHECK_USER_EXISTS\",\n  \"CREATE_CLIENT_ACCOUNT\",\n  \"CREATE_WORKER_ACCOUNT\"\n];\n\nif (!SUPPORTED_ACTIONS.includes(action)) {\n  return fail(`Unsupported action: ${action}`);\n}\n\n// --------------------------------------------------\n// 3️⃣ HELPERS\n// --------------------------------------------------\n\nconst isString = (v) => typeof v === \"string\" && v.trim() !== \"\";\nconst isArray = (v) => Array.isArray(v);\nconst isObject = (v) => v && typeof v === \"object\" && !Array.isArray(v);\nconst isNumber = (v) => typeof v === \"number\" && !isNaN(v);\n\n// --------------------------------------------------\n// 4️⃣ ACTION VALIDATION\n// --------------------------------------------------\n\nswitch (action) {\n\n  case \"GET_JOBS_BY_IDS\":\n    if (!payload || !isArray(payload.job_ids) || payload.job_ids.length === 0) {\n      return fail(\"GET_JOBS_BY_IDS requires payload.job_ids as non-empty array.\");\n    }\n    break;\n\n  case \"GET_JOB_BY_ID\":\n    if (!payload || !isString(payload.job_id)) {\n      return fail(\"GET_JOB_BY_ID requires payload.job_id (string).\");\n    }\n    break;\n\n  case \"CREATE_JOB\":\n    if (!payload || !isObject(payload)) {\n      return fail(\"CREATE_JOB requires payload object.\");\n    }\n    if (!isString(payload.client_id)) {\n      return fail(\"CREATE_JOB requires payload.client_id (string).\");\n    }\n    if (!isString(payload.service_type)) {\n      return fail(\"CREATE_JOB requires payload.service_type (string).\");\n    }\n    if (!isString(payload.description)) {\n      return fail(\"CREATE_JOB requires payload.description (string).\");\n    }\n    if (typeof payload.address_index !== \"number\") {\n      return fail(\"CREATE_JOB requires payload.address_index (number).\");\n    }\n    break;\n\n  case \"UPDATE_JOB_STATUS\":\n    if (!payload || !isString(payload.job_id)) {\n      return fail(\"UPDATE_JOB_STATUS requires payload.job_id (string).\");\n    }\n    if (!isString(payload.status)) {\n      return fail(\"UPDATE_JOB_STATUS requires payload.status (string).\");\n    }\n    break;\n\n  case \"GET_QUOTATIONS\":\n    if (!payload || !isString(payload.job_id)) {\n      return fail(\"GET_QUOTATIONS requires payload.job_id (string).\");\n    }\n    break;\n\n  case \"GET_QUOTATION_BY_ID\":\n    if (!payload || !isString(payload.job_id)) {\n      return fail(\"GET_QUOTATION_BY_ID requires payload.job_id (string).\");\n    }\n    if (!isString(payload.quotation_id)) {\n      return fail(\"GET_QUOTATION_BY_ID requires payload.quotation_id (string).\");\n    }\n    break;\n\n  case \"UPDATE_QUOTATION_STATUS\":\n    if (!payload ||\n        !isString(payload.job_id) ||\n        !isString(payload.quotation_id) ||\n        !isString(payload.status)) {\n      return fail(\"UPDATE_QUOTATION_STATUS requires job_id, quotation_id and status.\");\n    }\n    break;\n\n  case \"FINALIZE_JOB_QUOTATION\":\n    if (!payload || !isString(payload.job_id) || !isString(payload.quotation_id)) {\n      return fail(\"FINALIZE_JOB_QUOTATION requires job_id and quotation_id.\");\n    }\n    break;\n\n  case \"ADD_QUOTATION_MESSAGE\":\n    if (!payload || !isString(payload.job_id)) {\n      return fail(\"ADD_QUOTATION_MESSAGE requires payload.job_id (string).\");\n    }\n    if (!isString(payload.worker_id)) {\n      return fail(\"ADD_QUOTATION_MESSAGE requires payload.worker_id (string).\");\n    }\n    if (!isString(payload.estimated_cost)) {\n      return fail(\"ADD_QUOTATION_MESSAGE requires payload.estimated_cost (string).\");\n    }\n    if (!isString(payload.estimated_time)) {\n      return fail(\"ADD_QUOTATION_MESSAGE requires payload.estimated_time (string).\");\n    }\n    if (!isString(payload.description)) {\n      return fail(\"ADD_QUOTATION_MESSAGE requires payload.description (string).\");\n    }\n    break;\n\n  case \"VERIFY_OTP\":\n    if (!payload || !isString(payload.job_id)) {\n      return fail(\"VERIFY_OTP requires payload.job_id (string).\");\n    }\n    if (!isString(payload.otp)) {\n      return fail(\"VERIFY_OTP requires payload.otp (string).\");\n    }\n    break;\n\n  case \"ADD_FEEDBACK\":\n    if (!payload || !isString(payload.job_id)) {\n      return fail(\"ADD_FEEDBACK requires payload.job_id (string).\");\n    }\n    if (!isString(payload.submitted_by)) {\n      return fail(\"ADD_FEEDBACK requires payload.submitted_by ('client' or 'worker').\");\n    }\n    if (!['client', 'worker'].includes(payload.submitted_by)) {\n      return fail(\"ADD_FEEDBACK payload.submitted_by must be 'client' or 'worker'.\");\n    }\n    if (!isNumber(payload.rating) || payload.rating < 1 || payload.rating > 5) {\n      return fail(\"ADD_FEEDBACK requires payload.rating between 1 and 5.\");\n    }\n    if (!isString(payload.comment)) {\n      return fail(\"ADD_FEEDBACK requires payload.comment (string).\");\n    }\n    break;\n\n  case \"UPDATE_QUOTATION\":\n  if (!payload || !isString(payload.job_id)) {\n    return fail(\"UPDATE_QUOTATION requires payload.job_id (string).\");\n  }\n  if (!isString(payload.quotation_id)) {\n    return fail(\"UPDATE_QUOTATION requires payload.quotation_id (string).\");\n  }\n  if (!isString(payload.estimated_cost)) {\n    return fail(\"UPDATE_QUOTATION requires payload.estimated_cost (string).\");\n  }\n  if (!isString(payload.estimated_time)) {\n    return fail(\"UPDATE_QUOTATION requires payload.estimated_time (string).\");\n  }\n  if (!isString(payload.description)) {\n    return fail(\"UPDATE_QUOTATION requires payload.description (string).\");\n  }\n  break;\n\ncase \"WITHDRAW_QUOTATION\":\n  if (!payload || !isString(payload.job_id)) {\n    return fail(\"WITHDRAW_QUOTATION requires payload.job_id (string).\");\n  }\n  if (!isString(payload.quotation_id)) {\n    return fail(\"WITHDRAW_QUOTATION requires payload.quotation_id (string).\");\n  }\n  if (!isString(payload.worker_id)) {\n    return fail(\"WITHDRAW_QUOTATION requires payload.worker_id (string).\");\n  }\n  if (!isString(payload.reason)) {\n    return fail(\"WITHDRAW_QUOTATION requires payload.reason (string).\");\n  }\n  break;\n\n  case \"ADD_ADDRESS\":\n    if (!payload || !isString(payload.client_id)) {\n      return fail(\"ADD_ADDRESS requires payload.client_id (string).\");\n    }\n    if (!isString(payload.line1)) {\n      return fail(\"ADD_ADDRESS requires payload.line1 (string).\");\n    }\n    if (!isString(payload.city)) {\n      return fail(\"ADD_ADDRESS requires payload.city (string).\");\n    }\n    if (!isString(payload.pincode)) {\n      return fail(\"ADD_ADDRESS requires payload.pincode (string).\");\n    }\n    break;\n\n  case \"CREATE_CLIENT_ACCOUNT\":\n    if (!payload || !isString(payload.name)) {\n      return fail(\"CREATE_CLIENT_ACCOUNT requires payload.name (string).\");\n    }\n    if (!isString(payload.phone)) {\n      return fail(\"CREATE_CLIENT_ACCOUNT requires payload.phone (string).\");\n    }\n    if (!/^\\+?[0-9]{10,13}$/.test(payload.phone.replace(/\\s/g, ''))) {\n      return fail(\"CREATE_CLIENT_ACCOUNT requires a valid phone number.\");\n    }\n    if (!isString(payload.line1)) {\n      return fail(\"CREATE_CLIENT_ACCOUNT requires payload.line1 (string).\");\n    }\n    if (!isString(payload.city)) {\n      return fail(\"CREATE_CLIENT_ACCOUNT requires payload.city (string).\");\n    }\n    if (!isString(payload.pincode)) {\n      return fail(\"CREATE_CLIENT_ACCOUNT requires payload.pincode (string).\");\n    }\n    break;\n\n  case \"CHECK_USER_EXISTS\":\n    if (!payload || !isString(payload.phone)) {\n      return fail(\"CHECK_USER_EXISTS requires payload.phone (string).\");\n    }\n    break;\n\n  case \"CREATE_WORKER_ACCOUNT\":\n    if (!payload || !isString(payload.name)) {\n      return fail(\"CREATE_WORKER_ACCOUNT requires payload.name (string).\");\n    }\n    if (!isString(payload.phone)) {\n      return fail(\"CREATE_WORKER_ACCOUNT requires payload.phone (string).\");\n    }\n    if (!/^\\+?[0-9]{10,13}$/.test(payload.phone.replace(/\\s/g, ''))) {\n      return fail(\"CREATE_WORKER_ACCOUNT requires a valid phone number.\");\n    }\n    if (!isArray(payload.skills) || payload.skills.length === 0) {\n      return fail(\"CREATE_WORKER_ACCOUNT requires payload.skills (non-empty array).\");\n    }\n    const validSkills = [\n      'electrician', 'plumber', 'carpenter', 'painter',\n      'acApplianceTechnician', 'houseCleaner', 'driverOnDemand',\n      'cook', 'mechanic', 'handymanMasonryWork'\n    ];\n    const invalidSkills = payload.skills.filter(s => !validSkills.includes(s));\n    if (invalidSkills.length > 0) {\n      return fail(`Invalid skills: ${invalidSkills.join(', ')}. Must be from the allowed list.`);\n    }\n    if (!isString(payload.city)) {\n      return fail(\"CREATE_WORKER_ACCOUNT requires payload.city (string).\");\n    }\n    if (!isString(payload.pincode)) {\n      return fail(\"CREATE_WORKER_ACCOUNT requires payload.pincode (string).\");\n    }\n    break;\n}\n\n// --------------------------------------------------\n// 5️⃣ SUCCESS RETURN\n// --------------------------------------------------\n\nreturn [\n  {\n    json: {\n      success: true,\n      ...input,\n      validated: true\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -10000,
+        1008
+      ],
+      "id": "5b82b1e3-fd25-4923-8ae1-37c471bf3ef9",
+      "name": "ValidateRequest",
+      "alwaysOutputData": false,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9968d916-a104-4940-8c3c-968caa7c1072",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "GET_JOBS_BY_IDS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "GET_JOBS_BY_IDS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "7a34a30e-9002-4b43-84de-29819805561a",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "GET_JOB_BY_ID",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "GET_JOB_BY_ID"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "204156ba-d9a2-43dd-93b3-58a02fe26e4f",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "CREATE_JOB",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CREATE_JOB"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "01d1939b-e795-4530-ad41-37c24e8c9918",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "UPDATE_JOB_STATUS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "UPDATE_JOB_STATUS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bdca4620-d0b0-48e3-9ecf-028098e688cc",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "GET_QUOTATIONS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "GET_QUOTATIONS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "23892363-67aa-4491-be2b-c7110cff3c7a",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "GET_QUOTATION_BY_ID",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "GET_QUOTATION_BY_ID"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5f904636-9a19-463f-ae0e-4e17a3906be2",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "UPDATE_QUOTATION_STATUS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "UPDATE_QUOTATION_STATUS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4b528e1c-b371-4b1c-aa92-bcd20a8c2e1e",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "FINALIZE_JOB_QUOTATION",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "FINALIZE_JOB_QUOTATION"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c8a1894b-bca2-4efe-a8f5-cd26f81b6e05",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "ADD_QUOTATION_MESSAGE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ADD_QUOTATION_MESSAGE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "85b78767-02a6-4170-b88a-c8d45077081d",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "VERIFY_OTP",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "VERIFY_OTP"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a03996b9-dcd6-4c5d-87c2-5a20341a2ea4",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "ADD_FEEDBACK",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ADD_FEEDBACK"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "94682e73-fa6b-4985-bfb8-98f537aba20f",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "UPDATE_QUOTATION",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "UPDATE_QUOTATION"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0663b1fd-788b-496b-a722-610ecafd3e90",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "WITHDRAW_QUOTATION",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "WITHDRAW_QUOTATION"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "7f3b7405-5132-4316-860a-bbc7d4c770da",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "ADD_ADDRESS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ADD_ADDRESS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ea3b8528-a66c-446d-985e-6e57253fd55c",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "CHECK_USER_EXISTS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CHECK_USER_EXISTS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "81aa0fde-34ba-43df-9ce5-2559217686a2",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "CREATE_CLIENT_ACCOUNT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CREATE_CLIENT_ACCOUNT"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bf6e8bbc-6e7d-425c-81e0-e460e387776e",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "CREATE_WORKER_ACCOUNT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CREATE_WORKER_ACCOUNT"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -9552,
+        2016
+      ],
+      "id": "b2939f65-39b5-4235-be95-7d8965e954f3",
+      "name": "RouteByAction"
+    },
+    {
+      "parameters": {
+        "jsCode": "const jobIds = $json.payload.job_ids;\n\nreturn jobIds.map(id => ({\n  json: {\n    job_id: id\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7312,
+        -160
+      ],
+      "id": "0ce79d14-b37b-4279-b856-ee4f3ef03946",
+      "name": "PrepareJobIds"
+    },
+    {
+      "parameters": {
+        "batchSize": 10,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -7088,
+        -160
+      ],
+      "id": "ee0201ba-b25d-4e76-a684-9afac6283eb6",
+      "name": "Split"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      success: true,\n      action: \"GET_JOBS_BY_IDS\",\n      data: $json.jobs\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6640,
+        320
+      ],
+      "id": "b27184fc-b753-4057-892a-529ca640cd12",
+      "name": "StandardizeResponse (GET_JOBS_BY_IDS)"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "=jobs",
+        "documentId": "={{ $json.job_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -6864,
+        -112
+      ],
+      "id": "12ccd268-f64b-46b1-a799-3b541522c12b",
+      "name": "GetJobDoc(s)",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "=jobs",
+        "documentId": "={{ $json.payload.job_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        80
+      ],
+      "id": "75712c4e-6b03-4230-bfff-2f45ee8a91d8",
+      "name": "GetJobDoc",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst normalized = items\n  .map(item => item.json.found)\n  .filter(doc => doc && doc.fields)\n  .map(doc => {\n    const fields = doc.fields;\n\n    const getString = (f) => f?.stringValue || null;\n    const getNumber = (f) => f?.integerValue\n      ? Number(f.integerValue)\n      : f?.doubleValue\n      ? Number(f.doubleValue)\n      : null;\n\n    return {\n      id: doc.name.split('/').pop(),        // ← was doc.id, always undefined in raw mode\n      service_type: getString(fields.service_type),\n      description: getString(fields.description),\n      status: getString(fields.status),\n      worker_name: getString(fields.worker_name),\n      finalized_quotation_amount: getNumber(fields.finalized_quotation_amount),\n      scheduled_at: fields.scheduled_at?.timestampValue || null,\n      created_at: fields.created_at?.timestampValue || null,\n      city:\n        fields.address?.mapValue?.fields?.city?.stringValue || null,\n      pincode:\n        fields.address?.mapValue?.fields?.pincode?.stringValue || null,\n    };\n  });\n\nreturn [\n  {\n    json: {\n      jobs: normalized\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6864,
+        -304
+      ],
+      "id": "4b1c3aa4-b801-4d56-b126-adfc7383617a",
+      "name": "NormalizeJobs"
+    },
+    {
+      "parameters": {
+        "jsCode": "const doc = $json.found; // ✅ go inside \"found\"\n\nif (!doc || !doc.fields) {\n  return [\n    {\n      json: {\n        success: false,\n        error: \"Job not found\"\n      }\n    }\n  ];\n}\n\nconst fields = doc.fields;\n\nconst getString = (f) => f?.stringValue || null;\nconst getNumber = (f) =>\n  f?.integerValue\n    ? Number(f.integerValue)\n    : f?.doubleValue\n    ? Number(f.doubleValue)\n    : null;\n\nconst normalized = {\n  id: doc.name.split('/').pop(),\n  service_type: getString(fields.service_type),\n  description: getString(fields.description),\n  status: getString(fields.status),\n  worker_name: getString(fields.worker_name),\n  finalized_quotation_amount: getNumber(fields.finalized_quotation_amount),\n  scheduled_at: fields.scheduled_at?.timestampValue || null,\n  created_at: fields.created_at?.timestampValue || null,\n  started_at: fields.started_at?.timestampValue || null,\n  city:\n    fields.address?.mapValue?.fields?.city?.stringValue || null,\n  pincode:\n    fields.address?.mapValue?.fields?.pincode?.stringValue || null,\n};\n\nreturn [\n  {\n    json: {\n      job: normalized\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        80
+      ],
+      "id": "33eec977-e25d-4d52-b206-3360b1aeaa7d",
+      "name": "NormalizeSingleJob"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      success: true,\n      action: \"GET_JOB_BY_ID\",\n      data: $json.job\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6864,
+        80
+      ],
+      "id": "5e6faa20-3fb7-4736-a800-4060f4a111eb",
+      "name": "StandardizeResponse (GET_JOB_BY_ID)"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "clients",
+        "documentId": "={{ $json.payload.client_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        272
+      ],
+      "id": "9bc1edcf-4829-42a9-9c86-ce952c468a3f",
+      "name": "GetClientDoc",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Firestore raw mode returns { found: {...} }\nconst clientDoc = $json.found || $json;\n\nconst payload = $item(0).$node[\"ValidateRequest\"].json.payload;\n\nif (!clientDoc || !clientDoc.fields) {\n  throw new Error(\"Client document not found.\");\n}\n\nconst addresses =\n  clientDoc.fields.addresses?.arrayValue?.values || [];\n\nif (!addresses.length) {\n  throw new Error(\"Client has no addresses saved.\");\n}\n\nif (\n  payload.address_index == null ||\n  payload.address_index < 0 ||\n  payload.address_index >= addresses.length\n) {\n  throw new Error(\"Invalid address_index.\");\n}\n\nconst rawAddress =\n  addresses[payload.address_index]?.mapValue?.fields;\n\nif (!rawAddress) {\n  throw new Error(\"Selected address malformed.\");\n}\n\n// Normalize address\nconst resolvedAddress = {\n  line1: rawAddress.line1?.stringValue || null,\n  line2: rawAddress.line2?.stringValue || null,\n  landmark: rawAddress.landmark?.stringValue || null,\n  city: rawAddress.city?.stringValue || null,\n  pincode: rawAddress.pincode?.stringValue || null,\n  location: rawAddress.location?.geoPointValue || null,\n};\n\n// Normalize services buckets\nconst servicesRaw =\n  clientDoc.fields.services?.mapValue?.fields || {};\n\nconst extractJobIds = (bucket) => {\n  const values = bucket?.arrayValue?.values || [];\n  return values.map(v =>\n    v.referenceValue.split(\"/\").pop()\n  );\n};\n\nconst clientServices = {\n  requested: extractJobIds(servicesRaw.requested),\n  scheduled: extractJobIds(servicesRaw.scheduled),\n  completed: extractJobIds(servicesRaw.completed),\n  cancelled: extractJobIds(servicesRaw.cancelled),\n};\n\nreturn [\n  {\n    json: {\n      ...$item(0).$node[\"ValidateRequest\"].json,\n      resolved_address: resolvedAddress,\n      client_services: clientServices\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        272
+      ],
+      "id": "9773ec52-c155-4980-abbf-809cf215070d",
+      "name": "ResolveAddressFromIndex"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents/jobs",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"fields\": {\n    \"client_uid\": { \"stringValue\": \"{{$json.payload.client_id}}\" },\n    \"description\": { \"stringValue\": \"{{$json.payload.description}}\" },\n    \"service_type\": { \"stringValue\": \"{{$json.payload.service_type.toLowerCase()}}\" },\n    \"status\": { \"stringValue\": \"requested\" },\n    \"created_at\": { \"timestampValue\": \"{{ $now.toUTC() }}\" },\n    \"scheduled_at\": { \"timestampValue\": \"{{ $now.toUTC() }}\" },\n    \"address\": {\n      \"mapValue\": {\n        \"fields\": {\n          \"line_1\": { \"stringValue\": \"{{$json.resolved_address.line1}}\" },\n          \"line_2\": { \"stringValue\": \"{{$json.resolved_address.line2}}\" },\n          \"landmark\": { \"stringValue\": \"{{$json.resolved_address.landmark}}\" },\n          \"city\": { \"stringValue\": \"{{$json.resolved_address.city}}\" },\n          \"pincode\": { \"stringValue\": \"{{$json.resolved_address.pincode}}\" },\n          \"location\": {\n            \"geoPointValue\": {\n              \"latitude\": {{$json.resolved_address.location.latitude}},\n              \"longitude\": {{$json.resolved_address.location.longitude}}\n            }\n          }\n        }\n      }\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6864,
+        272
+      ],
+      "id": "cc8a8fe7-2720-4623-843e-b846e0db8f87",
+      "name": "CreateJob",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"writes\": [\n    {\n      \"transform\": {\n        \"document\": \"{{ $('GetClientDoc').item.json.found.name }}\",\n        \"fieldTransforms\": [\n          {\n            \"fieldPath\": \"services.requested\",\n            \"appendMissingElements\": {\n              \"values\": [\n                {\n                  \"referenceValue\": {{ $json.name.toJsonString() }}\n                }\n              ]\n            }\n          }\n        ]\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6640,
+        704
+      ],
+      "id": "14bb6793-a593-4666-adbc-d20ded9cde7e",
+      "name": "UpdateClientRequestedBucket",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      success: true,\n      action: \"CREATE_JOB\",\n      data: {\n        job_id: $('CreateJob').first().json.name.split('/').pop(), // extract only ID\n        status: \"requested\",\n        scheduled_at: DateTime.fromISO($('CreateJob').first().json.fields.scheduled_at.timestampValue, { zone: 'utc' }).setZone('Asia/Kolkata').toISO() || null\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6416,
+        704
+      ],
+      "id": "4041436b-eabd-4d2c-8808-7a350dfbcca2",
+      "name": "StandardizeResponse (CREATE_JOB)"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "=jobs",
+        "documentId": "={{ $json.payload.job_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        512
+      ],
+      "id": "a82c7b07-8f26-4734-8f99-895943f619ae",
+      "name": "GetJobDoc1",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "clients",
+        "documentId": "={{ $json.found.fields.client_uid.stringValue }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -6864,
+        464
+      ],
+      "id": "105633dc-2583-4e51-9afa-1d163eb87e59",
+      "name": "GetClientDoc1",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get payload from ValidateRequest node\nconst payload = $item(0).$node[\"ValidateRequest\"]?.json?.payload;\n\n// Get the job document fetched from Firestore\nconst jobDoc = $item(0).$node[\"GetJobDoc1\"]?.json?.found;\n\n// --------------------------------------------------\n// SAFE FAILURE HELPER\n// --------------------------------------------------\nfunction fail(message) {\n  return [\n    {\n      json: {\n        success: false,\n        error: message\n      }\n    }\n  ];\n}\n\n// --------------------------------------------------\n// BASIC VALIDATION\n// --------------------------------------------------\nif (!payload || !payload.status) {\n  return fail(\"Missing payload.status.\");\n}\n\nif (!jobDoc || !jobDoc.fields || !jobDoc.fields.status?.stringValue) {\n  return fail(\"Job document is missing or has no status.\");\n}\n\n// --------------------------------------------------\n// NORMALIZE STATUS VALUES\n// --------------------------------------------------\nfunction normalizeStatus(status) {\n  if (!status) return null;\n  const s = status.toString().trim();\n  if (s === 'inProgress' || s === 'in_progress' || s === 'inprogress') {\n    return 'inProgress';\n  }\n  return s;\n}\n\nconst currentStatus = normalizeStatus(\n  jobDoc.fields.status.stringValue\n);\n\nconst newStatus = normalizeStatus(payload.status);\n\nif (!currentStatus || !newStatus) {\n  return fail(\"Invalid status value.\");\n}\n\n// --------------------------------------------------\n// ALLOWED TRANSITIONS\n// --------------------------------------------------\nconst allowedTransitions = {\n  requested:   ['cancelled', 'quoted'],\n  quoted:      ['scheduled', 'cancelled'],\n  scheduled:   ['cancelled', 'rescheduled'],\n  rescheduled: ['cancelled'],\n  inProgress:  ['completed'],\n  completed:   [],\n  cancelled:   []\n};\n\nif (!allowedTransitions[currentStatus]) {\n  return fail(`Unknown current status: ${currentStatus}`);\n}\n\nif (!allowedTransitions[currentStatus].includes(newStatus)) {\n  return fail(\n    `Invalid status transition from \"${currentStatus}\" to \"${newStatus}\"`\n  );\n}\n\n// --------------------------------------------------\n// BUCKET MAPPING\n// --------------------------------------------------\nconst bucketMap = {\n  requested:   'requested',\n  quoted:      'requested',\n  scheduled:   'scheduled',\n  rescheduled: 'scheduled',\n  inProgress:  'scheduled',\n  completed:   'completed',\n  cancelled:   'cancelled'\n};\n\nreturn [\n  {\n    json: {\n      ...$json,\n      current_status: currentStatus,\n      new_status: newStatus,\n      old_bucket: bucketMap[currentStatus],\n      new_bucket: bucketMap[newStatus],\n      now: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6640,
+        896
+      ],
+      "id": "36b81ade-ba97-4b9e-b0b6-e5ad792d668f",
+      "name": "ValidateTransition"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "JSON",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6192,
+        896
+      ],
+      "id": "74367bfe-7e42-4f5e-880e-520dc3910786",
+      "name": "UpdateJobDoc",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const validateNode = $item(0).$node[\"ValidateTransition\"].json;\nconst jobNode = $item(0).$node[\"GetJobDoc1\"].json.found;\n\nconst jobRef = jobNode.name;\n\nif (validateNode.old_bucket === validateNode.new_bucket) {\n  return [{\n    json: {\n      ...validateNode,\n      bucket_changed: false\n    }\n  }];\n}\n\n// Read worker_uid directly from job doc — written there by FINALIZE_JOB_QUOTATION\nconst worker_uid = validateNode.new_status === 'completed'\n  ? (jobNode.fields.worker_uid?.stringValue || null)\n  : null;\n\nreturn [{\n  json: {\n    ...validateNode,\n    bucket_changed: true,\n    job_reference: jobRef,\n    client_uid: jobNode.fields.client_uid.stringValue,\n    worker_uid\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5968,
+        896
+      ],
+      "id": "accb0c19-e6d0-494e-b98e-015d0442db21",
+      "name": "PrepareBucketMovement"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1454a79e-dfdb-4424-b6c0-088b37a36c81",
+              "leftValue": "={{ $json.bucket_changed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -5744,
+        896
+      ],
+      "id": "5d5f8613-3998-4b97-93a2-dff74b9fc259",
+      "name": "IfBucketChanged"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -5296,
+        928
+      ],
+      "id": "b6ed3baa-9137-4cc7-a94b-fe029a52096b",
+      "name": "MoveBuckets",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const vt = $item(0).$node[\"ValidateTransition\"]?.json;\nconst jobDoc = $item(0).$node[\"GetJobDoc1\"]?.json?.found;\n\n// --------------------------------------------------\n// SAFE FAILURE HELPER\n// --------------------------------------------------\nfunction fail(message) {\n  return [\n    {\n      json: {\n        success: false,\n        error: message\n      }\n    }\n  ];\n}\n\n// --------------------------------------------------\n// BASIC VALIDATION\n// --------------------------------------------------\nif (!vt || !vt.new_status || !vt.now) {\n  return fail(\"Missing transition data.\");\n}\n\nif (!jobDoc || !jobDoc.name) {\n  return fail(\"Job document reference missing.\");\n}\n\n// --------------------------------------------------\n// BUILD UPDATE FIELDS\n// --------------------------------------------------\nconst fields = {\n  status: {\n    stringValue: vt.new_status\n  },\n  updated_at: {\n    timestampValue: vt.now\n  }\n};\n\nconst updateMask = [\"status\", \"updated_at\"];\n\n// --------------------------------------------------\n// LIFECYCLE TIMESTAMPS\n// --------------------------------------------------\n\n// Worker arrived\nif (vt.new_status === 'inProgress') {\n  fields.started_at = { timestampValue: vt.now };\n  updateMask.push('started_at');\n}\n\n// Work completed\nif (vt.new_status === 'completed') {\n  fields.completed_at = { timestampValue: vt.now };\n  updateMask.push('completed_at');\n}\n\n// Job cancelled\nif (vt.new_status === 'cancelled') {\n  fields.cancelled_at = { timestampValue: vt.now };\n  updateMask.push('cancelled_at');\n}\n\n// --------------------------------------------------\n// RETURN FIRESTORE COMMIT PAYLOAD\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      writes: [\n        {\n          update: {\n            name: jobDoc.name,\n            fields\n          },\n          updateMask: {\n            fieldPaths: updateMask\n          }\n        }\n      ]\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6416,
+        896
+      ],
+      "id": "dd9cb498-d966-4517-9cf9-05a170ee31cc",
+      "name": "BuildJobUpdatePayload"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $item(0).$node[\"ValidateTransition\"].json;\n\nreturn [{\n  json: {\n    success: true,\n    action: \"UPDATE_JOB_STATUS\",\n    data: {\n      job_id: $('ValidateRequest').first().json.payload.job_id,\n      previous_status: data.current_status,\n      new_status: data.new_status,\n      bucket_moved: data.old_bucket !== data.new_bucket\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5072,
+        896
+      ],
+      "id": "e224b5b5-5028-428e-8a81-ceffbae7530d",
+      "name": "StandardizeResponse (UPDATE_JOB)"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "=jobs/{{ $json.payload.job_id }}/quotations",
+        "documentId": "={{ $json.payload.quotation_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        1232
+      ],
+      "id": "32ed4647-3661-4da2-855a-dd82bb4180a2",
+      "name": "GetQuoDoc",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $item(0).$node[\"ValidateRequest\"].json.payload;\nconst quotationDoc = $item(0).$node[\"GetQuoDoc\"].json.found;\n\nif (!quotationDoc || !quotationDoc.fields?.status?.stringValue) {\n  throw new Error(\"Quotation not found.\");\n}\n\nconst currentStatus = quotationDoc.fields.status.stringValue;\nconst newStatus = payload.status;\n\n// Only allow rejected or withdrawn\nif (![\"rejected\", \"withdrawn\"].includes(newStatus)) {\n  throw new Error(\"Invalid status update. Only 'rejected' or 'withdrawn' allowed.\");\n}\n\n// Cannot modify once accepted/rejected/withdrawn\nif (currentStatus !== \"submitted\") {\n  throw new Error(\n    `Cannot change quotation from '${currentStatus}'. Only 'submitted' quotations can be modified.`\n  );\n}\n\nreturn [{\n  json: {\n    job_id: payload.job_id,\n    quotation_id: payload.quotation_id,\n    quotation_name: quotationDoc.name,\n    new_status: newStatus,\n    now: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        1232
+      ],
+      "id": "a866acc9-b88e-4590-b5a7-95cb718aa38a",
+      "name": "ValidateQuoTransition"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nconst fields = {\n  status: { stringValue: data.new_status },\n  updated_at: { timestampValue: data.now }\n};\n\nconst updateMask = [\"status\", \"updated_at\"];\n\nif (data.new_status === \"rejected\") {\n  fields.rejected_at = { timestampValue: data.now };\n  updateMask.push(\"rejected_at\");\n}\n\nif (data.new_status === \"withdrawn\") {\n  fields.withdrawn_at = { timestampValue: data.now };\n  updateMask.push(\"withdrawn_at\");\n}\n\nreturn [{\n  json: {\n    writes: [\n      {\n        update: {\n          name: data.quotation_name,\n          fields\n        },\n        updateMask: {\n          fieldPaths: updateMask\n        }\n      }\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6864,
+        1232
+      ],
+      "id": "2d671eac-e96b-4363-a0b9-9a6de1272ee3",
+      "name": "BuildCommitPayload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "JSON",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6640,
+        1376
+      ],
+      "id": "943b9c8f-77f2-4be2-9a1f-59ddfbc07fed",
+      "name": "FirestoreCommit",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $('ValidateRequest').first()?.json?.payload;\n\nreturn [\n  {\n    json: {\n      success: true,\n      action: \"UPDATE_QUOTATION_STATUS\",\n      data: {\n        job_id: payload.job_id,\n        quotation_id: payload.quotation_id,\n        status: payload.status\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6416,
+        1376
+      ],
+      "id": "557349e7-42ef-408a-8fb5-54003b4088df",
+      "name": "StandardizeResponse (UPDATE_QUOTATION_STATUS)"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "=jobs/{{ $json.payload.job_id }}/quotations",
+        "documentId": "={{ $json.payload.quotation_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        1424
+      ],
+      "id": "1c5810ac-bb83-4bc1-b5a6-3dd2f0b19c0b",
+      "name": "GetQuoDoc1",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "JSON",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6864,
+        1424
+      ],
+      "id": "515b6fd1-5dd5-47bd-b1f3-3f410bd99923",
+      "name": "FirestoreCommit1",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const quotation = $json.found;\n\nconst job_id_match = quotation.name.match(/jobs\\/([^/]+)\\/quotations\\/[^/]+$/);\nif (!job_id_match) {\n  throw new Error(\"Cannot extract job_id from quotation path.\");\n}\nconst job_id = job_id_match[1];\n\nconst worker_uid = quotation.fields.worker_uid?.stringValue || null;\nconst worker_name = quotation.fields.worker_name?.stringValue || null;\nconst worker_rating = quotation.fields.worker_rating?.doubleValue || 0;\nconst estimated_cost = quotation.fields.estimated_cost?.stringValue || \"0\";\nconst scheduled_at = new Date().toISOString();\n\nconst amountNumber = parseFloat(estimated_cost.replace(/[^0-9.]/g, '')) || 0;\n\nconst otp = Math.floor(1000 + Math.random() * 9000).toString();\n\nconst jobRef = `projects/voicesewa/databases/(default)/documents/jobs/${job_id}`;\nconst workerRef = `projects/voicesewa/databases/(default)/documents/workers/${worker_uid}`;\n\nreturn [{\n  json: {\n    writes: [\n      {\n        update: {\n          name: jobRef,\n          fields: {\n            finalized_quotation:        { referenceValue: quotation.name },\n            finalized_quotation_amount: { doubleValue: amountNumber },\n            status:                     { stringValue: 'scheduled' },\n            scheduled_at:               { timestampValue: scheduled_at },\n            worker_name:                { stringValue: worker_name },\n            worker_rating:              { doubleValue: worker_rating },\n            worker_uid:                 { stringValue: worker_uid },\n            otp:                        { stringValue: otp },\n            updated_at:                 { timestampValue: new Date().toISOString() }\n          }\n        },\n        updateMask: {\n          fieldPaths: [\n            'finalized_quotation',\n            'finalized_quotation_amount',\n            'status',\n            'scheduled_at',\n            'worker_name',\n            'worker_rating',\n            'worker_uid',\n            'otp',\n            'updated_at'\n          ]\n        }\n      },\n      {\n        transform: {\n          document: workerRef,\n          fieldTransforms: [{\n            fieldPath: 'jobs.applied',\n            removeAllFromArray: {\n              values: [{ referenceValue: jobRef }]\n            }\n          }]\n        }\n      },\n      {\n        transform: {\n          document: workerRef,\n          fieldTransforms: [{\n            fieldPath: 'jobs.confirmed',\n            appendMissingElements: {\n              values: [{ referenceValue: jobRef }]\n            }\n          }]\n        }\n      }\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        1424
+      ],
+      "id": "8c5cbfd1-8dd1-449c-a516-cefe6fbac494",
+      "name": "BuildPayload"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cbafb5b4-ff38-4081-a94e-5b6738a1d004",
+              "name": "success",
+              "value": "={{ $json.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "eb1c75b3-9ce8-4075-854e-5be38e81f688",
+              "name": "error",
+              "value": "={{ $json.error }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -5600,
+        1696
+      ],
+      "id": "1b8468f3-a5d7-4f5e-b164-d54e69d289aa",
+      "name": "InvalidRequest"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4ec95e46-537d-44c8-86c2-2aa9fee5e20a",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -9776,
+        1008
+      ],
+      "id": "d1026dbc-8607-448b-9d10-81519867d9b2",
+      "name": "IfValidRequest"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "getAll",
+        "projectId": "voicesewa",
+        "collection": "=jobs/{{ $json.payload.job_id }}/quotations",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        848
+      ],
+      "id": "1acd9b30-3e62-4027-a1bd-9f78a0aeebbc",
+      "name": "GetQuoDoc2",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function normalizeFirestoreValue(value) {\n  if (!value) return null;\n\n  if ('stringValue' in value) return value.stringValue;\n  if ('integerValue' in value) return Number(value.integerValue);\n  if ('doubleValue' in value) return value.doubleValue;\n  if ('booleanValue' in value) return value.booleanValue;\n  if ('timestampValue' in value) return value.timestampValue;\n  if ('nullValue' in value) return null;\n\n  if ('arrayValue' in value) {\n    const values = value.arrayValue.values || [];\n    return values.map(normalizeFirestoreValue);\n  }\n\n  if ('mapValue' in value) {\n    return normalizeFirestoreFields(value.mapValue.fields || {});\n  }\n\n  return null;\n}\n\nfunction normalizeFirestoreFields(fields) {\n  const normalized = {};\n  for (const key in fields) {\n    normalized[key] = normalizeFirestoreValue(fields[key]);\n  }\n  return normalized;\n}\n\nreturn $input.all().map(item => {\n  const doc = item.json;\n\n  return {\n    json: {\n      id: doc.id || doc.name?.split('/').pop(),\n      ...normalizeFirestoreFields(doc.fields || {}),\n      createTime: doc.createTime || null,\n      updateTime: doc.updateTime || null,\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        848
+      ],
+      "id": "bfb57fb5-71c7-4395-a155-889c0b90df0e",
+      "name": "NormalizeQuotations"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allQuotations = $input.all().map(item => item.json);\n\nreturn [\n  {\n    json: {\n      success: true,\n      action: \"GET_QUOTATIONS\",\n      data: {\n        quotations: allQuotations\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6864,
+        848
+      ],
+      "id": "d50a0c0b-f0ee-4855-9a54-7a442bf5b320",
+      "name": "StandardizeResponse (GET_QUOTATIONS)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\nconst writes = [\n  {\n    transform: {\n      document: `projects/voicesewa/databases/(default)/documents/clients/${d.client_uid}`,\n      fieldTransforms: [{\n        fieldPath: `services.${d.old_bucket}`,\n        removeAllFromArray: {\n          values: [{ referenceValue: d.job_reference }]\n        }\n      }]\n    }\n  },\n  {\n    transform: {\n      document: `projects/voicesewa/databases/(default)/documents/clients/${d.client_uid}`,\n      fieldTransforms: [{\n        fieldPath: `services.${d.new_bucket}`,\n        appendMissingElements: {\n          values: [{ referenceValue: d.job_reference }]\n        }\n      }]\n    }\n  }\n];\n\nif (d.new_status === 'completed' && d.worker_uid) {\n  writes.push({\n    transform: {\n      document: `projects/voicesewa/databases/(default)/documents/workers/${d.worker_uid}`,\n      fieldTransforms: [{\n        fieldPath: 'jobs.confirmed',\n        removeAllFromArray: {\n          values: [{ referenceValue: d.job_reference }]\n        }\n      }]\n    }\n  });\n  writes.push({\n    transform: {\n      document: `projects/voicesewa/databases/(default)/documents/workers/${d.worker_uid}`,\n      fieldTransforms: [{\n        fieldPath: 'jobs.completed',\n        appendMissingElements: {\n          values: [{ referenceValue: d.job_reference }]\n        }\n      }]\n    }\n  });\n}\n\nreturn [{ json: { writes } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5520,
+        928
+      ],
+      "id": "f94906a7-b95a-4728-931b-9fb094972266",
+      "name": "BuildMoveBucketsPayload"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "=jobs/{{ $json.payload.job_id }}/quotations",
+        "documentId": "={{ $json.payload.quotation_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        1040
+      ],
+      "id": "fd075ab7-c457-41b6-9b6f-08ab9d51a68b",
+      "name": "GetQuoDoc3",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const doc = $json.found;\n\nif (!doc || !doc.fields) {\n  return [{\n    json: {\n      success: false,\n      error: \"Quotation not found\"\n    }\n  }];\n}\n\nconst f = doc.fields;\n\nconst getString = (field) => field?.stringValue || null;\nconst getBool = (field) => field?.booleanValue ?? null;\nconst getNum = (field) => {\n  if (field?.doubleValue != null) return field.doubleValue;\n  if (field?.integerValue != null) return Number(field.integerValue);\n  return null;\n};\n\nreturn [{\n  json: {\n    id: doc.name.split('/').pop(),\n    worker_uid: getString(f.worker_uid),\n    worker_name: getString(f.worker_name),\n    worker_rating: getNum(f.worker_rating),\n    estimated_cost: getString(f.estimated_cost),\n    estimated_time: getString(f.estimated_time),\n    description: getString(f.description),\n    notes: getString(f.notes),\n    availability: getString(f.availability),\n    status: getString(f.status),\n    viewed_by_client: getBool(f.viewed_by_client),\n    auto_rejected: getBool(f.auto_rejected),\n    created_at: f.created_at?.timestampValue || null,\n    accepted_at: f.accepted_at?.timestampValue || null,\n    rejected_at: f.rejected_at?.timestampValue || null,\n    withdrawn_at: f.withdrawn_at?.timestampValue || null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        1040
+      ],
+      "id": "ad327ff4-dfcd-46af-adda-8d4ce469fd68",
+      "name": "NormalizeQuotations1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const quotation = $input.first().json;\n\nreturn [\n  {\n    json: {\n      success: true,\n      action: \"GET_QUOTATION_BY_ID\",\n      data: {\n        quotation: quotation\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6864,
+        1040
+      ],
+      "id": "72ca4dca-619d-4e96-89fb-dc63afca7fcb",
+      "name": "StandardizeResponse (GET_QUOTATION_BY_ID)"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "=jobs",
+        "documentId": "={{ $json.payload.job_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        1616
+      ],
+      "id": "a21e9881-5085-4f6a-afc9-6b9fecb2cfa9",
+      "name": "GetJobDoc2",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $item(0).$node[\"ValidateRequest\"].json.payload;\nconst jobDoc = $json.found;\n\nif (!jobDoc || !jobDoc.fields) {\n  return [{ json: { success: false, error: \"Job not found.\" } }];\n}\n\nconst currentStatus = jobDoc.fields.status?.stringValue;\nconst blockedStatuses = ['scheduled', 'rescheduled', 'inProgress', 'completed', 'cancelled'];\n\nif (blockedStatuses.includes(currentStatus)) {\n  return [{\n    json: {\n      success: false,\n      error: `Cannot quote a job with status: ${currentStatus}`\n    }\n  }];\n}\n\nconst jobId = payload.job_id;\nconst workerId = payload.worker_id;\nconst jobRef = `projects/voicesewa/databases/(default)/documents/jobs/${jobId}`;\nconst workerRef = `projects/voicesewa/databases/(default)/documents/workers/${workerId}`;\nconst now = new Date().toISOString();\n\n// Stronger ID — timestamp ms in base36 + 8 random chars\nconst quoId = Date.now().toString(36) + Math.random().toString(36).substring(2, 10);\nconst quoRef = `${jobRef}/quotations/${quoId}`;\n\nconst writes = [];\n\nwrites.push({\n  update: {\n    name: quoRef,\n    fields: {\n      worker_uid:          { stringValue: workerId },\n      worker_name:         { stringValue: payload.worker_name || \"\" },\n      worker_rating:       { doubleValue: payload.worker_rating || 0 },\n      estimated_cost:      { stringValue: payload.estimated_cost },\n      estimated_time:      { stringValue: payload.estimated_time },\n      description:         { stringValue: payload.description },\n      notes:               { stringValue: payload.notes || \"\" },\n      availability:        { stringValue: payload.availability || \"\" },\n      price_breakdown:     payload.price_breakdown\n        ? { mapValue: { fields: Object.fromEntries(\n            Object.entries(payload.price_breakdown).map(([k, v]) => [k, { stringValue: String(v) }])\n          )}}\n        : { nullValue: null },\n      portfolio_photo_ids: { arrayValue: { values: [] } },\n      status:              { stringValue: \"submitted\" },\n      created_at:          { timestampValue: now },\n      updated_at:          { nullValue: null },\n      viewed_by_client:    { booleanValue: false },\n      viewed_at:           { nullValue: null },\n      accepted_at:         { nullValue: null },\n      rejected_at:         { nullValue: null },\n      withdrawn_at:        { nullValue: null },\n      rejection_reason:    { nullValue: null },\n      withdrawal_reason:   { nullValue: null },\n      auto_rejected:       { nullValue: null }\n    }\n  }\n});\n\nif (currentStatus === 'requested') {\n  writes.push({\n    update: {\n      name: jobRef,\n      fields: {\n        status: { stringValue: 'quoted' }\n      }\n    },\n    updateMask: { fieldPaths: ['status'] }\n  });\n}\n\nwrites.push({\n  transform: {\n    document: workerRef,\n    fieldTransforms: [{\n      fieldPath: 'jobs.applied',\n      appendMissingElements: {\n        values: [{ referenceValue: jobRef }]\n      }\n    }]\n  }\n});\n\nreturn [{ json: { writes, quotation_id: quoId } }];  // ← quoId now flows forward"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        1616
+      ],
+      "id": "2da6051c-fe33-4e58-9398-36217b2d1c70",
+      "name": "Build&SubmitQuotation"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "JSON",
+        "body": "={{ JSON.stringify({ writes: $json.writes }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6640,
+        1760
+      ],
+      "id": "4fbc271e-c8f2-4cd3-8f5c-794971a65cb7",
+      "name": "FirestoreCommit2",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $('ValidateRequest').first().json.payload;\nconst quotation_id = $('PrepareQuotationCommit').first().json.quotation_id;\n\nreturn [{\n  json: {\n    success: true,\n    action: \"ADD_QUOTATION_MESSAGE\",\n    data: {\n      job_id: payload.job_id,\n      worker_id: payload.worker_id,\n      quotation_id: quotation_id,\n      status: \"submitted\"\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6416,
+        1760
+      ],
+      "id": "edb3a639-71a4-4bdc-b469-dcd955df20c7",
+      "name": "StandardizeResponse (ADD_QUOTATION_MESSAGE)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "daea718c-1fa7-4985-95e6-4a970397948d",
+              "leftValue": "={{ $json.found.fields.status.stringValue }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "6bf6cdf8-2991-4784-9704-781955ee9a0f",
+              "leftValue": "={{ $json.found.fields.status.stringValue }}",
+              "rightValue": "cancelled",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -7088,
+        512
+      ],
+      "id": "d7fcb786-b59c-4455-83f9-894da0f8aa87",
+      "name": "IfStatusIsNotCompletedOrNotCancelled"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    writes: $json.writes,\n    quotation_id: $json.quotation_id  // pass through separately\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6864,
+        1616
+      ],
+      "id": "1da15121-e8ea-4522-ae15-cccf42dc4ec7",
+      "name": "PrepareQuotationCommit"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fba56f73-4c99-409c-ac2f-acd469673fe0",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "83052b85-e9ec-4fd8-8f97-a7b483954d99",
+              "name": "error",
+              "value": "=Cannot update a job with status: {{ $json.found.fields.status.stringValue }}\"",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -6864,
+        656
+      ],
+      "id": "02790ca7-5a8b-4a08-86b5-288a1fcc6147",
+      "name": "JobAlreadyFinalizedError"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $('ValidateRequest').first().json.payload;\nconst quotation = $('GetQuoDoc1').first().json.found;\n\nreturn [{\n  json: {\n    success: true,\n    action: \"FINALIZE_JOB_QUOTATION\",\n    data: {\n      job_id: payload.job_id,\n      finalized_quotation_id: payload.quotation_id,\n      finalized_quotation_amount: quotation.fields.estimated_cost?.stringValue || null,\n      status: \"scheduled\"\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6640,
+        1568
+      ],
+      "id": "1e79dd65-9a93-4345-8a69-3a06a2fc54c3",
+      "name": "StandardizeResponse (FINALIZE_JOB_QUOTATION)"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "=jobs",
+        "documentId": "={{ $json.payload.job_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        1808
+      ],
+      "id": "4428d57e-c0c7-421c-a7ba-e9c62963df3b",
+      "name": "GetJobForOTP",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $item(0).$node[\"ValidateRequest\"].json.payload;\nconst jobDoc = $json.found;\n\nif (!jobDoc || !jobDoc.fields) {\n  return [{ json: { success: false, error: \"Job not found.\" } }];\n}\n\nconst currentStatus = jobDoc.fields.status?.stringValue;\n\n// Job must be scheduled or rescheduled to start\nif (!['scheduled', 'rescheduled'].includes(currentStatus)) {\n  return [{\n    json: {\n      success: false,\n      error: `Job cannot be started. Current status is: ${currentStatus}`\n    }\n  }];\n}\n\nconst storedOtp = jobDoc.fields.otp?.stringValue || null;\nconst enteredOtp = payload.otp.toString().trim();\n\nif (!storedOtp) {\n  return [{\n    json: {\n      success: false,\n      error: \"No OTP found for this job. Please contact support.\"\n    }\n  }];\n}\n\n// Read current attempt count (stored on job doc, default 0)\nconst otpAttempts = Number(jobDoc.fields.otp_attempts?.integerValue || 0);\n\n// Check attempt limit\nif (otpAttempts >= 3) {\n  return [{\n    json: {\n      success: false,\n      error: \"Maximum OTP attempts reached for this session. Please try again later.\",\n      otp_attempts: otpAttempts\n    }\n  }];\n}\n\nconst now = new Date().toISOString();\nconst jobRef = `projects/voicesewa/databases/(default)/documents/jobs/${payload.job_id}`;\n\n// Wrong OTP — increment attempts, don't start job\nif (enteredOtp !== storedOtp) {\n  const newAttempts = otpAttempts + 1;\n  const attemptsLeft = 3 - newAttempts;\n\n  return [{\n    json: {\n      success: false,\n      otp_correct: false,\n      otp_attempts: newAttempts,\n      attempts_left: attemptsLeft,\n      error: attemptsLeft > 0\n        ? `Incorrect OTP. You have ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} left.`\n        : \"Incorrect OTP. No attempts remaining for this session.\",\n      // Still need to write the incremented attempt count to Firestore\n      writes: [\n        {\n          update: {\n            name: jobRef,\n            fields: {\n              otp_attempts: { integerValue: newAttempts }\n            }\n          },\n          updateMask: {\n            fieldPaths: ['otp_attempts']\n          }\n        }\n      ]\n    }\n  }];\n}\n\n// Correct OTP — transition to inProgress, reset attempts\nreturn [{\n  json: {\n    success: true,\n    otp_correct: true,\n    writes: [\n      {\n        update: {\n          name: jobRef,\n          fields: {\n            status:       { stringValue: 'inProgress' },\n            started_at:   { timestampValue: now },\n            updated_at:   { timestampValue: now },\n            otp_attempts: { integerValue: 0 }\n          }\n        },\n        updateMask: {\n          fieldPaths: ['status', 'started_at', 'updated_at', 'otp_attempts']\n        }\n      }\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        1808
+      ],
+      "id": "a2e53e3f-e629-4971-8895-6f9f8e10e0d9",
+      "name": "VerifyOTP&Start"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "JSON",
+        "body": "={{ JSON.stringify({ writes: $json.writes }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6864,
+        1808
+      ],
+      "id": "413c0512-b7f2-4b01-9ffe-c300fd39f8dd",
+      "name": "FirestoreCommitOTP",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $('VerifyOTP&Start').first().json;\nconst payload = $('ValidateRequest').first().json.payload;\n\nif (!result.otp_correct) {\n  return [{\n    json: {\n      success: false,\n      action: \"VERIFY_OTP\",\n      error: result.error,\n      data: {\n        job_id: payload.job_id,\n        otp_attempts: result.otp_attempts,\n        attempts_left: result.attempts_left ?? 0\n      }\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    success: true,\n    action: \"VERIFY_OTP\",\n    data: {\n      job_id: payload.job_id,\n      status: \"inProgress\",\n      message: \"OTP verified. Job marked as in progress.\"\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6640,
+        1952
+      ],
+      "id": "4daf8d71-0976-45ea-adbe-69e7a7f44680",
+      "name": "StandardizeResponse (VERIFY_OTP)"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "=jobs",
+        "documentId": "={{ $json.payload.job_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        2000
+      ],
+      "id": "abf46dd2-794c-4afd-8824-b0d2be7f8708",
+      "name": "GetJobForFeedback",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $item(0).$node[\"ValidateRequest\"].json.payload;\nconst jobDoc = $json.found;\n\nif (!jobDoc || !jobDoc.fields) {\n  return [{ json: { success: false, error: \"Job not found.\" } }];\n}\n\nconst currentStatus = jobDoc.fields.status?.stringValue;\n\nif (currentStatus !== 'completed') {\n  return [{\n    json: {\n      success: false,\n      error: `Feedback can only be submitted for completed jobs. Current status is: ${currentStatus}`\n    }\n  }];\n}\n\nconst submittedBy = payload.submitted_by; // 'client' or 'worker'\nconst feedbackField = submittedBy === 'client' ? 'client_feedback' : 'worker_feedback';\n\n// Check if feedback already submitted\nconst existingFeedback = jobDoc.fields[feedbackField];\nif (existingFeedback && existingFeedback.mapValue?.fields?.rating) {\n  return [{\n    json: {\n      success: false,\n      error: `${submittedBy === 'client' ? 'Client' : 'Worker'} feedback has already been submitted for this job.`\n    }\n  }];\n}\n\nconst now = new Date().toISOString();\nconst jobRef = `projects/voicesewa/databases/(default)/documents/jobs/${payload.job_id}`;\n\nreturn [{\n  json: {\n    writes: [\n      {\n        update: {\n          name: jobRef,\n          fields: {\n            [feedbackField]: {\n              mapValue: {\n                fields: {\n                  rating:     { doubleValue: payload.rating },\n                  comment:    { stringValue: payload.comment },\n                  created_at: { timestampValue: now }\n                }\n              }\n            }\n          }\n        },\n        updateMask: {\n          fieldPaths: [feedbackField]\n        }\n      }\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        2000
+      ],
+      "id": "2042fb9e-e473-40e5-904c-9ffa7c63b77d",
+      "name": "BuildFeedbackPayload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "JSON",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6640,
+        2144
+      ],
+      "id": "d06c261b-25c8-481b-a5bb-f5829844938f",
+      "name": "CommitFeedback",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $('ValidateRequest').first().json.payload;\n\nreturn [{\n  json: {\n    success: true,\n    action: \"ADD_FEEDBACK\",\n    data: {\n      job_id: payload.job_id,\n      submitted_by: payload.submitted_by,\n      rating: payload.rating,\n      comment: payload.comment\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6416,
+        2144
+      ],
+      "id": "25819571-73aa-4696-8297-e0e03701958b",
+      "name": "StandardizeResponse (ADD_FEEDBACK)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c5aced78-8133-4074-88c0-bea6d0b29c83",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "a223dea2-771a-4ffb-a77f-49ab3a88f7cf",
+              "leftValue": "={{ $json.writes }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -6864,
+        2000
+      ],
+      "id": "4b02e73c-8043-464b-a072-ee5cbca86b46",
+      "name": "IfSuccess"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "=jobs/{{ $json.payload.job_id }}/quotations",
+        "documentId": "={{ $json.payload.quotation_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        2192
+      ],
+      "id": "f29b0b51-58ae-4e2b-b568-bd3779efbd4e",
+      "name": "GetQuoForUpdate",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $item(0).$node[\"ValidateRequest\"].json.payload;\nconst quoDoc = $json.found;\n\nif (!quoDoc || !quoDoc.fields) {\n  return [{ json: { success: false, error: \"Quotation not found.\" } }];\n}\n\nconst currentStatus = quoDoc.fields.status?.stringValue;\n\nif (currentStatus !== 'submitted') {\n  return [{\n    json: {\n      success: false,\n      error: `Cannot update quotation with status: ${currentStatus}. Only submitted quotations can be updated.`\n    }\n  }];\n}\n\nconst now = new Date().toISOString();\n\nconst fields = {\n  estimated_cost: { stringValue: payload.estimated_cost },\n  estimated_time: { stringValue: payload.estimated_time },\n  description:    { stringValue: payload.description },\n  notes:          { stringValue: payload.notes || \"\" },\n  availability:   { stringValue: payload.availability || \"\" },\n  updated_at:     { timestampValue: now }\n};\n\nconst fieldPaths = [\n  'estimated_cost',\n  'estimated_time',\n  'description',\n  'notes',\n  'availability',\n  'updated_at'\n];\n\n// Optional price_breakdown\nif (payload.price_breakdown) {\n  fields.price_breakdown = {\n    mapValue: {\n      fields: Object.fromEntries(\n        Object.entries(payload.price_breakdown).map(([k, v]) => [k, { stringValue: String(v) }])\n      )\n    }\n  };\n  fieldPaths.push('price_breakdown');\n}\n\nreturn [{\n  json: {\n    writes: [{\n      update: {\n        name: quoDoc.name,\n        fields\n      },\n      updateMask: {\n        fieldPaths\n      }\n    }]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        2192
+      ],
+      "id": "0be5f88f-50ae-4b30-987e-3e6657b0a8d9",
+      "name": "BuildQuotationUpdatePayload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "JSON",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6640,
+        2336
+      ],
+      "id": "5316434e-30aa-40f9-a3c4-6178b2e07758",
+      "name": "CommitQuotationUpdate",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $('ValidateRequest').first().json.payload;\n\nreturn [{\n  json: {\n    success: true,\n    action: \"UPDATE_QUOTATION\",\n    data: {\n      job_id: payload.job_id,\n      quotation_id: payload.quotation_id,\n      estimated_cost: payload.estimated_cost,\n      estimated_time: payload.estimated_time\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6416,
+        2336
+      ],
+      "id": "4b43a95b-541a-4f70-9155-0207a85f8a85",
+      "name": "StandardizeResponse (UPDATE_QUOTATION)"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "=jobs/{{ $json.payload.job_id }}/quotations",
+        "documentId": "={{ $json.payload.quotation_id }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -7312,
+        2384
+      ],
+      "id": "e625a15f-3190-4ec1-a447-5021e6961408",
+      "name": "GetQuoForWithdraw",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c5aced78-8133-4074-88c0-bea6d0b29c83",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "a223dea2-771a-4ffb-a77f-49ab3a88f7cf",
+              "leftValue": "={{ $json.writes }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -6864,
+        2192
+      ],
+      "id": "d5e5143d-f094-49f4-8f2f-d1966f6f0455",
+      "name": "IfSuccess1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $item(0).$node[\"ValidateRequest\"].json.payload;\nconst quoDoc = $json.found;\n\nif (!quoDoc || !quoDoc.fields) {\n  return [{ json: { success: false, error: \"Quotation not found.\" } }];\n}\n\nconst currentStatus = quoDoc.fields.status?.stringValue;\n\nif (currentStatus !== 'submitted') {\n  return [{\n    json: {\n      success: false,\n      error: `Cannot withdraw quotation with status: ${currentStatus}. Only submitted quotations can be withdrawn.`\n    }\n  }];\n}\n\nconst now = new Date().toISOString();\nconst jobRef = `projects/voicesewa/databases/(default)/documents/jobs/${payload.job_id}`;\nconst workerRef = `projects/voicesewa/databases/(default)/documents/workers/${payload.worker_id}`;\n\nreturn [{\n  json: {\n    writes: [\n      // 1. Update quotation status to withdrawn\n      {\n        update: {\n          name: quoDoc.name,\n          fields: {\n            status:            { stringValue: 'withdrawn' },\n            withdrawal_reason: { stringValue: payload.reason },\n            withdrawn_at:      { timestampValue: now },\n            updated_at:        { timestampValue: now }\n          }\n        },\n        updateMask: {\n          fieldPaths: ['status', 'withdrawal_reason', 'withdrawn_at', 'updated_at']\n        }\n      },\n      // 2. Remove job from worker's applied bucket\n      {\n        transform: {\n          document: workerRef,\n          fieldTransforms: [{\n            fieldPath: 'jobs.applied',\n            removeAllFromArray: {\n              values: [{ referenceValue: jobRef }]\n            }\n          }]\n        }\n      },\n      // 3. Add job to worker's declined bucket\n      {\n        transform: {\n          document: workerRef,\n          fieldTransforms: [{\n            fieldPath: 'jobs.declined',\n            appendMissingElements: {\n              values: [{ referenceValue: jobRef }]\n            }\n          }]\n        }\n      }\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        2384
+      ],
+      "id": "b9739b41-dbd1-4706-83e2-2e82517c1ffa",
+      "name": "BuildWithdrawPayload"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c5aced78-8133-4074-88c0-bea6d0b29c83",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "a223dea2-771a-4ffb-a77f-49ab3a88f7cf",
+              "leftValue": "={{ $json.writes }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -6864,
+        2384
+      ],
+      "id": "ba33eda7-8d73-4545-a7e2-be44e72c3766",
+      "name": "IfSuccess2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "JSON",
+        "body": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6640,
+        2528
+      ],
+      "id": "e90d3cb5-8f79-4453-b339-1890b2ae6599",
+      "name": "CommitWithdrawal",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $('ValidateRequest').first().json.payload;\n\nreturn [{\n  json: {\n    success: true,\n    action: \"WITHDRAW_QUOTATION\",\n    data: {\n      job_id: payload.job_id,\n      quotation_id: payload.quotation_id,\n      status: \"withdrawn\",\n      reason: payload.reason\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6416,
+        2528
+      ],
+      "id": "8d5eeed5-7f52-4b91-a2cb-dc046ceae13d",
+      "name": "StandardizeResponse (WITHDRAW_QUOTATION)"
+    },
+    {
+      "parameters": {
+        "url": "=https://maps.googleapis.com/maps/api/geocode/json?address={{ encodeURIComponent($json.payload.line1 + ', ' + ($json.payload.landmark || '') + ', ' + $json.payload.city + ', ' + $json.payload.pincode + ', India') }}&key=AIzaSyAVAeA7PE9PSVnpPZsrwKluvAM_5Mjutnk",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -7312,
+        2624
+      ],
+      "id": "6883628f-4eb0-4f16-ba9a-f2a4f65d4523",
+      "name": "GeocodeAddress"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $item(0).$node[\"ValidateRequest\"].json.payload;\nconst geocodeResult = $json;\n\n// Extract coordinates silently — fail gracefully if not found\nlet latitude = null;\nlet longitude = null;\n\ntry {\n  const location = geocodeResult?.results?.[0]?.geometry?.location;\n  if (location && location.lat && location.lng) {\n    latitude = location.lat;\n    longitude = location.lng;\n  }\n} catch (e) {\n  // silently continue with null geopoint\n}\n\nconst clientRef = `projects/voicesewa/databases/(default)/documents/clients/${payload.client_id}`;\n\n// Build the address map as a Firestore mapValue\nconst addressFields = {\n  line1:    { stringValue: payload.line1 },\n  line2:    { stringValue: payload.line2 || \"\" },\n  landmark: { stringValue: payload.landmark || \"\" },\n  city:     { stringValue: payload.city },\n  pincode:  { stringValue: payload.pincode }\n};\n\n// Only add geopoint if geocoding succeeded\nif (latitude !== null && longitude !== null) {\n  addressFields.location = {\n    geoPointValue: { latitude, longitude }\n  };\n} else {\n  addressFields.location = { nullValue: null };\n}\n\nreturn [{\n  json: {\n    writes: [\n      {\n        transform: {\n          document: clientRef,\n          fieldTransforms: [{\n            fieldPath: \"addresses\",\n            appendMissingElements: {\n              values: [{\n                mapValue: {\n                  fields: addressFields\n                }\n              }]\n            }\n          }]\n        }\n      }\n    ],\n    // Pass through for StandardizeResponse\n    resolved_address: {\n      line1: payload.line1,\n      line2: payload.line2 || null,\n      landmark: payload.landmark || null,\n      city: payload.city,\n      pincode: payload.pincode,\n      latitude,\n      longitude\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        2624
+      ],
+      "id": "d596767a-c326-4f8b-90ab-9aa3751173c4",
+      "name": "BuildAddressPayload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "JSON",
+        "body": "={{ JSON.stringify({ writes: $json.writes }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6864,
+        2624
+      ],
+      "id": "d55de0b7-21a2-43c8-9ccc-5094ae6b9a3a",
+      "name": "CommitAddress",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $('ValidateRequest').first().json.payload;\nconst resolved = $('BuildAddressPayload').first().json.resolved_address;\n\nreturn [{\n  json: {\n    success: true,\n    action: \"ADD_ADDRESS\",\n    data: {\n      client_id: payload.client_id,\n      address: {\n        line1: resolved.line1,\n        line2: resolved.line2,\n        landmark: resolved.landmark,\n        city: resolved.city,\n        pincode: resolved.pincode,\n        location: resolved.latitude ? {\n          latitude: resolved.latitude,\n          longitude: resolved.longitude\n        } : null\n      },\n      geocoded: resolved.latitude !== null\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6640,
+        2720
+      ],
+      "id": "c708839d-ea04-4b9b-953b-50e28e3a9218",
+      "name": "StandardizeResponse (ADD_ADDRESS)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $item(0).$node[\"ValidateRequest\"].json.payload;\nconst results = $input.all();\n\n// Firestore runQuery always returns an array.\n// If no match exists, it returns an item with only { readTime }.\n// So we must explicitly check for item.json.document.\nconst phoneExists = results.some(item => item.json.document);\n\nif (phoneExists) {\n  return [{\n    json: {\n      success: false,\n      error: `An account with phone number ${payload.phone} already exists.`\n    }\n  }];\n}\n\n// Normalize phone — remove spaces\nlet phone = (payload.phone || '').replace(/\\s/g, '');\n\n// Remove leading \"+\"\nif (phone.startsWith('+')) {\n  phone = phone.substring(1);\n}\n\n// Convert Indian formats to 91XXXXXXXXXX (NO + sign)\nif (phone.startsWith('0')) {\n  phone = '91' + phone.substring(1);\n} else if (!phone.startsWith('91')) {\n  phone = '91' + phone;\n}\n\nreturn [{\n  json: {\n    success: true,\n    normalized_phone: phone,\n    payload\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7088,
+        3200
+      ],
+      "id": "b6f1bc26-d6fc-457a-99ac-5905d4e5b7ca",
+      "name": "ValidatePhoneUnique"
+    },
+    {
+      "parameters": {
+        "url": "=https://maps.googleapis.com/maps/api/geocode/json?address={{ encodeURIComponent($json.payload.line1 + ', ' + ($json.payload.landmark || '') + ', ' + $json.payload.city + ', ' + $json.payload.pincode + ', India') }}&key=AIzaSyAVAeA7PE9PSVnpPZsrwKluvAM_5Mjutnk",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6640,
+        3248
+      ],
+      "id": "3746ea78-8f77-429e-afd1-d02cbe957efb",
+      "name": "GeocodeNewClientAddress"
+    },
+    {
+      "parameters": {
+        "jsCode": "const validateNode = $('ValidatePhoneUnique').first().json;\nconst payload = validateNode.payload;\nconst phone = validateNode.normalized_phone;\nconst authUser = $('CreateClientAuthUser').first().json;\nconst geocodeResult = $('GeocodeNewClientAddress').first().json;\n\nconst uid = authUser.localId;\nif (!uid) {\n  return [{ json: { success: false, error: \"Firebase Auth user creation failed — no UID returned.\" } }];\n}\n\n// Resolve coordinates silently\nlet latitude = null;\nlet longitude = null;\ntry {\n  const location = geocodeResult?.results?.[0]?.geometry?.location;\n  if (location?.lat && location?.lng) {\n    latitude = location.lat;\n    longitude = location.lng;\n  }\n} catch (e) {}\n\nconst now = new Date().toISOString();\nconst clientRef = `projects/voicesewa/databases/(default)/documents/clients/${uid}`;\n\n// Build address fields\nconst addressFields = {\n  line1:    { stringValue: payload.line1 },\n  line2:    { stringValue: payload.line2 || \"\" },\n  landmark: { stringValue: payload.landmark || \"\" },\n  city:     { stringValue: payload.city },\n  pincode:  { stringValue: payload.pincode },\n  location: latitude\n    ? { geoPointValue: { latitude, longitude } }\n    : { nullValue: null }\n};\n\nreturn [{\n  json: {\n    uid,\n    phone,\n    writes: [{\n      update: {\n        name: clientRef,\n        fields: {\n          uid:        { stringValue: uid },\n          name:       { stringValue: payload.name },\n          phone:      { stringValue: phone },\n          email:      { stringValue: \"\" },\n          fcm_token:  { stringValue: \"\" },\n          created_at: { timestampValue: now },\n          updated_at: { timestampValue: now },\n          addresses: {\n            arrayValue: {\n              values: [{\n                mapValue: { fields: addressFields }\n              }]\n            }\n          },\n          services: {\n            mapValue: {\n              fields: {\n                requested:  { arrayValue: { values: [] } },\n                scheduled:  { arrayValue: { values: [] } },\n                completed:  { arrayValue: { values: [] } },\n                cancelled:  { arrayValue: { values: [] } }\n              }\n            }\n          }\n        }\n      }\n    }]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6192,
+        3248
+      ],
+      "id": "be0dc577-e858-4650-b418-fb9314bff130",
+      "name": "BuildClientDoc"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "JSON",
+        "body": "={{ JSON.stringify({ writes: $json.writes }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -5968,
+        3248
+      ],
+      "id": "89b30f6f-c0ee-42dc-b4fb-427b263a6deb",
+      "name": "CommitClientDoc",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $('BuildClientDoc').first().json;\n\nreturn [{\n  json: {\n    success: true,\n    action: \"CREATE_CLIENT_ACCOUNT\",\n    data: {\n      uid: result.uid,\n      phone: result.phone,\n      message: \"Account created successfully. You can now sign in.\"\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5744,
+        3248
+      ],
+      "id": "bf5edf5a-54a3-4385-a884-5a421d75d118",
+      "name": "StandardizeResponse (CREATE_CLIENT_ACCOUNT)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:runQuery",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ structuredQuery: { from: [{ collectionId: 'workers' }], where: { fieldFilter: { field: { fieldPath: 'phone' }, op: 'EQUAL', value: { stringValue: 91+$json.payload.phone.replace(/\\\\s/g, '') } } }, limit: 1 } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -7312,
+        3008
+      ],
+      "id": "55bc1fc4-4a79-4b3e-a747-0fe5c8c7afa8",
+      "name": "CheckWorkerByPhone"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:runQuery",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ structuredQuery: { from: [{ collectionId: 'clients' }], where: { fieldFilter: { field: { fieldPath: 'phone' }, op: 'EQUAL', value: { stringValue: 91+$json.payload.phone.replace(/\\\\s/g, '') } } }, limit: 1 } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -7312,
+        2816
+      ],
+      "id": "0fccfb1b-7610-40bc-a98d-4ba47baf53a7",
+      "name": "CheckClientByPhone"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -7088,
+        2912
+      ],
+      "id": "a7819d15-f0f4-4b01-9156-d7573a5138c5",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $item(0).$node[\"ValidateRequest\"].json.payload;\n\nconst clientResults = $('CheckClientByPhone').all();\nconst workerResults = $('CheckWorkerByPhone').all();\n\nconst clientDoc = clientResults.find(item => item.json.document)?.json.document;\nconst workerDoc = workerResults.find(item => item.json.document)?.json.document;\n\nconst clientExists = !!clientDoc;\nconst workerExists = !!workerDoc;\n\nif (!clientExists && !workerExists) {\n  return [{\n    json: {\n      success: true,\n      exists: false,\n      user_type: null,\n      uid: null,\n      name: null,\n      phone: payload.phone\n    }\n  }];\n}\n\n// Prefer client if both exist (edge case)\nconst doc = clientDoc || workerDoc;\nconst userType = clientDoc ? 'client' : 'worker';\nconst fields = doc.fields;\n\nreturn [{\n  json: {\n    success: true,\n    exists: true,\n    user_type: userType,\n    uid: doc.name.split('/').pop(),\n    name: fields.name?.stringValue || null,\n    phone: payload.phone\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6864,
+        2912
+      ],
+      "id": "692138bc-7498-45fb-be48-11ee297f180a",
+      "name": "ResolveUserExists"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\n\nreturn [{\n  json: {\n    success: true,\n    action: \"CHECK_USER_EXISTS\",\n    data: {\n      exists: result.exists,\n      user_type: result.user_type,\n      uid: result.uid,\n      name: result.name,\n      phone: result.phone\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6640,
+        3008
+      ],
+      "id": "8fef15e5-678f-45cc-ad0d-c17185875f72",
+      "name": "StandardizeResponse (CHECK_USER_EXISTS)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:runQuery",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ structuredQuery: { from: [{ collectionId: 'clients' }], where: { fieldFilter: { field: { fieldPath: 'phone' }, op: 'EQUAL', value: { stringValue: 91+$json.payload.phone.replace(/\\\\s/g, '') } } }, limit: 1 } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -7312,
+        3200
+      ],
+      "id": "d9532db0-5eba-4909-893a-e067d56be2f3",
+      "name": "CheckClientPhoneExists",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:runQuery",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ structuredQuery: { from: [{ collectionId: 'workers' }], where: { fieldFilter: { field: { fieldPath: 'phone' }, op: 'EQUAL', value: { stringValue: 91+$json.payload.phone.replace(/\\\\s/g, '') } } }, limit: 1 } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -7312,
+        3392
+      ],
+      "id": "968879cd-330e-47c8-a15b-1eb6e3bf227e",
+      "name": "CheckWorkerPhoneExists",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $item(0).$node[\"ValidateRequest\"].json.payload;\nconst results = $input.all();\n\nconst phoneExists = results.some(item => item.json.document);\n\nif (phoneExists) {\n  return [{\n    json: {\n      success: false,\n      error: `An account with phone number ${payload.phone} already exists.`\n    }\n  }];\n}\n\nlet phone = payload.phone.replace(/\\s/g, '');\nif (phone.startsWith('0')) phone = '91' + phone.substring(1);\nif (!phone.startsWith('+')) phone = '91' + phone;\n\nreturn [{\n  json: {\n    success: true,\n    normalized_phone: phone,\n    payload\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7104,
+        3392
+      ],
+      "id": "48e74426-0261-4066-be5f-722330c2c55d",
+      "name": "ValidateWorkerPhoneUnique"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "24babdb0-df39-4410-b17b-e24f4f55edc4",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -6864,
+        3200
+      ],
+      "id": "c688e8a6-dea7-42d8-bd1a-119a99ba6fcf",
+      "name": "IfClientPhoneUnique"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "24babdb0-df39-4410-b17b-e24f4f55edc4",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -6896,
+        3392
+      ],
+      "id": "607ce54a-7c58-4313-9437-cf56e33db00e",
+      "name": "IfWorkerPhoneUnique"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDFY15uyFXMRnC2y9uhVR_JNp9dvECyAoo",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phoneNumber: $('ValidatePhoneUnique').first().json.normalized_phone, disabled: false }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6416,
+        3248
+      ],
+      "id": "a93074ea-67d5-4b16-933b-f0a664d8f5ec",
+      "name": "CreateClientAuthUser",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDFY15uyFXMRnC2y9uhVR_JNp9dvECyAoo",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ phoneNumber: $('ValidatePhoneUnique').first().json.normalized_phone, disabled: false }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6624,
+        3456
+      ],
+      "id": "271ef250-7412-4a32-89e8-d70c9df0f5dc",
+      "name": "CreateWorkerAuthUser",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const validateNode = $('ValidateWorkerPhoneUnique').first().json;\nconst payload = validateNode.payload;\nconst phone = validateNode.normalized_phone;\nconst authUser = $('CreateWorkerAuthUser').first().json;\n\nconst uid = authUser.localId;\nif (!uid) {\n  return [{ json: { success: false, error: \"Firebase Auth user creation failed — no UID returned.\" } }];\n}\n\nconst now = new Date().toISOString();\nconst workerRef = `projects/voicesewa/databases/(default)/documents/workers/${uid}`;\n\nreturn [{\n  json: {\n    uid,\n    phone,\n    writes: [{\n      update: {\n        name: workerRef,\n        fields: {\n          uid:        { stringValue: uid },\n          name:       { stringValue: payload.name },\n          phone:      { stringValue: phone },\n          bio:        { stringValue: payload.bio || \"\" },\n          city:       { stringValue: payload.city },\n          pincode:    { stringValue: payload.pincode },\n          skills: {\n            arrayValue: {\n              values: payload.skills.map(s => ({ stringValue: s }))\n            }\n          },\n          avg_rating:   { doubleValue: 0 },\n          total_ratings: { integerValue: 0 },\n          fcm_token:    { stringValue: \"\" },\n          is_available: { booleanValue: true },\n          created_at:   { timestampValue: now },\n          updated_at:   { timestampValue: now },\n          jobs: {\n            mapValue: {\n              fields: {\n                applied:   { arrayValue: { values: [] } },\n                confirmed: { arrayValue: { values: [] } },\n                completed: { arrayValue: { values: [] } },\n                declined:  { arrayValue: { values: [] } }\n              }\n            }\n          }\n        }\n      }\n    }]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6416,
+        3456
+      ],
+      "id": "3d661ecf-7bc2-4e55-b29b-24164a83448e",
+      "name": "BuildWorkerDoc"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "JSON",
+        "body": "={{ JSON.stringify({ writes: $json.writes }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -6192,
+        3456
+      ],
+      "id": "837548c9-ab9a-47f4-a270-f9c6c66a9ce4",
+      "name": "CommitWorkerDoc",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $('BuildWorkerDoc').first().json;\n\nreturn [{\n  json: {\n    success: true,\n    action: \"CREATE_WORKER_ACCOUNT\",\n    data: {\n      uid: result.uid,\n      phone: result.phone,\n      message: \"Account created successfully. You can now start taking jobs.\"\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5984,
+        3456
+      ],
+      "id": "2ddb8060-4830-4171-9be5-680f7dc59449",
+      "name": "StandardizeResponse (CREATE_WORKER_ACCOUNT)"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "action": "CREATE_CLIENT_ACCOUNT",
+          "payload": {
+            "name": "Priya Sharma",
+            "phone": "9876543310",
+            "line1": "Flat 12, Rose Apartments, SV Road",
+            "line2": "Second Floor",
+            "landmark": "Near Reliance Fresh",
+            "city": "Mumbai",
+            "pincode": "400064"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "ValidateRequest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ValidateRequest": {
+      "main": [
+        [
+          {
+            "node": "IfValidRequest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "RouteByAction": {
+      "main": [
+        [
+          {
+            "node": "PrepareJobIds",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetJobDoc",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetClientDoc",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetJobDoc1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetQuoDoc2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetQuoDoc3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetQuoDoc",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetQuoDoc1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetJobDoc2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetJobForOTP",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetJobForFeedback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetQuoForUpdate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetQuoForWithdraw",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GeocodeAddress",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CheckClientByPhone",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "CheckWorkerByPhone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CheckClientPhoneExists",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CheckWorkerPhoneExists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PrepareJobIds": {
+      "main": [
+        [
+          {
+            "node": "Split",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split": {
+      "main": [
+        [
+          {
+            "node": "NormalizeJobs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GetJobDoc(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetJobDoc(s)": {
+      "main": [
+        [
+          {
+            "node": "Split",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NormalizeJobs": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (GET_JOBS_BY_IDS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetJobDoc": {
+      "main": [
+        [
+          {
+            "node": "NormalizeSingleJob",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NormalizeSingleJob": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (GET_JOB_BY_ID)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetClientDoc": {
+      "main": [
+        [
+          {
+            "node": "ResolveAddressFromIndex",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ResolveAddressFromIndex": {
+      "main": [
+        [
+          {
+            "node": "CreateJob",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CreateJob": {
+      "main": [
+        [
+          {
+            "node": "UpdateClientRequestedBucket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UpdateClientRequestedBucket": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (CREATE_JOB)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetJobDoc1": {
+      "main": [
+        [
+          {
+            "node": "IfStatusIsNotCompletedOrNotCancelled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetClientDoc1": {
+      "main": [
+        [
+          {
+            "node": "ValidateTransition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ValidateTransition": {
+      "main": [
+        [
+          {
+            "node": "BuildJobUpdatePayload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UpdateJobDoc": {
+      "main": [
+        [
+          {
+            "node": "PrepareBucketMovement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PrepareBucketMovement": {
+      "main": [
+        [
+          {
+            "node": "IfBucketChanged",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfBucketChanged": {
+      "main": [
+        [
+          {
+            "node": "BuildMoveBucketsPayload",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "StandardizeResponse (UPDATE_JOB)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildJobUpdatePayload": {
+      "main": [
+        [
+          {
+            "node": "UpdateJobDoc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MoveBuckets": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (UPDATE_JOB)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetQuoDoc": {
+      "main": [
+        [
+          {
+            "node": "ValidateQuoTransition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ValidateQuoTransition": {
+      "main": [
+        [
+          {
+            "node": "BuildCommitPayload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildCommitPayload": {
+      "main": [
+        [
+          {
+            "node": "FirestoreCommit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FirestoreCommit": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (UPDATE_QUOTATION_STATUS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetQuoDoc1": {
+      "main": [
+        [
+          {
+            "node": "BuildPayload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildPayload": {
+      "main": [
+        [
+          {
+            "node": "FirestoreCommit1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FirestoreCommit1": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (FINALIZE_JOB_QUOTATION)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfValidRequest": {
+      "main": [
+        [
+          {
+            "node": "RouteByAction",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "InvalidRequest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetQuoDoc2": {
+      "main": [
+        [
+          {
+            "node": "NormalizeQuotations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NormalizeQuotations": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (GET_QUOTATIONS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildMoveBucketsPayload": {
+      "main": [
+        [
+          {
+            "node": "MoveBuckets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetQuoDoc3": {
+      "main": [
+        [
+          {
+            "node": "NormalizeQuotations1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NormalizeQuotations1": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (GET_QUOTATION_BY_ID)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetJobDoc2": {
+      "main": [
+        [
+          {
+            "node": "Build&SubmitQuotation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build&SubmitQuotation": {
+      "main": [
+        [
+          {
+            "node": "PrepareQuotationCommit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FirestoreCommit2": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (ADD_QUOTATION_MESSAGE)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfStatusIsNotCompletedOrNotCancelled": {
+      "main": [
+        [
+          {
+            "node": "GetClientDoc1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "JobAlreadyFinalizedError",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PrepareQuotationCommit": {
+      "main": [
+        [
+          {
+            "node": "FirestoreCommit2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JobAlreadyFinalizedError": {
+      "main": [
+        [
+          {
+            "node": "InvalidRequest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetJobForOTP": {
+      "main": [
+        [
+          {
+            "node": "VerifyOTP&Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VerifyOTP&Start": {
+      "main": [
+        [
+          {
+            "node": "FirestoreCommitOTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FirestoreCommitOTP": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (VERIFY_OTP)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetJobForFeedback": {
+      "main": [
+        [
+          {
+            "node": "BuildFeedbackPayload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildFeedbackPayload": {
+      "main": [
+        [
+          {
+            "node": "IfSuccess",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CommitFeedback": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (ADD_FEEDBACK)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfSuccess": {
+      "main": [
+        [
+          {
+            "node": "CommitFeedback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "InvalidRequest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetQuoForUpdate": {
+      "main": [
+        [
+          {
+            "node": "BuildQuotationUpdatePayload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildQuotationUpdatePayload": {
+      "main": [
+        [
+          {
+            "node": "IfSuccess1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CommitQuotationUpdate": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (UPDATE_QUOTATION)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfSuccess1": {
+      "main": [
+        [
+          {
+            "node": "CommitQuotationUpdate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "InvalidRequest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetQuoForWithdraw": {
+      "main": [
+        [
+          {
+            "node": "BuildWithdrawPayload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildWithdrawPayload": {
+      "main": [
+        [
+          {
+            "node": "IfSuccess2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfSuccess2": {
+      "main": [
+        [
+          {
+            "node": "CommitWithdrawal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "InvalidRequest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CommitWithdrawal": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (WITHDRAW_QUOTATION)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GeocodeAddress": {
+      "main": [
+        [
+          {
+            "node": "BuildAddressPayload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildAddressPayload": {
+      "main": [
+        [
+          {
+            "node": "CommitAddress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CommitAddress": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (ADD_ADDRESS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ValidatePhoneUnique": {
+      "main": [
+        [
+          {
+            "node": "IfClientPhoneUnique",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GeocodeNewClientAddress": {
+      "main": [
+        [
+          {
+            "node": "CreateClientAuthUser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildClientDoc": {
+      "main": [
+        [
+          {
+            "node": "CommitClientDoc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CommitClientDoc": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (CREATE_CLIENT_ACCOUNT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckClientByPhone": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckWorkerByPhone": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "ResolveUserExists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ResolveUserExists": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (CHECK_USER_EXISTS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckClientPhoneExists": {
+      "main": [
+        [
+          {
+            "node": "ValidatePhoneUnique",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckWorkerPhoneExists": {
+      "main": [
+        [
+          {
+            "node": "ValidateWorkerPhoneUnique",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ValidateWorkerPhoneUnique": {
+      "main": [
+        [
+          {
+            "node": "IfWorkerPhoneUnique",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfClientPhoneUnique": {
+      "main": [
+        [
+          {
+            "node": "GeocodeNewClientAddress",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "InvalidRequest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CreateClientAuthUser": {
+      "main": [
+        [
+          {
+            "node": "BuildClientDoc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfWorkerPhoneUnique": {
+      "main": [
+        [
+          {
+            "node": "CreateWorkerAuthUser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CreateWorkerAuthUser": {
+      "main": [
+        [
+          {
+            "node": "BuildWorkerDoc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildWorkerDoc": {
+      "main": [
+        [
+          {
+            "node": "CommitWorkerDoc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CommitWorkerDoc": {
+      "main": [
+        [
+          {
+            "node": "StandardizeResponse (CREATE_WORKER_ACCOUNT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "31fc7db4-bd33-4689-9db6-bf6d1a18cf26",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cb840271ce94bb7fd9c6793b8082b2d29d9bc8dbac834b10a25330e393e00f0d"
+  },
+  "id": "rx9n4dyLPdEpVrxR",
+  "tags": []
+}

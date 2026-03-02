@@ -1,0 +1,826 @@
+{
+  "name": "FireStore (Old)",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "uid"
+            },
+            {
+              "name": "type"
+            },
+            {
+              "name": "profile",
+              "type": "object"
+            },
+            {
+              "name": "intent"
+            },
+            {
+              "name": "entities",
+              "type": "object"
+            },
+            {
+              "name": "requires_confirmation",
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -368,
+        -192
+      ],
+      "id": "f601d46d-1463-4cd3-8976-3ca62393a85d",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1184,
+        -192
+      ],
+      "id": "28e9c81b-c347-49f1-aada-a4024ae6c610",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"uid\": \"xqh5lrPDDZY1FkMsmQX5GnftN893\",\n  \"type\": \"client\",\n  \"intent\": \"NONE\",\n  \"entities\": {},\n  \"requires_confirmation\": false\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -960,
+        -192
+      ],
+      "id": "d7ae1a7a-37ed-433f-810e-474d1536faed",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "JQunXVDuq8ALGJ9v",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/JQunXVDuq8ALGJ9v",
+          "cachedResultName": "VoiceSewa — FireStore"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -736,
+        -192
+      ],
+      "id": "57667b41-6163-4182-a6b8-94da2471fc30",
+      "name": "Call 'FireStore'"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "client",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cfda835e-b7bf-4bb9-a30a-94ffd757cab1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Client"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "33578a96-3b01-4df8-a941-dd8fa9a90bda",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "worker",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Worker"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        -192
+      ],
+      "id": "528aead5-ef32-4c50-810d-e5ff75845a62",
+      "name": "CheckRole"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.intent.toUpperCase() }}",
+                    "rightValue": "CREATE_JOB",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "79dc4882-2fb5-4c09-9d08-b40fea48c5b1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CREATE_JOB"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "256aa837-3b1b-416b-b7c2-9e0336fffcf7",
+                    "leftValue": "={{ $json.intent.toUpperCase() }}",
+                    "rightValue": "CANCEL_JOB",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CANCEL_JOB"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4c86e3e2-a10f-4a95-bd14-083ac2bfabe4",
+                    "leftValue": "={{ $json.intent.toUpperCase() }}",
+                    "rightValue": "VIEW_MY_JOBS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "VIEW_MY_JOBS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1d6d3d65-bfb0-4485-8c9a-d17b4bdcafb0",
+                    "leftValue": "={{ $json.intent.toUpperCase() }}",
+                    "rightValue": "VIEW_JOB_STATUS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "VIEW_JOB_STATUS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e03503ff-22f3-4e0e-b6b2-912bf45b9270",
+                    "leftValue": "={{ $json.intent.toUpperCase() }}",
+                    "rightValue": "VIEW_QUOTES",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "VIEW_QUOTES"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6ee0af4b-5b4f-440f-8c59-080b17fd0e90",
+                    "leftValue": "={{ $json.intent.toUpperCase() }}",
+                    "rightValue": "ACCEPT_QUOTE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ACCEPT_QUOTE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2d0c8dfe-98e8-4454-9a12-03568b362d9c",
+                    "leftValue": "={{ $json.intent.toUpperCase() }}",
+                    "rightValue": "REJECT_QUOTE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "REJECT_QUOTE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c4034683-3b4c-4e27-ac9b-c38bf3407f6f",
+                    "leftValue": "={{ $json.intent.toUpperCase() }}",
+                    "rightValue": "CONFIRM_OTP",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CONFIRM_OTP"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d12dec54-2646-419e-be8e-f41c2e9d5fe2",
+                    "leftValue": "={{ $json.intent.toUpperCase() }}",
+                    "rightValue": "SUBMIT_CLIENT_REVIEW",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SUBMIT_CLIENT_REVIEW"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d76b7de3-0f2e-4b0b-be67-74ff73a090cb",
+                    "leftValue": "={{ $json.intent.toUpperCase() }}",
+                    "rightValue": "SEND_MESSAGE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SEND_MESSAGE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        112,
+        -752
+      ],
+      "id": "17ed3703-9553-4fdd-ac39-fc67ed5ca6ee",
+      "name": "ClientIntents"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents/jobs",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"fields\": {\n    \"client_uid\": { \"stringValue\": \"{{$json.client_uid}}\" },\n    \"description\": { \"stringValue\": \"{{$json.description}}\" },\n    \"service_type\": { \"stringValue\": \"{{$json.service_type}}\" },\n    \"status\": { \"stringValue\": \"{{$json.status}}\" },\n    \"created_at\": { \"timestampValue\": \"{{$json.created_at}}\" },\n    \"scheduled_at\": { \"timestampValue\": \"{{$json.scheduled_at}}\" },\n    \"address\": {\n      \"mapValue\": {\n        \"fields\": {\n          \"line_1\": { \"stringValue\": \"{{$json.address.line_1}}\" },\n          \"line_2\": { \"stringValue\": \"{{$json.address.line_2}}\" },\n          \"landmark\": { \"stringValue\": \"{{$json.address.landmark}}\" },\n          \"city\": { \"stringValue\": \"{{$json.address.city}}\" },\n          \"pincode\": { \"stringValue\": \"{{$json.address.pincode}}\" },\n          \"location\": {\n            \"geoPointValue\": {\n              \"latitude\": {{$json.address.location.latitude}},\n              \"longitude\": {{$json.address.location.longitude}}\n            }\n          }\n        }\n      }\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        -928
+      ],
+      "id": "d5e0e2e7-b01b-4f2e-99d5-9d23440628d4",
+      "name": "CreateJob",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "478a71a1-908c-4a0d-82d9-d393d270bb27",
+              "name": "address",
+              "value": "={{ $json.profile.addresses[$json.entities.address_index].removeField(\"address_index\").removeField(\"full_address\") }}",
+              "type": "object"
+            },
+            {
+              "id": "27194b3d-87d0-4bfe-85bb-42a67bb6c8df",
+              "name": "client_uid",
+              "value": "={{ $json.uid }}",
+              "type": "string"
+            },
+            {
+              "id": "c5d8ef92-7c85-4d5f-a5c2-7069b1d11a80",
+              "name": "created_at",
+              "value": "={{ DateTime.now().setZone(\"Asia/Kolkata\").toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "627dff9d-d8ea-4a90-a328-98def5870fae",
+              "name": "description",
+              "value": "={{ $json.entities.description }}",
+              "type": "string"
+            },
+            {
+              "id": "71270912-7c4f-4e5e-90e0-c77d0a640e4d",
+              "name": "scheduled_at",
+              "value": "={{ $json.entities.preferred_datetime.toDateTime().setZone(\"Asia/Kolkata\").toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "9f3f0f91-ef52-4fe6-8244-00e4628161dc",
+              "name": "service_type",
+              "value": "={{ $json.entities.service_type.toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "066a15b4-e8a0-412e-ac98-e6d60ebbe1b6",
+              "name": "status",
+              "value": "requested",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        -928
+      ],
+      "id": "715a8058-26e0-40d0-980d-ab634ccc25ac",
+      "name": "CreateJobData"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c93bf092-2aae-47d8-8a79-415beda9d8fc",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        -928
+      ],
+      "id": "e39191b8-0440-428c-b5dc-296d992402e3",
+      "name": "JobCreatedSuccessfully"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents:commit",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"writes\": [\n    {\n      \"transform\": {\n        \"document\": \"projects/voicesewa/databases/(default)/documents/clients/{{ $('ClientIntents').item.json.uid }}\",\n        \"fieldTransforms\": [\n          {\n            \"fieldPath\": \"services.requested\",\n            \"appendMissingElements\": {\n              \"values\": [\n                {\n                  \"referenceValue\": {{ $json.name.toJsonString() }}\n                }\n              ]\n            }\n          }\n        ]\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        848,
+        -928
+      ],
+      "id": "7f523b09-91d3-43de-9b3b-75d5f612ede1",
+      "name": "UpdateClientProfile",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8167c3c2-508f-4176-871e-813a67cdabba",
+              "name": "job_index",
+              "value": "={{ $json.entities.job_index }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        -768
+      ],
+      "id": "6b44cdb7-6211-412e-b272-1a0a023b9aad",
+      "name": "CancelJobData"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://firestore.googleapis.com/v1/projects/voicesewa/databases/(default)/documents/jobs/{{$json.job_id}}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "updateMask.fieldPaths",
+              "value": "status"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "value": "{\n    \"fields\": {\n      \"status\": { \"stringValue\": \"cancelled\" }\n    }\n  }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        -768
+      ],
+      "id": "9a58583b-183f-4d0e-ad75-987afe81b41e",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {
+    "CreateJob": [
+      {
+        "json": {
+          "name": "projects/voicesewa/databases/(default)/documents/jobs/i8F2WkDesdONs6jouMxH",
+          "fields": {
+            "address": {
+              "mapValue": {
+                "fields": {
+                  "pincode": {
+                    "stringValue": "400081"
+                  },
+                  "line_2": {
+                    "stringValue": "PQR House"
+                  },
+                  "location": {
+                    "geoPointValue": {
+                      "latitude": 19.1663734,
+                      "longitude": 72.9619733
+                    }
+                  },
+                  "landmark": {
+                    "stringValue": "Near XYZ Landmark"
+                  },
+                  "city": {
+                    "stringValue": "Mumbai"
+                  },
+                  "line_1": {
+                    "stringValue": "ABC Street"
+                  }
+                }
+              }
+            },
+            "created_at": {
+              "timestampValue": "2026-02-25T15:23:12.410Z"
+            },
+            "client_uid": {
+              "stringValue": "xqh5lrPDDZY1FkMsmQX5GnftN893"
+            },
+            "scheduled_at": {
+              "timestampValue": "2026-02-28T10:30:00Z"
+            },
+            "description": {
+              "stringValue": "Switch board sparking issue in living room"
+            },
+            "service_type": {
+              "stringValue": "electrician"
+            },
+            "status": {
+              "stringValue": "requested"
+            }
+          },
+          "createTime": "2026-02-25T15:30:47.450541Z",
+          "updateTime": "2026-02-25T15:30:47.450541Z"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "UpdateClientProfile": [
+      {
+        "json": {
+          "writeResults": [
+            {
+              "updateTime": "2026-02-25T17:04:54.765447Z",
+              "transformResults": [
+                {
+                  "nullValue": null
+                }
+              ]
+            }
+          ],
+          "commitTime": "2026-02-25T17:04:54.765447Z"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Call 'FireStore'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "CheckRole",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckRole": {
+      "main": [
+        [
+          {
+            "node": "ClientIntents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ClientIntents": {
+      "main": [
+        [
+          {
+            "node": "CreateJobData",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CancelJobData",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        []
+      ]
+    },
+    "CreateJob": {
+      "main": [
+        [
+          {
+            "node": "UpdateClientProfile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CreateJobData": {
+      "main": [
+        [
+          {
+            "node": "CreateJob",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UpdateClientProfile": {
+      "main": [
+        [
+          {
+            "node": "JobCreatedSuccessfully",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CancelJobData": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "04234445-9ae0-46ed-992b-757af1b3ae13",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cb840271ce94bb7fd9c6793b8082b2d29d9bc8dbac834b10a25330e393e00f0d"
+  },
+  "id": "JQunXVDuq8ALGJ9v",
+  "tags": []
+}

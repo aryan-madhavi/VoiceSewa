@@ -1,0 +1,575 @@
+{
+  "name": "Chat_Translation",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "text": "={{ $json.originalMsg }}",
+        "translateTo": "en"
+      },
+      "type": "n8n-nodes-base.googleTranslate",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        336
+      ],
+      "id": "ec90e503-d811-4554-adb9-e98891848fec",
+      "name": "TranslateEN",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "text": "={{ $json.originalMsg }}",
+        "translateTo": "hi"
+      },
+      "type": "n8n-nodes-base.googleTranslate",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        528
+      ],
+      "id": "18235d53-e3e3-41ba-9953-2a85db2cdefe",
+      "name": "TranslateHI",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 4,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        448,
+        592
+      ],
+      "id": "848786a9-6658-4a4a-929d-0ba903567018",
+      "name": "Merge",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "text": "={{ $json.originalMsg }}",
+        "translateTo": "mr"
+      },
+      "type": "n8n-nodes-base.googleTranslate",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        720
+      ],
+      "id": "7816c023-7475-4f73-b1f1-ec0a03440e35",
+      "name": "TranslateMR",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "text": "={{ $json.originalMsg }}",
+        "translateTo": "gu"
+      },
+      "type": "n8n-nodes-base.googleTranslate",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        912
+      ],
+      "id": "3821272b-d68a-46eb-bfc9-00e02cea74a2",
+      "name": "TranslateGU",
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "upsert",
+        "projectId": "voicesewa",
+        "collection": "=jobs/{{ $('GetDocInfo').item.json.jobId }}/quotations/{{ $('GetDocInfo').item.json.quotationId }}/messages",
+        "updateKey": "updateKey",
+        "columns": "translated"
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        624
+      ],
+      "id": "bff2a653-e00e-44e8-9fe1-60e09b8a929a",
+      "name": "Create or update a document",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "translate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -928,
+        624
+      ],
+      "id": "4798e767-6cf0-43fe-8cfd-7c77aebf2161",
+      "name": "Webhook",
+      "webhookId": "5d69cd58-40e6-40fe-8090-85899af5f095"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "41cd9684-d692-4f94-81aa-68f1f91ba676",
+              "name": "jobId",
+              "value": "={{ $json.body.jobId }}",
+              "type": "string"
+            },
+            {
+              "id": "fc07e02e-c824-40d6-b7ad-27d755b3f0c0",
+              "name": "quotationId",
+              "value": "={{ $json.body.quotationId }}",
+              "type": "string"
+            },
+            {
+              "id": "dac2fc15-a1a8-42a7-b238-b68ec377dc9d",
+              "name": "messageId",
+              "value": "={{ $json.body.messageId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -704,
+        624
+      ],
+      "id": "37815e41-1553-44a9-9888-6be3156d804a",
+      "name": "GetDocInfo"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "projectId": "voicesewa",
+        "collection": "jobs",
+        "documentId": "={{ $json.jobId }}/quotations/{{ $json.quotationId }}/messages/{{ $json.messageId }}",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleFirebaseCloudFirestore",
+      "typeVersion": 1.1,
+      "position": [
+        -480,
+        624
+      ],
+      "id": "14141067-bab9-47d6-8a51-75a4b9d073c2",
+      "name": "GetMsgDoc",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleApi": {
+          "id": "k77EJDaIIoT5Nazq",
+          "name": "Google Firebase Cloud Firestore account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bcd8900b-b8ad-4810-ab4f-c3e19f022da4",
+              "name": "originalMsg",
+              "value": "={{ $json.found.fields.originalMsg.stringValue }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        624
+      ],
+      "id": "9dfc0fbd-98f9-454a-b5b6-d694f384437b",
+      "name": "MapOriginalMsg"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2907970d-f339-4a94-a36d-e7cf9b27d7bc",
+              "name": "en",
+              "value": "={{ $json.translatedText }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        336
+      ],
+      "id": "04b00f11-eea8-4292-a106-0313092eaeef",
+      "name": "MapTranslatedEn"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2907970d-f339-4a94-a36d-e7cf9b27d7bc",
+              "name": "hi",
+              "value": "={{ $json.translatedText }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        528
+      ],
+      "id": "f8a725d2-967f-4a77-9021-cf9bf193ef03",
+      "name": "MapTranslatedHi"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2907970d-f339-4a94-a36d-e7cf9b27d7bc",
+              "name": "mr",
+              "value": "={{ $json.translatedText }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        720
+      ],
+      "id": "c8ef509f-ef69-494a-bd9a-f58ac9918760",
+      "name": "MapTranslatedMr"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2907970d-f339-4a94-a36d-e7cf9b27d7bc",
+              "name": "gu",
+              "value": "={{ $json.translatedText }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        912
+      ],
+      "id": "4ddf765d-d906-4810-ab50-d66f5c299560",
+      "name": "MapTranslatedGu"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a6c2c0cc-f2ba-4e7b-8488-7d8b5ab2cd52",
+              "name": "translated",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "fae7c4e1-3248-40b0-9c9d-6321ead1bcf8",
+              "name": "updateKey",
+              "value": "={{ $('GetDocInfo').item.json.messageId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        656,
+        624
+      ],
+      "id": "3fdc16b0-c76f-45aa-a3ff-431618af869b",
+      "name": "CreateTranslatedMap"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "fomoha8938hutudns.app.n8n.cloud",
+            "user-agent": "Dart/3.10 (dart:io)",
+            "content-length": "104",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "103.233.218.2",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "IN",
+            "cf-ray": "9d4e08f2783653df-BOM",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "103.233.218.2, 172.71.202.164",
+            "x-forwarded-host": "fomoha8938hutudns.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-95-67c5b59755-l49m6",
+            "x-is-trusted": "yes",
+            "x-real-ip": "103.233.218.2"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "jobId": "3J1YJsEDVhaR4qskfQzc",
+            "quotationId": "Neh4vTAUzMA7svQqqTLU",
+            "messageId": "BNkdLo3Hv4PFO4ClpFA8"
+          },
+          "webhookUrl": "https://fomoha8938hutudns.app.n8n.cloud/webhook/translate",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "TranslateEN": {
+      "main": [
+        [
+          {
+            "node": "MapTranslatedEn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TranslateHI": {
+      "main": [
+        [
+          {
+            "node": "MapTranslatedHi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TranslateMR": {
+      "main": [
+        [
+          {
+            "node": "MapTranslatedMr",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TranslateGU": {
+      "main": [
+        [
+          {
+            "node": "MapTranslatedGu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "CreateTranslatedMap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "GetDocInfo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetDocInfo": {
+      "main": [
+        [
+          {
+            "node": "GetMsgDoc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetMsgDoc": {
+      "main": [
+        [
+          {
+            "node": "MapOriginalMsg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MapOriginalMsg": {
+      "main": [
+        [
+          {
+            "node": "TranslateEN",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TranslateHI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TranslateMR",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "TranslateGU",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MapTranslatedEn": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MapTranslatedMr": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "MapTranslatedHi": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "MapTranslatedGu": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "CreateTranslatedMap": {
+      "main": [
+        [
+          {
+            "node": "Create or update a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b5bf3452-9786-42bc-bbb2-9748c0d0ee7e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cb840271ce94bb7fd9c6793b8082b2d29d9bc8dbac834b10a25330e393e00f0d"
+  },
+  "id": "AmWZab8HTuuIYFZ6",
+  "tags": []
+}
