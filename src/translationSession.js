@@ -12,38 +12,38 @@ import speech from '@google-cloud/speech';
 import { TranslationServiceClient } from '@google-cloud/translate';
 import tts from '@google-cloud/text-to-speech';
 
-const speechClient = new speech.SpeechClient();
+const speechClient    = new speech.SpeechClient();
 const translateClient = new TranslationServiceClient();
-const ttsClient = new tts.TextToSpeechClient();
+const ttsClient       = new tts.TextToSpeechClient();
 
 const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT;
 
-// ─── STT stream config ────────────────────────────────────────────────────────
-// LINEAR16 @ 16 kHz mono — matches what Flutter's `record` package sends
+// ── STT config ────────────────────────────────────────────────────────────────
+
 function buildSttConfig(languageCode) {
   return {
     config: {
-      encoding: 'LINEAR16',
-      sampleRateHertz: 16000,
+      encoding:                   'LINEAR16',
+      sampleRateHertz:            16000,
       languageCode,
       enableAutomaticPunctuation: true,
-      model: 'phone_call',          // Optimised for telephony audio quality
-      useEnhanced: true,            // Enhanced model (billed at higher rate but worth it)
+      model:                      'phone_call',
+      useEnhanced:                true,
     },
-    interimResults: true,           // Stream partial transcripts to UI in real-time
+    interimResults: true,
   };
 }
 
-// ─── Translate ────────────────────────────────────────────────────────────────
+// ── Translate ─────────────────────────────────────────────────────────────────
+
 async function translateText(text, sourceLang, targetLang) {
-  // BCP-47 codes like "en-US" → base codes "en" required by Translate API
   const src = sourceLang.split('-')[0];
   const tgt = targetLang.split('-')[0];
 
   const [response] = await translateClient.translateText({
-    parent: `projects/${PROJECT_ID}/locations/global`,
-    contents: [text],
-    mimeType: 'text/plain',
+    parent:             `projects/${PROJECT_ID}/locations/global`,
+    contents:           [text],
+    mimeType:           'text/plain',
     sourceLanguageCode: src,
     targetLanguageCode: tgt,
   });
@@ -51,35 +51,67 @@ async function translateText(text, sourceLang, targetLang) {
   return response.translations[0].translatedText;
 }
 
-// ─── TTS ──────────────────────────────────────────────────────────────────────
+// ── TTS ───────────────────────────────────────────────────────────────────────
+// Neural2 voices give the best quality but aren't available for every locale.
+// Languages with Neural2 support (as of 2025): en, hi, fr, de, es, it, ja, ko,
+// pt, cmn (Mandarin), ar, nl, pl, sv, tr, vi.
+// Languages WITHOUT Neural2 (common for VoiceSewa): ml-IN, pa-IN, gu-IN, bn-IN.
+// Strategy: try Neural2 first, fall back to Standard on any error.
+
+const NEURAL2_UNAVAILABLE = new Set(); // Cache failures to avoid repeated retries
+
 async function synthesizeSpeech(text, voiceLang) {
-  // Prefer Neural2 → fallback gracefully if not available for that locale
-  const [response] = await ttsClient.synthesizeSpeech({
-    input: { text },
+  const useNeural2 = !NEURAL2_UNAVAILABLE.has(voiceLang);
+
+  const voiceName = useNeural2
+    ? `${voiceLang}-Neural2-A`
+    : `${voiceLang}-Standard-A`;
+
+  const request = {
+    input:       { text },
     voice: {
       languageCode: voiceLang,
-      ssmlGender: 'NEUTRAL',
-      name: `${voiceLang}-Neural2-A`,   // e.g. "es-ES-Neural2-A"
+      ssmlGender:   'NEUTRAL',
+      name:         voiceName,
     },
     audioConfig: {
-      audioEncoding: 'LINEAR16',        // Raw PCM — easiest to play on Flutter side
-      sampleRateHertz: 16000,
-      effectsProfileId: ['handset-class-device'],  // Optimised for phone speakers
+      audioEncoding:    'LINEAR16',
+      sampleRateHertz:  16000,
+      effectsProfileId: ['handset-class-device'],
     },
-  });
+  };
 
-  return response.audioContent; // Buffer<PCM bytes>
+  try {
+    const [response] = await ttsClient.synthesizeSpeech(request);
+    return response.audioContent;
+  } catch (err) {
+    if (useNeural2) {
+      // Neural2 not available for this locale — cache and retry with Standard
+      console.warn(`[TTS] Neural2 unavailable for ${voiceLang}, falling back to Standard`);
+      NEURAL2_UNAVAILABLE.add(voiceLang);
+
+      const fallbackRequest = {
+        ...request,
+        voice: { ...request.voice, name: `${voiceLang}-Standard-A` },
+      };
+      const [response] = await ttsClient.synthesizeSpeech(fallbackRequest);
+      return response.audioContent;
+    }
+    // Standard also failed — rethrow
+    throw err;
+  }
 }
 
-// ─── Session factory ──────────────────────────────────────────────────────────
+// ── Session factory ───────────────────────────────────────────────────────────
+
 /**
- * @param {object} opts
- * @param {string}   opts.sourceLang       BCP-47 e.g. "en-US"
- * @param {string}   opts.targetLang       BCP-47 e.g. "es"   (for Translate)
- * @param {string}   opts.voiceLang        BCP-47 e.g. "es-ES" (for TTS voice)
- * @param {Function} opts.onTranslatedAudio  (Buffer) → void  — send audio to partner
- * @param {Function} opts.onTranscript       (text, isFinal) → void  — update sender UI
- * @param {Function} opts.onError            (Error) → void
+ * @param {object}   opts
+ * @param {string}   opts.sourceLang        BCP-47 e.g. "hi-IN"
+ * @param {string}   opts.targetLang        BCP-47 base e.g. "en" (for Translate API)
+ * @param {string}   opts.voiceLang         BCP-47 e.g. "en-IN" (for TTS voice)
+ * @param {Function} opts.onTranslatedAudio (Buffer) → void
+ * @param {Function} opts.onTranscript      (text, isFinal) → void
+ * @param {Function} opts.onError           (Error) → void
  */
 export function createTranslationSession({
   sourceLang,
@@ -89,12 +121,11 @@ export function createTranslationSession({
   onTranscript,
   onError,
 }) {
-  let recognizeStream = null;
-  let restartTimer = null;
-  let isActive = true;
-  let pendingAudioChunks = []; // Buffer audio that arrives during stream restart
+  let recognizeStream    = null;
+  let restartTimer       = null;
+  let isActive           = true;
+  let pendingAudioChunks = [];
 
-  // ── Start / restart the STT stream ─────────────────────────────────────────
   const startStream = () => {
     if (!isActive) return;
 
@@ -102,10 +133,9 @@ export function createTranslationSession({
       .streamingRecognize(buildSttConfig(sourceLang))
       .on('error', (err) => {
         if (!isActive) return;
-
-        // Code 11 = stream deadline exceeded (~305 s) — normal, restart silently
         if (err.code === 11) {
-          console.log(`[STT] Stream timeout — restarting for lang=${sourceLang}`);
+          // Stream deadline exceeded (~305s) — normal, restart silently
+          console.log(`[STT] Stream timeout, restarting lang=${sourceLang}`);
           cleanupStream();
           startStream();
         } else {
@@ -114,19 +144,17 @@ export function createTranslationSession({
         }
       })
       .on('data', async (data) => {
-        const result = data.results?.[0];
+        const result     = data.results?.[0];
         if (!result) return;
 
         const transcript = result.alternatives?.[0]?.transcript ?? '';
-        const isFinal = result.isFinal;
+        const isFinal    = result.isFinal;
 
-        // Send interim transcripts back to sender for live caption display
         onTranscript?.(transcript, isFinal);
 
-        // Only translate + synthesise on final results to avoid wasted API calls
         if (isFinal && transcript.trim().length > 0) {
           try {
-            const translated = await translateText(transcript, sourceLang, targetLang);
+            const translated  = await translateText(transcript, sourceLang, targetLang);
             const audioBuffer = await synthesizeSpeech(translated, voiceLang);
             onTranslatedAudio?.(audioBuffer);
           } catch (err) {
@@ -136,7 +164,7 @@ export function createTranslationSession({
         }
       });
 
-    // Flush any audio that arrived during the restart window
+    // Flush queued audio from restart window
     if (pendingAudioChunks.length > 0) {
       for (const chunk of pendingAudioChunks) {
         recognizeStream.write(chunk);
@@ -144,9 +172,9 @@ export function createTranslationSession({
       pendingAudioChunks = [];
     }
 
-    // Proactively restart 15 seconds before Google's hard 305-second cutoff
+    // Proactively restart 15s before Google's hard 305s cutoff
     restartTimer = setTimeout(() => {
-      console.log(`[STT] Proactive restart for lang=${sourceLang}`);
+      console.log(`[STT] Proactive restart lang=${sourceLang}`);
       cleanupStream();
       startStream();
     }, 290_000);
@@ -160,27 +188,18 @@ export function createTranslationSession({
     recognizeStream = null;
   };
 
-  // Kick off first stream
   startStream();
 
-  // ── Public API ──────────────────────────────────────────────────────────────
   return {
-    /**
-     * Feed raw PCM audio from Flutter microphone into the STT stream.
-     * Safe to call even during a stream restart.
-     */
     sendAudio(buffer) {
       if (!isActive) return;
-
       if (recognizeStream && !recognizeStream.destroyed) {
         recognizeStream.write(buffer);
       } else {
-        // Stream is restarting — queue chunks so we don't drop audio
         pendingAudioChunks.push(buffer);
       }
     },
 
-    /** Gracefully shut down everything for this user. */
     stop() {
       isActive = false;
       cleanupStream();

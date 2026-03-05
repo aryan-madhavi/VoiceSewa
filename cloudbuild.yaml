@@ -46,13 +46,24 @@ steps:
       - --image=${_REGION}-docker.pkg.dev/${_GCP_PROJECT}/docker-images/${_SERVICE_NAME}:${SHORT_SHA}
       - --region=${_REGION}
       - --platform=managed
-      - --no-allow-unauthenticated
-      - --min-instances=0
+      - --allow-unauthenticated  # Auth enforced at app layer (routes.js + wsHandler.js)
+                               # so /health is publicly reachable for monitoring
+      - --min-instances=1      # CRITICAL: keeps one instance always warm.
+                               # With min=0, POST /session and WS /ws can hit
+                               # different instances → SESSION_NOT_FOUND.
+                               # Sessions are in-memory; they don't survive
+                               # instance switches. min=1 ensures all requests
+                               # go to the same instance during normal load.
+                               # At scale you'd need Redis for session storage,
+                               # but for now this is the correct fix.
       - --max-instances=10
       - --concurrency=80
       - --cpu=1
       - --memory=512Mi
-      - --session-affinity
+      - --session-affinity     # Keeps a given client on the same instance once
+                               # connected (via GCILB cookie). But Flutter's http
+                               # package doesn't persist cookies, so session
+                               # affinity alone is NOT sufficient — min=1 is.
       - --timeout=3600
       - --set-env-vars=GOOGLE_CLOUD_PROJECT=${_GCP_PROJECT},NODE_ENV=production
       - --service-account=voicesewa-call-translate@${_GCP_PROJECT}.iam.gserviceaccount.com

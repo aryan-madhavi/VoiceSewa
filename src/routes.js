@@ -2,10 +2,10 @@
  * routes.js
  *
  * REST endpoints:
- *   GET  /health          — liveness probe (for Railway / Render / Docker)
- *   POST /session         — create a new call session, returns sessionId
- *   GET  /session/:id     — check session status
- *   DELETE /session/:id   — manually end a session
+ *   GET    /health        -- liveness probe (publicly accessible)
+ *   POST   /session       -- create a new call session, returns sessionId
+ *   GET    /session/:id   -- check session status
+ *   DELETE /session/:id   -- manually end a session
  */
 
 import { Router } from 'express';
@@ -20,7 +20,17 @@ import { requireAuth } from './firebaseAuth.js';
 
 const router = Router();
 
-// ── Health / readiness probe ──────────────────────────────────────────────────
+// -- Auth middleware: protects all routes EXCEPT /health --
+// Cloud Run is set to --allow-unauthenticated so the load balancer passes all
+// traffic through. Firebase auth is enforced here at the app layer instead,
+// keeping /health publicly reachable for uptime monitoring while protecting
+// /session and every other endpoint.
+router.use((req, res, next) => {
+  if (req.path === '/health') return next();
+  return requireAuth(req, res, next);
+});
+
+// -- Health / readiness probe (public) --
 router.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
@@ -29,10 +39,9 @@ router.get('/health', (_req, res) => {
   });
 });
 
-// ── Create session ────────────────────────────────────────────────────────────
-// Requires a valid Firebase ID token — only authenticated app users can start calls.
-// Flutter: pass `Authorization: Bearer ${await user.getIdToken()}` header.
-router.post('/session', requireAuth, (req, res) => {
+// -- Create session --
+// requireAuth is already applied above via middleware, no need to add it here.
+router.post('/session', (req, res) => {
   const sessionId = uuidv4();
   createSession(sessionId);
 
@@ -45,7 +54,7 @@ router.post('/session', requireAuth, (req, res) => {
   });
 });
 
-// ── Session status ────────────────────────────────────────────────────────────
+// -- Session status --
 router.get('/session/:id', (req, res) => {
   const session = getSession(req.params.id);
 
@@ -54,15 +63,15 @@ router.get('/session/:id', (req, res) => {
   }
 
   res.json({
-    sessionId: session.id,
+    sessionId:      session.id,
     connectedUsers: session.users.length,
-    createdAt: new Date(session.createdAt).toISOString(),
-    isFull: session.users.length >= 2,
+    createdAt:      new Date(session.createdAt).toISOString(),
+    isFull:         session.users.length >= 2,
   });
 });
 
-// ── End session manually ──────────────────────────────────────────────────────
-router.delete('/session/:id', requireAuth, (req, res) => {
+// -- End session manually --
+router.delete('/session/:id', (req, res) => {
   const session = getSession(req.params.id);
 
   if (!session) {
