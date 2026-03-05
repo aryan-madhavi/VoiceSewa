@@ -1,0 +1,65 @@
+# cloudbuild.yaml
+#
+# Automated Cloud Run deployment triggered on git push.
+# Repository : github.com/aryan-madhavi/VoiceSewa
+# Branch     : backend/features/auto-translate-call
+#
+# Manual submit:
+#   gcloud builds submit \
+#     --config cloudbuild.yaml \
+#     --substitutions=_REGION=asia-south1,_SERVICE_NAME=voicesewa-call-translate,_GCP_PROJECT=voicesewa,SHORT_SHA=latest \
+#     --project=voicesewa
+
+substitutions:
+  _REGION: asia-south1
+  _SERVICE_NAME: voicesewa-call-translate
+  _GCP_PROJECT: voicesewa
+
+steps:
+  # ── Step 1: Build image ────────────────────────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: build
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${_GCP_PROJECT}/docker-images/${_SERVICE_NAME}:${SHORT_SHA}
+      - -t
+      - ${_REGION}-docker.pkg.dev/${_GCP_PROJECT}/docker-images/${_SERVICE_NAME}:latest
+      - .
+
+  # ── Step 2: Push to Artifact Registry ─────────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: push
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/${_GCP_PROJECT}/docker-images/${_SERVICE_NAME}
+
+  # ── Step 3: Deploy to Cloud Run ────────────────────────────────────────────
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE_NAME}
+      - --image=${_REGION}-docker.pkg.dev/${_GCP_PROJECT}/docker-images/${_SERVICE_NAME}:${SHORT_SHA}
+      - --region=${_REGION}
+      - --platform=managed
+      - --no-allow-unauthenticated
+      - --min-instances=0
+      - --max-instances=10
+      - --concurrency=80
+      - --cpu=1
+      - --memory=512Mi
+      - --session-affinity
+      - --timeout=3600
+      - --set-env-vars=GOOGLE_CLOUD_PROJECT=${_GCP_PROJECT},NODE_ENV=production
+      - --service-account=voicesewa-call-translate@${_GCP_PROJECT}.iam.gserviceaccount.com
+
+images:
+  - ${_REGION}-docker.pkg.dev/${_GCP_PROJECT}/docker-images/${_SERVICE_NAME}:${SHORT_SHA}
+  - ${_REGION}-docker.pkg.dev/${_GCP_PROJECT}/docker-images/${_SERVICE_NAME}:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY
