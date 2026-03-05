@@ -1,4 +1,4 @@
-// lib/features/translate_call/data/fcm_service.dart
+// lib/features/auth/data/fcm_service.dart
 //
 // Manages the complete FCM lifecycle for the call feature:
 //
@@ -18,16 +18,15 @@
 //
 // Sending the notification is NOT done here — a Cloud Function
 // (functions/index.js) listens for new call docs and sends FCM
-// using the Admin SDK server-side. That keeps service account keys
-// off the device entirely.
+// using the Admin SDK server-side.
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
-import '../../../../core/constants.dart';
-import '../../translate-call/data/notification_service.dart';
+import '../../../core/constants.dart';
+import '../../translate_call/data/notification_service.dart';
 
 class FcmService {
   FcmService({
@@ -40,23 +39,18 @@ class FcmService {
   final FirebaseFirestore _firestore;
 
   // ── init ──────────────────────────────────────────────────────────────────
-  // Call once from main.dart after ProviderScope is ready.
-  // [onCallNotificationTap] is invoked with the sessionId when the user taps
-  // an incoming call notification while the app was backgrounded / terminated.
 
   Future<void> init({
     required void Function(String sessionId) onCallNotificationTap,
   }) async {
-    // Save current token
+    // Save current token to Firestore
     await saveToken();
 
     // Re-save on rotation
     FirebaseMessaging.instance.onTokenRefresh.listen((_) => saveToken());
 
     // Foreground: FCM arrives while app is open
-    FirebaseMessaging.onMessage.listen((message) {
-      _handleDataMessage(message);
-    });
+    FirebaseMessaging.onMessage.listen(_handleDataMessage);
 
     // Background tap: user tapped notification, app was backgrounded
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
@@ -74,6 +68,8 @@ class FcmService {
 
   Future<String?> getToken() => FirebaseMessaging.instance.getToken();
 
+  /// Saves the current FCM token to users/{uid} in Firestore.
+  /// Called on init and whenever the token rotates.
   Future<void> saveToken() async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -95,13 +91,11 @@ class FcmService {
     final type = message.data['type'] as String?;
     if (type != AppConstants.fcmTypeIncomingCall) return;
 
-    // App is in foreground — FCM won't show a notification automatically,
-    // so we trigger one ourselves via flutter_local_notifications.
     NotificationService.instance.showIncomingCall(
-      sessionId:   message.data['sessionId']   ?? '',
-      callerUid:   message.data['callerUid']   ?? '',
-      callerName:  message.data['callerName']  ?? 'Unknown',
-      callerLang:  message.data['callerLang']  ?? 'hi-IN',
+      sessionId:    message.data['sessionId']    ?? '',
+      callerUid:    message.data['callerUid']    ?? '',
+      callerName:   message.data['callerName']   ?? 'Unknown',
+      callerLang:   message.data['callerLang']   ?? 'hi-IN',
       receiverLang: message.data['receiverLang'] ?? 'en-IN',
     );
   }

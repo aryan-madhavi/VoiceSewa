@@ -1,10 +1,4 @@
 // lib/features/translate_call/presentation/active_call_screen.dart
-//
-// The live call screen. Shows:
-//   - Partner name + live call timer (top)
-//   - Language pair cards with speaking indicator
-//   - Two caption boxes: my live transcript / partner's live transcript
-//   - Control row: mute, end call, speaker (stub)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,23 +29,17 @@ class ActiveCallScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-
-              // ── Top bar ───────────────────────────────────────────────────
               _TopBar(
                 partnerName:  partnerName,
                 callDuration: call.callDuration,
               ),
               const SizedBox(height: 24),
-
-              // ── Language pair ─────────────────────────────────────────────
               _LangRow(
                 myLanguage:      call.myLanguage,
                 partnerLanguage: call.partnerLanguage,
                 isMuted:         call.isMuted,
               ),
               const SizedBox(height: 20),
-
-              // ── Caption boxes ─────────────────────────────────────────────
               Expanded(
                 child: Column(
                   children: [
@@ -76,8 +64,6 @@ class ActiveCallScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // ── Controls ──────────────────────────────────────────────────
               _ControlRow(
                 isMuted: call.isMuted,
                 onMute:  () =>
@@ -109,20 +95,22 @@ class _TopBar extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(partnerName,
-                style: Theme.of(context).textTheme.callName
-                    .copyWith(fontSize: 22)),
+            Text(
+              partnerName,
+              style: Theme.of(context).textTheme.callName
+                  .copyWith(fontSize: 22),
+            ),
             const SizedBox(height: 2),
-            Text(callDuration.toCallDuration(),
-                style: Theme.of(context).textTheme.callTimer),
+            Text(
+              callDuration.toCallDuration(),
+              style: Theme.of(context).textTheme.callTimer,
+            ),
           ],
         ),
-        // Live badge
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           decoration: BoxDecoration(
-            color: AppTheme.statusActive.withOpacity(0.15),
+            color:  AppTheme.statusActive.withOpacity(0.15),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
                 color: AppTheme.statusActive.withOpacity(0.35)),
@@ -131,8 +119,7 @@ class _TopBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 7,
-                height: 7,
+                width: 7, height: 7,
                 decoration: const BoxDecoration(
                   color: AppTheme.statusActive,
                   shape: BoxShape.circle,
@@ -158,7 +145,6 @@ class _LangRow extends StatelessWidget {
     required this.partnerLanguage,
     required this.isMuted,
   });
-
   final dynamic myLanguage;
   final dynamic partnerLanguage;
   final bool isMuted;
@@ -200,7 +186,6 @@ class _LangCard extends StatelessWidget {
     required this.sublabel,
     required this.isMuted,
   });
-
   final String flag;
   final String native;
   final String sublabel;
@@ -211,9 +196,9 @@ class _LangCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
+        color:        Colors.white.withOpacity(0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.callBorder),
+        border:       Border.all(color: AppTheme.callBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,12 +216,13 @@ class _LangCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(native,
               style: const TextStyle(
-                  color: AppTheme.callTextPrimary,
+                  color:      AppTheme.callTextPrimary,
                   fontWeight: FontWeight.w600,
-                  fontSize: 13)),
+                  fontSize:   13)),
           Text(sublabel,
               style: const TextStyle(
-                  color: AppTheme.callTextSecondary, fontSize: 11)),
+                  color:    AppTheme.callTextSecondary,
+                  fontSize: 11)),
         ],
       ),
     );
@@ -252,7 +238,6 @@ class _CaptionBox extends StatelessWidget {
     required this.isMuted,
     required this.accent,
   });
-
   final String label;
   final String text;
   final bool isMuted;
@@ -264,9 +249,9 @@ class _CaptionBox extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: accent.withOpacity(0.08),
+        color:        accent.withOpacity(0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accent.withOpacity(0.2)),
+        border:       Border.all(color: accent.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,9 +259,9 @@ class _CaptionBox extends StatelessWidget {
           Text(
             label.toUpperCase(),
             style: const TextStyle(
-              color: AppTheme.callTextSecondary,
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
+              color:       AppTheme.callTextSecondary,
+              fontSize:    10,
+              fontWeight:  FontWeight.w700,
               letterSpacing: 1,
             ),
           ),
@@ -292,7 +277,7 @@ class _CaptionBox extends StatelessWidget {
                         SizedBox(width: 6),
                         Text('Muted',
                             style: TextStyle(
-                                color: AppTheme.statusRinging,
+                                color:    AppTheme.statusRinging,
                                 fontSize: 14)),
                       ],
                     ),
@@ -301,12 +286,17 @@ class _CaptionBox extends StatelessWidget {
                     ? const Center(
                         child: Text('…',
                             style: TextStyle(
-                                color: Colors.white24,
+                                color:    Colors.white24,
                                 fontSize: 28)),
                       )
                     : Text(
                         text,
-                        style: Theme.of(context).textTheme.caption,
+                        // bodyMedium replaces the removed caption style
+                        style: const TextStyle(
+                          color:    AppTheme.callTextPrimary,
+                          fontSize: 16,
+                          height:   1.5,
+                        ),
                       ),
           ),
         ],
@@ -323,7 +313,6 @@ class _ControlRow extends StatelessWidget {
     required this.onMute,
     required this.onEnd,
   });
-
   final bool isMuted;
   final VoidCallback onMute;
   final VoidCallback onEnd;
@@ -353,7 +342,7 @@ class _ControlRow extends StatelessWidget {
           icon:  Icons.volume_up_rounded,
           label: 'Speaker',
           color: Colors.white.withOpacity(0.15),
-          onTap: () {}, // TODO: audio routing (earpiece ↔ speaker)
+          onTap: () {}, // TODO: audio routing earpiece ↔ speaker
         ),
       ],
     );
@@ -369,13 +358,12 @@ class _ControlButton extends StatelessWidget {
     this.size = 56,
     this.glow = false,
   });
-
-  final IconData icon;
-  final String label;
-  final Color color;
+  final IconData    icon;
+  final String      label;
+  final Color       color;
   final VoidCallback onTap;
-  final double size;
-  final bool glow;
+  final double      size;
+  final bool        glow;
 
   @override
   Widget build(BuildContext context) {
@@ -385,19 +373,16 @@ class _ControlButton extends StatelessWidget {
         GestureDetector(
           onTap: onTap,
           child: Container(
-            width: size,
-            height: size,
+            width: size, height: size,
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
               boxShadow: glow
-                  ? [
-                      BoxShadow(
-                        color: color.withOpacity(0.45),
-                        blurRadius: 18,
-                        spreadRadius: 2,
-                      )
-                    ]
+                  ? [BoxShadow(
+                      color:       color.withOpacity(0.45),
+                      blurRadius:  18,
+                      spreadRadius: 2,
+                    )]
                   : null,
             ),
             child: Icon(icon, color: Colors.white, size: size * 0.42),

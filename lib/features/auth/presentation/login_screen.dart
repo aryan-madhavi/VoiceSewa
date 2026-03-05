@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme.dart';
 import '../application/auth_controller.dart';
-import '../application/providers.dart';
+import '../application/auth_providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -19,8 +18,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey  = GlobalKey<FormState>();
   final _email    = TextEditingController();
   final _password = TextEditingController();
-
-  bool _obscure = true;
+  bool _obscure   = true;
 
   @override
   void dispose() {
@@ -49,7 +47,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final error     = authState.hasError
         ? AuthController.friendlyError(authState.error!)
         : null;
-
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -62,7 +59,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ── Logo / title ────────────────────────────────────────
+                  // ── Title ─────────────────────────────────────────────────
                   Text(
                     'VoiceSewa',
                     style: theme.textTheme.displaySmall?.copyWith(
@@ -83,36 +80,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  // ── Error banner ────────────────────────────────────────
+                  // ── Error ─────────────────────────────────────────────────
                   if (error != null) ...[
                     _ErrorBanner(message: error),
                     const SizedBox(height: 16),
                   ],
 
-                  // ── Email ────────────────────────────────────────────────
+                  // ── Email ─────────────────────────────────────────────────
                   TextFormField(
-                    controller:   _email,
-                    keyboardType: TextInputType.emailAddress,
+                    controller:      _email,
+                    keyboardType:    TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
-                      labelText:   'Email',
-                      border:      OutlineInputBorder(),
-                      prefixIcon:  Icon(Icons.email_outlined),
+                      labelText:  'Email',
+                      border:     OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.email_outlined),
                     ),
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return 'Enter your email';
-                      }
+                      if (v == null || v.trim().isEmpty) return 'Enter your email';
                       if (!v.contains('@')) return 'Enter a valid email';
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
 
-                  // ── Password ─────────────────────────────────────────────
+                  // ── Password ──────────────────────────────────────────────
                   TextFormField(
-                    controller:  _password,
-                    obscureText: _obscure,
+                    controller:      _password,
+                    obscureText:     _obscure,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _submit(),
                     decoration: InputDecoration(
@@ -123,8 +118,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         icon: Icon(_obscure
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined),
-                        onPressed: () =>
-                            setState(() => _obscure = !_obscure),
+                        onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
                     validator: (v) {
@@ -133,7 +127,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     },
                   ),
 
-                  // ── Forgot password ──────────────────────────────────────
+                  // ── Forgot password ───────────────────────────────────────
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -143,7 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
 
-                  // ── Sign in button ────────────────────────────────────────
+                  // ── Sign in ───────────────────────────────────────────────
                   FilledButton(
                     onPressed: isLoading ? null : _submit,
                     style: FilledButton.styleFrom(
@@ -171,12 +165,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ]),
                   const SizedBox(height: 16),
 
-                  // ── Google sign in ────────────────────────────────────────
+                  // ── Google ────────────────────────────────────────────────
                   OutlinedButton.icon(
                     onPressed: isLoading ? null : _google,
                     style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(52)),
-                    icon: const _GoogleIcon(),
+                    icon:  const _GoogleIcon(),
                     label: const Text('Continue with Google',
                         style: TextStyle(fontSize: 15)),
                   ),
@@ -193,7 +187,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: Text(
                           'Sign up',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.primary,
+                            color:      theme.colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -210,7 +204,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-// ── Supporting widgets ────────────────────────────────────────────────────────
+// ── Shared widgets ─────────────────────────────────────────────────────────────
 
 class _ErrorBanner extends StatelessWidget {
   const _ErrorBanner({required this.message});
@@ -222,7 +216,7 @@ class _ErrorBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer,
+        color:        theme.colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -234,7 +228,8 @@ class _ErrorBanner extends StatelessWidget {
             child: Text(
               message,
               style: TextStyle(
-                  color: theme.colorScheme.onErrorContainer, fontSize: 13),
+                  color:    theme.colorScheme.onErrorContainer,
+                  fontSize: 13),
             ),
           ),
         ],
@@ -249,21 +244,17 @@ class _GoogleIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 20,
-      height: 20,
+      width: 20, height: 20,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color:        Colors.white,
         borderRadius: BorderRadius.circular(2),
       ),
       alignment: Alignment.center,
-      child: const Text(
-        'G',
-        style: TextStyle(
-          color: Color(0xFF4285F4),
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
-      ),
+      child: const Text('G',
+          style: TextStyle(
+              color:      Color(0xFF4285F4),
+              fontWeight: FontWeight.bold,
+              fontSize:   14)),
     );
   }
 }

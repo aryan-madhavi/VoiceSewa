@@ -1,24 +1,4 @@
 // lib/features/translate_call/application/call_controller.dart
-//
-// The core of the feature. AsyncNotifier<CallState> that owns:
-//
-//   ┌─ Lifecycle ──────────────────────────────────────────────────────────────
-//   │  initiateCall()  — caller side: create backend session, write Firestore,
-//   │                    watch for receiver accepting
-//   │  acceptCall()    — receiver side: update Firestore, connect WebSocket
-//   │  declineCall()   — receiver side: update Firestore status
-//   │  hangUp()        — either side: disconnect everything, update Firestore
-//   │  toggleMute()    — pause / resume microphone recording
-//   └──────────────────────────────────────────────────────────────────────────
-//
-//   ┌─ Audio ──────────────────────────────────────────────────────────────────
-//   │  Microphone   → record package streams PCM16 @ 16 kHz
-//   │  Backend      → WS binary frames → just_audio _PcmStreamAudioSource
-//   └──────────────────────────────────────────────────────────────────────────
-//
-//   ┌─ State machine ──────────────────────────────────────────────────────────
-//   │  idle → ringingOutgoing / ringingIncoming → connecting → active → ended
-//   └──────────────────────────────────────────────────────────────────────────
 
 import 'dart:async';
 import 'dart:typed_data';
@@ -28,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../../core/constants.dart';
 import '../data/translate_call_repository.dart';
@@ -40,26 +19,26 @@ import 'providers.dart';
 
 enum CallPhase {
   idle,
-  ringingOutgoing, // Caller waiting — receiver being notified via FCM
-  ringingIncoming, // Receiver seeing incoming call screen
-  connecting,      // WebSocket handshake in progress
-  active,          // Both users connected, translation pipeline running
-  ended,           // Call finished — brief summary state before returning idle
+  ringingOutgoing,
+  ringingIncoming,
+  connecting,
+  active,
+  ended,
 }
 
 // ── CallState ─────────────────────────────────────────────────────────────────
 
 class CallState {
   const CallState({
-    this.phase           = CallPhase.idle,
+    this.phase             = CallPhase.idle,
     this.sessionId,
     this.session,
     this.myLanguage,
     this.partnerLanguage,
-    this.myTranscript    = '',
+    this.myTranscript      = '',
     this.partnerTranscript = '',
-    this.isMuted         = false,
-    this.callDuration    = Duration.zero,
+    this.isMuted           = false,
+    this.callDuration      = Duration.zero,
     this.error,
   });
 
@@ -68,23 +47,16 @@ class CallState {
   final CallSession? session;
   final CallLanguage? myLanguage;
   final CallLanguage? partnerLanguage;
-
-  /// Live STT caption of what I am saying (interim + final from backend)
   final String myTranscript;
-
-  /// Live STT caption of what the partner is saying
   final String partnerTranscript;
-
   final bool isMuted;
   final Duration callDuration;
-
-  /// Non-null when a recoverable error occurred (e.g. mic permission denied).
   final String? error;
 
-  bool get isActive   => phase == CallPhase.active;
-  bool get isRinging  => phase == CallPhase.ringingOutgoing ||
-                         phase == CallPhase.ringingIncoming;
-  bool get isIdle     => phase == CallPhase.idle;
+  bool get isActive  => phase == CallPhase.active;
+  bool get isRinging => phase == CallPhase.ringingOutgoing ||
+                        phase == CallPhase.ringingIncoming;
+  bool get isIdle    => phase == CallPhase.idle;
 
   CallState copyWith({
     CallPhase? phase,
@@ -108,33 +80,26 @@ class CallState {
         partnerTranscript: partnerTranscript ?? this.partnerTranscript,
         isMuted:           isMuted          ?? this.isMuted,
         callDuration:      callDuration     ?? this.callDuration,
-        error:             error,           // null clears the error — intentional
+        error:             error,
       );
 }
 
 // ── Controller ────────────────────────────────────────────────────────────────
 
 class CallController extends AsyncNotifier<CallState> {
-  // ── Resources ─────────────────────────────────────────────────────────────
   final _recorder   = AudioRecorder();
   final _player     = AudioPlayer();
-  final _uuid       = const Uuid();
-
-  // PCM chunks from backend are pushed here; _PcmStreamAudioSource reads them
   final _audioQueue = StreamController<Uint8List>.broadcast();
 
-  // Active subscriptions
-  StreamSubscription<WsEvent>?   _wsEventSub;
-  StreamSubscription<List<int>>? _audioStreamSub;
+  StreamSubscription<WsEvent>?     _wsEventSub;
+  StreamSubscription<List<int>>?   _audioStreamSub;
   StreamSubscription<CallSession>? _firestoreSub;
 
-  // Timers
   Timer? _callTimer;
   Timer? _ringingTimer;
+  Timer? _connectingTimeoutTimer;
 
   DateTime? _callStartTime;
-
-  // ── build ─────────────────────────────────────────────────────────────────
 
   @override
   Future<CallState> build() async {
@@ -142,20 +107,17 @@ class CallController extends AsyncNotifier<CallState> {
     return const CallState();
   }
 
-  // ── Public actions ────────────────────────────────────────────────────────
+  // ── Initiate call (caller side) ───────────────────────────────────────────
 
-  /// Caller initiates a call to [receiverUid].
   Future<void> initiateCall({
     required String receiverUid,
     required String receiverName,
-    required String receiverFcmToken,
     required CallLanguage myLanguage,
     required CallLanguage partnerLanguage,
   }) async {
     state = const AsyncLoading();
 
     try {
-      // 1. Microphone permission
       final micOk = await _requestMic();
       if (!micOk) {
         state = AsyncData(const CallState(
@@ -167,10 +129,17 @@ class CallController extends AsyncNotifier<CallState> {
       final repo = ref.read(translateCallRepositoryProvider);
       final user = ref.read(firebaseAuthProvider).currentUser!;
 
-      // 2. Create backend session — returns the sessionId
+      // Fetch receiver FCM token from Firestore
+      final receiverFcmToken = await repo.fetchReceiverFcmToken(receiverUid);
+      if (receiverFcmToken == null) {
+        state = AsyncData(const CallState(
+          error: 'Could not reach this contact. They may be offline.',
+        ));
+        return;
+      }
+
       final sessionId = await repo.createBackendSession();
 
-      // 3. Write Firestore call doc (triggers Cloud Function → FCM to receiver)
       final session = CallSession(
         sessionId:        sessionId,
         callerUid:        user.uid,
@@ -194,19 +163,27 @@ class CallController extends AsyncNotifier<CallState> {
         partnerLanguage: partnerLanguage,
       ));
 
-      // 4. Watch Firestore for receiver accepting / declining
       _watchForAnswer(sessionId, myLanguage, partnerLanguage);
 
-      // 5. Auto-miss after timeout
       _ringingTimer = Timer(AppConstants.ringingTimeout, () {
         _handleMissed(sessionId);
       });
     } catch (e, st) {
-      state = AsyncError(e, st);
+      debugPrint('[CallController] initiateCall error: $e\n$st');
+      state = AsyncData(CallState(error: _friendlyError(e)));
     }
   }
 
-  /// Receiver accepts an incoming call.
+  // ── Accept call (receiver side) ───────────────────────────────────────────
+  //
+  // ORDER MATTERS:
+  //   1. Connect WS first → receiver is ready on the backend
+  //   2. Then set Firestore status=active → caller sees it and connects
+  //
+  // If we set Firestore first, the caller may connect to the backend before
+  // the receiver, and the backend may never fire call_started because
+  // user-index-0 (receiver) arrived after user-index-1 (caller).
+
   Future<void> acceptCall({
     required CallSession incomingSession,
     required CallLanguage myLanguage,
@@ -216,9 +193,7 @@ class CallController extends AsyncNotifier<CallState> {
     try {
       final micOk = await _requestMic();
       if (!micOk) {
-        state = AsyncData(const CallState(
-          error: 'Microphone permission required.',
-        ));
+        state = AsyncData(const CallState(error: 'Microphone permission required.'));
         return;
       }
 
@@ -226,11 +201,7 @@ class CallController extends AsyncNotifier<CallState> {
       final partnerLang   = CallLanguage.fromSourceLang(incomingSession.callerLang);
       final notifications = ref.read(notificationServiceProvider);
 
-      // Dismiss the heads-up notification
       await notifications.dismissIncomingCall(incomingSession.sessionId);
-
-      // Update Firestore → caller's watchCallSession emits active
-      await repo.updateCallStatus(incomingSession.sessionId, CallStatus.active);
 
       state = AsyncData(CallState(
         phase:           CallPhase.connecting,
@@ -240,35 +211,52 @@ class CallController extends AsyncNotifier<CallState> {
         partnerLanguage: partnerLang,
       ));
 
+      // Step 1: connect WS (receiver joins the backend session first)
       await _connectAndStartAudio(
         sessionId:       incomingSession.sessionId,
         myLanguage:      myLanguage,
         partnerLanguage: partnerLang,
       );
+
+      // Step 2: signal Firestore → caller connects WS
+      await repo.updateCallStatus(incomingSession.sessionId, CallStatus.active);
+
+      // Guard: if call_started never arrives within 30s, abort
+      _startConnectingTimeout(incomingSession.sessionId);
     } catch (e, st) {
-      state = AsyncError(e, st);
+      debugPrint('[CallController] acceptCall error: $e\n$st');
+      await _cleanup();
+      state = AsyncData(CallState(error: _friendlyError(e)));
     }
   }
 
-  /// Receiver declines an incoming call.
+  // ── Decline call (receiver side) ──────────────────────────────────────────
+
   Future<void> declineCall(String sessionId) async {
     final repo          = ref.read(translateCallRepositoryProvider);
     final notifications = ref.read(notificationServiceProvider);
 
     await notifications.dismissIncomingCall(sessionId);
-    await repo.updateCallStatus(sessionId, CallStatus.declined);
+
+    try {
+      await repo.updateCallStatus(sessionId, CallStatus.declined);
+    } catch (e) {
+      debugPrint('[CallController] declineCall error: $e');
+    }
 
     state = const AsyncData(CallState());
   }
 
-  /// Either side hangs up the active or ringing call.
+  // ── Hang up (either side) ─────────────────────────────────────────────────
+
   Future<void> hangUp() async {
-    final current    = state.valueOrNull;
-    final sessionId  = current?.sessionId;
-    final startTime  = _callStartTime;
-    final session    = current?.session;
+    final current   = state.valueOrNull;
+    final sessionId = current?.sessionId;
+    final startTime = _callStartTime;
+    final session   = current?.session;
 
     _ringingTimer?.cancel();
+    _connectingTimeoutTimer?.cancel();
     await _cleanup();
 
     if (sessionId != null) {
@@ -277,37 +265,39 @@ class CallController extends AsyncNotifier<CallState> {
           ? DateTime.now().difference(startTime).inSeconds
           : null;
 
-      await repo.updateCallStatus(
-        sessionId,
-        CallStatus.ended,
-        endedAt:         DateTime.now(),
-        durationSeconds: duration,
-      );
+      try {
+        await repo.updateCallStatus(
+          sessionId,
+          CallStatus.ended,
+          endedAt:         DateTime.now(),
+          durationSeconds: duration,
+        );
 
-      // Update history entries for both participants
-      if (session != null && duration != null) {
-        final data = {
-          'status':          CallStatus.ended.name,
-          'endedAt':         DateTime.now(),
-          'durationSeconds': duration,
-        };
-        await repo.updateHistoryEntry(session.callerUid,   sessionId, data);
-        await repo.updateHistoryEntry(session.receiverUid, sessionId, data);
+        if (session != null && duration != null) {
+          final data = {
+            'status':          CallStatus.ended.name,
+            'endedAt':         DateTime.now(),
+            'durationSeconds': duration,
+          };
+          await repo.updateHistoryEntry(session.callerUid,   sessionId, data);
+          await repo.updateHistoryEntry(session.receiverUid, sessionId, data);
+        }
+
+        await repo.endBackendSession(sessionId);
+      } catch (e) {
+        debugPrint('[CallController] hangUp cleanup error: $e');
       }
-
-      await repo.endBackendSession(sessionId);
     }
 
     state = const AsyncData(CallState(phase: CallPhase.ended));
-
-    // Return to idle after a brief summary pause
     await Future.delayed(const Duration(seconds: 2));
     if (state.valueOrNull?.phase == CallPhase.ended) {
       state = const AsyncData(CallState());
     }
   }
 
-  /// Toggle microphone mute. No-op when call is not active.
+  // ── Toggle mute ───────────────────────────────────────────────────────────
+
   void toggleMute() {
     final current = state.valueOrNull;
     if (current == null || !current.isActive) return;
@@ -335,8 +325,10 @@ class CallController extends AsyncNotifier<CallState> {
       (session) async {
         switch (session.status) {
           case CallStatus.active:
-            // Receiver accepted
+            // Receiver is already connected to WS (they connected before
+            // updating Firestore). Cancel ringing timer and connect our WS.
             _ringingTimer?.cancel();
+
             state = AsyncData(CallState(
               phase:           CallPhase.connecting,
               sessionId:       sessionId,
@@ -344,11 +336,18 @@ class CallController extends AsyncNotifier<CallState> {
               myLanguage:      myLanguage,
               partnerLanguage: partnerLanguage,
             ));
-            await _connectAndStartAudio(
-              sessionId:       sessionId,
-              myLanguage:      myLanguage,
-              partnerLanguage: partnerLanguage,
-            );
+
+            try {
+              await _connectAndStartAudio(
+                sessionId:       sessionId,
+                myLanguage:      myLanguage,
+                partnerLanguage: partnerLanguage,
+              );
+              _startConnectingTimeout(sessionId);
+            } catch (e) {
+              debugPrint('[CallController] Caller WS connect error: $e');
+              _handleWsFatalError('Connection failed. Please try again.');
+            }
 
           case CallStatus.declined:
             _ringingTimer?.cancel();
@@ -365,15 +364,24 @@ class CallController extends AsyncNotifier<CallState> {
             await Future.delayed(const Duration(seconds: 2));
             state = const AsyncData(CallState());
 
+          case CallStatus.missed:
+            await _cleanup();
+            state = const AsyncData(
+              CallState(phase: CallPhase.ended, error: 'No answer'),
+            );
+            await Future.delayed(const Duration(seconds: 2));
+            state = const AsyncData(CallState());
+
           default:
             break;
         }
       },
-      onError: (Object e) => debugPrint('[CallController] Firestore error: $e'),
+      onError: (Object e) =>
+          debugPrint('[CallController] Firestore watch error: $e'),
     );
   }
 
-  // ── Internal: connect WebSocket + mic + playback ──────────────────────────
+  // ── Internal: connect WS + mic + playback ─────────────────────────────────
 
   Future<void> _connectAndStartAudio({
     required String sessionId,
@@ -389,7 +397,13 @@ class CallController extends AsyncNotifier<CallState> {
     );
 
     _wsEventSub?.cancel();
-    _wsEventSub = repo.wsEvents.listen(_handleWsEvent);
+    _wsEventSub = repo.wsEvents.listen(
+      _handleWsEvent,
+      onError: (Object e) {
+        debugPrint('[CallController] WS stream error: $e');
+        _handleWsFatalError('Connection lost. Please try again.');
+      },
+    );
 
     await _startPlayback();
     await _startRecording();
@@ -402,13 +416,17 @@ class CallController extends AsyncNotifier<CallState> {
 
     switch (event) {
       case WsConnectedEvent():
-        // Wait for call_started before going active
-        break;
+        debugPrint('[CallController] WS connected, awaiting call_started');
 
       case WsCallStartedEvent():
+        _connectingTimeoutTimer?.cancel();
         _callStartTime = DateTime.now();
         _startCallTimer();
-        state = AsyncData(current.copyWith(phase: CallPhase.active));
+        state = AsyncData(current.copyWith(
+          phase: CallPhase.active,
+          error: null,
+        ));
+        debugPrint('[CallController] Call active');
 
       case WsTranscriptEvent(:final text, :final isFinal, :final lang):
         final isMe = lang == current.myLanguage?.sourceLang;
@@ -424,13 +442,52 @@ class CallController extends AsyncNotifier<CallState> {
         _audioQueue.add(pcmBytes);
 
       case WsPartnerLeftEvent():
+        debugPrint('[CallController] Partner left');
         hangUp();
 
       case WsErrorEvent(:final code, :final message):
         debugPrint('[WS] $code: $message');
-        // Non-fatal: surface to UI but keep call alive
-        state = AsyncData(current.copyWith(error: message));
+        const fatalCodes = {'SESSION_NOT_FOUND', 'AUTH_FAILED', 'WS_ERROR'};
+        if (fatalCodes.contains(code)) {
+          _handleWsFatalError(message);
+        } else {
+          state = AsyncData(current.copyWith(error: message));
+        }
     }
+  }
+
+  // ── Connecting timeout ────────────────────────────────────────────────────
+
+  void _startConnectingTimeout(String sessionId) {
+    _connectingTimeoutTimer?.cancel();
+    _connectingTimeoutTimer = Timer(
+      const Duration(seconds: 30),
+      () {
+        if (state.valueOrNull?.phase == CallPhase.connecting) {
+          debugPrint('[CallController] Connecting timeout');
+          _handleWsFatalError('Could not connect. Please try again.');
+        }
+      },
+    );
+  }
+
+  void _handleWsFatalError(String message) {
+    final sessionId = state.valueOrNull?.sessionId;
+    _cleanup().then((_) async {
+      if (sessionId != null) {
+        try {
+          final repo = ref.read(translateCallRepositoryProvider);
+          await repo.updateCallStatus(sessionId, CallStatus.ended,
+              endedAt: DateTime.now());
+          await repo.endBackendSession(sessionId);
+        } catch (_) {}
+      }
+      state = AsyncData(CallState(phase: CallPhase.ended, error: message));
+      await Future.delayed(const Duration(seconds: 3));
+      if (state.valueOrNull?.phase == CallPhase.ended) {
+        state = const AsyncData(CallState());
+      }
+    });
   }
 
   void _clearTranscriptAfterDelay({required bool mine}) {
@@ -443,15 +500,13 @@ class CallController extends AsyncNotifier<CallState> {
     });
   }
 
-  // ── Audio: playback ───────────────────────────────────────────────────────
+  // ── Audio ─────────────────────────────────────────────────────────────────
 
   Future<void> _startPlayback() async {
     final source = _PcmStreamAudioSource(_audioQueue.stream);
     await _player.setAudioSource(source);
     await _player.play();
   }
-
-  // ── Audio: recording ──────────────────────────────────────────────────────
 
   Future<void> _startRecording() async {
     final repo   = ref.read(translateCallRepositoryProvider);
@@ -462,14 +517,11 @@ class CallController extends AsyncNotifier<CallState> {
         numChannels: 1,
       ),
     );
-
     _audioStreamSub = stream.listen((chunk) {
       if (state.valueOrNull?.isMuted == true) return;
       repo.sendAudio(Uint8List.fromList(chunk));
     });
   }
-
-  // ── Timer helpers ─────────────────────────────────────────────────────────
 
   void _startCallTimer() {
     _callTimer?.cancel();
@@ -483,50 +535,62 @@ class CallController extends AsyncNotifier<CallState> {
   }
 
   Future<void> _handleMissed(String sessionId) async {
-    final repo = ref.read(translateCallRepositoryProvider);
-    await repo.updateCallStatus(sessionId, CallStatus.missed);
+    if (state.valueOrNull?.phase != CallPhase.ringingOutgoing) return;
+    try {
+      final repo = ref.read(translateCallRepositoryProvider);
+      await repo.updateCallStatus(sessionId, CallStatus.missed);
+    } catch (e) {
+      debugPrint('[CallController] _handleMissed error: $e');
+    }
     await _cleanup();
-    state = const AsyncData(
-      CallState(phase: CallPhase.ended, error: 'No answer'),
-    );
+    state = const AsyncData(CallState(phase: CallPhase.ended, error: 'No answer'));
     await Future.delayed(const Duration(seconds: 2));
     state = const AsyncData(CallState());
   }
-
-  // ── Permissions ───────────────────────────────────────────────────────────
 
   Future<bool> _requestMic() async {
     final status = await Permission.microphone.request();
     return status.isGranted;
   }
 
-  // ── Cleanup ───────────────────────────────────────────────────────────────
-
   Future<void> _cleanup() async {
     _callTimer?.cancel();
     _ringingTimer?.cancel();
+    _connectingTimeoutTimer?.cancel();
     _firestoreSub?.cancel();
     _wsEventSub?.cancel();
     _audioStreamSub?.cancel();
 
-    await _recorder.stop();
-    await _player.stop();
+    try { await _recorder.stop(); } catch (_) {}
+    try { await _player.stop();   } catch (_) {}
 
-    final repo = ref.read(translateCallRepositoryProvider);
-    await repo.disconnectWebSocket();
+    try {
+      final repo = ref.read(translateCallRepositoryProvider);
+      await repo.disconnectWebSocket();
+    } catch (_) {}
 
-    _callTimer      = null;
-    _ringingTimer   = null;
-    _firestoreSub   = null;
-    _wsEventSub     = null;
-    _audioStreamSub = null;
-    _callStartTime  = null;
+    _callTimer              = null;
+    _ringingTimer           = null;
+    _connectingTimeoutTimer = null;
+    _firestoreSub           = null;
+    _wsEventSub             = null;
+    _audioStreamSub         = null;
+    _callStartTime          = null;
+  }
+
+  static String _friendlyError(Object e) {
+    final msg = e.toString();
+    if (msg.contains('permission-denied')) {
+      return 'Permission denied. Check Firestore security rules.';
+    }
+    if (msg.contains('network') || msg.contains('unavailable')) {
+      return 'Network error. Check your connection.';
+    }
+    return 'Something went wrong. Please try again.';
   }
 }
 
 // ── Custom just_audio source for raw PCM stream ───────────────────────────────
-// just_audio doesn't support raw PCM out of the box, so we wrap the
-// incoming audio chunk stream in a StreamAudioSource.
 
 class _PcmStreamAudioSource extends StreamAudioSource {
   _PcmStreamAudioSource(this._stream);

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../application/auth_controller.dart';
-import '../application/providers.dart';
+import '../application/auth_providers.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -233,7 +233,7 @@ class _ErrorBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.errorContainer,
+        color:        theme.colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -245,7 +245,8 @@ class _ErrorBanner extends StatelessWidget {
             child: Text(
               message,
               style: TextStyle(
-                  color: theme.colorScheme.onErrorContainer, fontSize: 13),
+                  color:    theme.colorScheme.onErrorContainer,
+                  fontSize: 13),
             ),
           ),
         ],

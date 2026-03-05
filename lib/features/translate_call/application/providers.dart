@@ -2,12 +2,15 @@
 //
 // Providers scoped to the translate_call feature.
 // Firebase singletons (firebaseAuthProvider, firestoreProvider,
-// currentUserProvider) live in auth/application/auth_providers.dart
-// and are imported from there — this file never re-declares them.
+// currentUserProvider, currentUserProfileProvider) live in
+// auth/application/auth_providers.dart and are imported from there.
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../auth/application/providers.dart';
+import '../../../../core/constants.dart';
+import '../../auth/application/auth_providers.dart';
+import '../../auth/domain/user_profile.dart';
 import '../data/call_history_repository.dart';
 import '../../auth/data/fcm_service.dart';
 import '../data/notification_service.dart';
@@ -19,9 +22,13 @@ import 'call_controller.dart';
 import 'call_history_controller.dart';
 
 // Re-export auth providers so the rest of translate_call only needs
-// to import this one file (no change to call_controller.dart imports).
-export '../../auth/application/providers.dart'
-    show firebaseAuthProvider, firestoreProvider, currentUserProvider;
+// to import this one file.
+export '../../auth/application/auth_providers.dart'
+    show
+        firebaseAuthProvider,
+        firestoreProvider,
+        currentUserProvider,
+        currentUserProfileProvider;
 
 // ── Services ──────────────────────────────────────────────────────────────────
 
@@ -57,6 +64,8 @@ final callHistoryRepositoryProvider = Provider<CallHistoryRepository>(
 
 // ── Language selection ────────────────────────────────────────────────────────
 
+/// Initialised from the user's Firestore profile once it loads.
+/// Defaults to hindi until the profile is available.
 final selectedLanguageProvider = StateProvider<CallLanguage>(
   (_) => CallLanguage.hindi,
 );
@@ -86,6 +95,33 @@ final incomingCallProvider = StreamProvider<CallSession?>(
       data:    (user) => user == null
                            ? const Stream.empty()
                            : repo.watchIncomingCall(user.uid),
+      loading: () => const Stream.empty(),
+      error:   (_, __) => const Stream.empty(),
+    );
+  },
+);
+
+// ── All users stream (contact list) ──────────────────────────────────────────
+
+/// Streams all registered users from Firestore, excluding the current user.
+/// Used by HomeScreen to display the contact list.
+final allUsersProvider = StreamProvider<List<UserProfile>>(
+  (ref) {
+    final userAsync = ref.watch(currentUserProvider);
+    final firestore = ref.watch(firestoreProvider);
+
+    return userAsync.when(
+      data: (user) {
+        if (user == null) return const Stream.empty();
+        return firestore
+            .collection(AppConstants.usersCollection)
+            .orderBy('displayName')
+            .snapshots()
+            .map((snap) => snap.docs
+                .map(UserProfile.fromFirestore)
+                .where((u) => u.uid != user.uid) // exclude self
+                .toList());
+      },
       loading: () => const Stream.empty(),
       error:   (_, __) => const Stream.empty(),
     );

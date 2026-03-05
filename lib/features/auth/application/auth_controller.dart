@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/auth_repository.dart';
-import 'providers.dart';
+import 'auth_providers.dart';
 
 class AuthController extends AsyncNotifier<void> {
   late AuthRepository _repo;
