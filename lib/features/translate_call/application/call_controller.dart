@@ -129,7 +129,6 @@ class CallController extends AsyncNotifier<CallState> {
       final repo = ref.read(translateCallRepositoryProvider);
       final user = ref.read(firebaseAuthProvider).currentUser!;
 
-      // Fetch receiver FCM token from Firestore
       final receiverFcmToken = await repo.fetchReceiverFcmToken(receiverUid);
       if (receiverFcmToken == null) {
         state = AsyncData(const CallState(
@@ -176,24 +175,29 @@ class CallController extends AsyncNotifier<CallState> {
 
   // ── Accept call (receiver side) ───────────────────────────────────────────
   //
-  // ORDER MATTERS:
-  //   1. Connect WS first → receiver is ready on the backend
-  //   2. Then set Firestore status=active → caller sees it and connects
+  // KEY ORDER:
+  //   1. Keep phase=ringingIncoming (stay on incoming-call screen)
+  //   2. Connect WebSocket — receiver joins backend session
+  //   3. Update Firestore status=active — caller sees it and connects
+  //   4. ONLY THEN set phase=connecting — router now transitions to active-call
   //
-  // If we set Firestore first, the caller may connect to the backend before
-  // the receiver, and the backend may never fire call_started because
-  // user-index-0 (receiver) arrived after user-index-1 (caller).
+  // Setting phase=connecting earlier would trigger the router redirect to
+  // /active-call BEFORE the WS is established, breaking the connection flow.
 
   Future<void> acceptCall({
     required CallSession incomingSession,
     required CallLanguage myLanguage,
   }) async {
-    state = const AsyncLoading();
+    // Do NOT set AsyncLoading here — it clears the state and the router
+    // would see callPhase=null and possibly redirect away from /incoming-call.
+    // Instead keep current state while we do the setup work.
 
     try {
       final micOk = await _requestMic();
       if (!micOk) {
-        state = AsyncData(const CallState(error: 'Microphone permission required.'));
+        state = AsyncData(const CallState(
+          error: 'Microphone permission required.',
+        ));
         return;
       }
 
@@ -201,8 +205,24 @@ class CallController extends AsyncNotifier<CallState> {
       final partnerLang   = CallLanguage.fromSourceLang(incomingSession.callerLang);
       final notifications = ref.read(notificationServiceProvider);
 
+      // Dismiss notification banner immediately on tap
       await notifications.dismissIncomingCall(incomingSession.sessionId);
 
+      // Step 1: Connect WebSocket — receiver must be on backend BEFORE
+      // updating Firestore, otherwise caller connects first and waits alone.
+      await _connectAndStartAudio(
+        sessionId:       incomingSession.sessionId,
+        myLanguage:      myLanguage,
+        partnerLanguage: partnerLang,
+      );
+      debugPrint('[CallController] Receiver WS connected');
+
+      // Step 2: Now signal caller via Firestore
+      await repo.updateCallStatus(incomingSession.sessionId, CallStatus.active);
+      debugPrint('[CallController] Firestore status=active written');
+
+      // Step 3: ONLY NOW set connecting phase — router transitions to /active-call.
+      // WS is already established so call_started can arrive immediately.
       state = AsyncData(CallState(
         phase:           CallPhase.connecting,
         sessionId:       incomingSession.sessionId,
@@ -211,22 +231,18 @@ class CallController extends AsyncNotifier<CallState> {
         partnerLanguage: partnerLang,
       ));
 
-      // Step 1: connect WS (receiver joins the backend session first)
-      await _connectAndStartAudio(
-        sessionId:       incomingSession.sessionId,
-        myLanguage:      myLanguage,
-        partnerLanguage: partnerLang,
-      );
-
-      // Step 2: signal Firestore → caller connects WS
-      await repo.updateCallStatus(incomingSession.sessionId, CallStatus.active);
-
       // Guard: if call_started never arrives within 30s, abort
       _startConnectingTimeout(incomingSession.sessionId);
+
     } catch (e, st) {
       debugPrint('[CallController] acceptCall error: $e\n$st');
       await _cleanup();
-      state = AsyncData(CallState(error: _friendlyError(e)));
+      state = AsyncData(CallState(
+        phase: CallPhase.ended,
+        error: _friendlyError(e),
+      ));
+      await Future.delayed(const Duration(seconds: 3));
+      state = const AsyncData(CallState());
     }
   }
 
@@ -311,7 +327,7 @@ class CallController extends AsyncNotifier<CallState> {
     state = AsyncData(current.copyWith(isMuted: muted));
   }
 
-  // ── Internal: watch Firestore for receiver response (caller side) ─────────
+  // ── Watch Firestore for receiver response (caller side) ───────────────────
 
   void _watchForAnswer(
     String sessionId,
@@ -325,8 +341,8 @@ class CallController extends AsyncNotifier<CallState> {
       (session) async {
         switch (session.status) {
           case CallStatus.active:
-            // Receiver is already connected to WS (they connected before
-            // updating Firestore). Cancel ringing timer and connect our WS.
+            // Receiver is already on the backend WS (they connected before
+            // writing Firestore). Safe to connect our WS now.
             _ringingTimer?.cancel();
 
             state = AsyncData(CallState(
@@ -381,7 +397,7 @@ class CallController extends AsyncNotifier<CallState> {
     );
   }
 
-  // ── Internal: connect WS + mic + playback ─────────────────────────────────
+  // ── Connect WS + mic + playback ───────────────────────────────────────────
 
   Future<void> _connectAndStartAudio({
     required String sessionId,

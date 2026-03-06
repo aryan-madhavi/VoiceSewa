@@ -1,9 +1,8 @@
 // lib/features/translate_call/presentation/home_screen.dart
 //
-// Contact list populated from Firestore users collection.
-// All users (except self) are shown as callable contacts.
-// The language strip reflects the user's stored preference and saves
-// any changes back to their Firestore profile.
+// Contact list populated live from Firestore via allUsersProvider.
+// Language strip seeded from currentUserProfileProvider and persisted
+// back to Firestore on change.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,14 +30,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final profileAsync = ref.watch(currentUserProfileProvider);
     final theme        = Theme.of(context);
 
-    // Sync selectedLanguageProvider with the user's stored preference
-    // once the profile loads (only on first load, not on every rebuild)
+    // Seed selectedLanguageProvider from the user's stored Firestore
+    // preference once on first load — not on every rebuild.
     profileAsync.whenData((profile) {
       if (profile != null && !_languageInitialised) {
         _languageInitialised = true;
         final stored = CallLanguage.fromSourceLang(profile.language);
         if (stored != ref.read(selectedLanguageProvider)) {
-          // Use addPostFrameCallback to avoid setState during build
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               ref.read(selectedLanguageProvider.notifier).state = stored;
@@ -69,39 +67,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Language selector strip ──────────────────────────────────────
           _LanguageStrip(
             selected: myLanguage,
             onTap:    () => _showLanguageSheet(context, ref),
           ),
 
-          // ── Section label ────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
             child: Text(
               'CONTACTS',
               style: theme.textTheme.labelSmall?.copyWith(
-                color:       theme.colorScheme.onSurfaceVariant,
+                color:        theme.colorScheme.onSurfaceVariant,
                 letterSpacing: 1.2,
               ),
             ),
           ),
 
-          // ── Contact list from Firestore ──────────────────────────────────
           Expanded(
             child: usersAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error:   (e, _) => Center(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Text('Could not load contacts: $e',
-                      textAlign: TextAlign.center),
+                  child: Text(
+                    'Could not load contacts: $e',
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
               data: (users) {
-                if (users.isEmpty) {
-                  return const _EmptyContacts();
-                }
+                if (users.isEmpty) return const _EmptyContacts();
                 return ListView.separated(
                   padding:          const EdgeInsets.fromLTRB(16, 0, 16, 24),
                   itemCount:        users.length,
@@ -119,8 +115,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
-
-  // ── Language bottom sheet ──────────────────────────────────────────────────
 
   void _showLanguageSheet(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
@@ -140,12 +134,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               controller:       controller,
               padding:          const EdgeInsets.fromLTRB(16, 16, 16, 32),
               itemCount:        CallLanguage.values.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, indent: 56),
+              separatorBuilder: (_, __) =>
+                  const Divider(height: 1, indent: 56),
               itemBuilder: (_, i) {
                 final lang       = CallLanguage.values[i];
                 final isSelected = lang == selected;
                 return ListTile(
-                  leading: Text(lang.flag,
+                  leading:  Text(lang.flag,
                       style: const TextStyle(fontSize: 24)),
                   title:    Text(lang.nativeLabel),
                   subtitle: Text(lang.label),
@@ -155,7 +150,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       : null,
                   onTap: () {
                     ref.read(selectedLanguageProvider.notifier).state = lang;
-                    // Persist the choice to Firestore
                     _saveLanguage(ref, lang);
                     Navigator.pop(ctx);
                   },
@@ -168,7 +162,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Persists the selected language to the current user's Firestore doc.
   void _saveLanguage(WidgetRef ref, CallLanguage lang) {
     final uid = ref.read(firebaseAuthProvider).currentUser?.uid;
     if (uid == null) return;
@@ -177,8 +170,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .updateUserLanguage(uid, lang.sourceLang);
   }
 
-  // ── Initiate call ──────────────────────────────────────────────────────────
-
   Future<void> _call(
     BuildContext context,
     WidgetRef ref,
@@ -186,14 +177,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     CallLanguage myLanguage,
   ) async {
     final partnerLanguage = CallLanguage.fromSourceLang(contact.language);
-
     await ref.read(callControllerProvider.notifier).initiateCall(
-          receiverUid:     contact.uid,
-          receiverName:    contact.displayName,
-          myLanguage:      myLanguage,
-          partnerLanguage: partnerLanguage,
-        );
-    // Router redirect handles navigation to outgoing call screen
+      receiverUid:     contact.uid,
+      receiverName:    contact.displayName,
+      myLanguage:      myLanguage,
+      partnerLanguage: partnerLanguage,
+    );
   }
 }
 
@@ -274,6 +263,7 @@ class _ContactTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme           = Theme.of(context);
     final contactLanguage = CallLanguage.fromSourceLang(user.language);
+    final canCall         = user.fcmToken != null;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -284,7 +274,6 @@ class _ContactTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Avatar
           CircleAvatar(
             radius:          22,
             backgroundColor: theme.colorScheme.primaryContainer,
@@ -301,7 +290,6 @@ class _ContactTile extends StatelessWidget {
           ),
           const SizedBox(width: 14),
 
-          // Name + language
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,7 +309,6 @@ class _ContactTile extends StatelessWidget {
             ),
           ),
 
-          // Translation arrow preview
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Text(
@@ -330,13 +317,15 @@ class _ContactTile extends StatelessWidget {
             ),
           ),
 
-          // Call button — disabled if FCM token is missing (user never opened app)
-          IconButton.filled(
-            onPressed: user.fcmToken != null ? onCall : null,
-            icon:      const Icon(Icons.call_rounded),
-            tooltip:   user.fcmToken != null
+          // Disabled when contact has no FCM token (never opened the app)
+          Tooltip(
+            message: canCall
                 ? 'Call ${user.displayName}'
-                : '${user.displayName} is not reachable',
+                : '${user.displayName} is not reachable right now',
+            child: IconButton.filled(
+              onPressed: canCall ? onCall : null,
+              icon: const Icon(Icons.call_rounded),
+            ),
           ),
         ],
       ),
@@ -374,7 +363,8 @@ class _EmptyContacts extends StatelessWidget {
               'Other users will appear here once they sign up.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.65)),
+                  color: theme.colorScheme.onSurfaceVariant
+                      .withOpacity(0.65)),
             ),
           ],
         ),
