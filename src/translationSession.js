@@ -27,7 +27,7 @@ function buildSttConfig(languageCode) {
       sampleRateHertz:            16000,
       languageCode,
       enableAutomaticPunctuation: true,
-      model:                      'phone_call',
+      model:                      'latest_long',
       useEnhanced:                true,
     },
     interimResults: true,
