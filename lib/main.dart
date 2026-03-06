@@ -1,5 +1,8 @@
 // lib/main.dart
 
+import 'dart:async';
+
+import 'package:call_translate/features/translate_call/domain/call_session.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -142,6 +145,11 @@ final _routerNotifierProvider =
 // ── Router ────────────────────────────────────────────────────────────────────
 
 final routerProvider = Provider<GoRouter>((ref) {
+  // FIX: watch the provider VALUE (not just .notifier) so that
+  // _RouterNotifier.build() actually runs and subscribes to
+  // incomingCallProvider. Without this, the Firestore stream never
+  // starts and ref.read(incomingCallProvider) always returns AsyncLoading.
+  ref.watch(_routerNotifierProvider);
   final notifier = ref.watch(_routerNotifierProvider.notifier);
   return GoRouter(
     initialLocation:   '/splash',
@@ -228,19 +236,9 @@ class _CallTranslateAppState extends ConsumerState<CallTranslateApp> {
     super.initState();
 
     // ── Step 1: Register the notification tap handler FIRST ──────────────
-    // This must happen before the second init() call below so that
-    // _handleLaunchNotification() (called inside init()) can use it.
-    //
-    // What happens on tap:
-    //   • The incomingCallProvider Firestore stream already has the session
-    //     (it started as soon as the user logged in).
-    //   • We just need to trigger a router re-evaluation — it will see
-    //     incomingCall != null and redirect to /incoming-call automatically.
     NotificationService.instance.setOnNotificationTap((sessionId) {
       debugPrint('[App] notification tap → sessionId=$sessionId');
-      // Trigger router refresh — incomingCallProvider has the session,
-      // redirect rule will send user to /incoming-call.
-      ref.read(_routerNotifierProvider.notifier).notifyListeners();
+      _navigateToIncomingCall();
     });
 
     // ── Step 2: Re-init NotificationService now that tap handler is set ──
@@ -256,10 +254,63 @@ class _CallTranslateAppState extends ConsumerState<CallTranslateApp> {
       ref.read(fcmServiceProvider).init(
         onCallNotificationTap: (sessionId) {
           debugPrint('[FCM] tap → sessionId=$sessionId');
-          ref.read(_routerNotifierProvider.notifier).notifyListeners();
+          _navigateToIncomingCall();
         },
       );
     });
+  }
+
+  // ── Notification tap → /incoming-call ────────────────────────────────────
+  //
+  // FIX: Simply calling notifyListeners() on tap was a race condition.
+  // redirect() reads incomingCallProvider with ref.read() — if the Firestore
+  // stream hasn't emitted yet (cold start, or stream just subscribed),
+  // valueOrNull is null and the redirect does nothing.
+  //
+  // Fix: poll incomingCallProvider until it has a non-null session (up to
+  // 5 seconds), then trigger the redirect. This covers all three tap scenarios:
+  //   A) Foreground — stream is live, emits immediately, 1st poll succeeds
+  //   B) Background — stream resumes quickly, usually 1-2 polls
+  //   C) Terminated — cold start, stream needs to connect, may take ~1-3s
+  void _navigateToIncomingCall() {
+    // FIX: ref.read(incomingCallProvider) only returns the cached snapshot.
+    // If the StreamProvider was never subscribed (build() never ran because
+    // routerProvider only watched .notifier not the value), the stream never
+    // started and valueOrNull is always null no matter how long we poll.
+    //
+    // Correct approach: use ref.listen which both subscribes the provider
+    // (starting the Firestore stream if not already running) AND gives us
+    // a callback the moment a non-null session arrives.
+    // We keep a reference to cancel the subscription after routing.
+
+    // Check immediately in case the stream already has data
+    final existing = ref.read(incomingCallProvider).valueOrNull;
+    if (existing != null) {
+      debugPrint('[App] incomingCall already in cache → navigating');
+      ref.read(_routerNotifierProvider.notifier).notifyListeners();
+      return;
+    }
+
+    debugPrint('[App] waiting for incomingCallProvider via listen...');
+
+    // Timeout guard
+    Timer? timeoutTimer;
+    ProviderSubscription<AsyncValue<CallSession?>>? sub;
+
+    timeoutTimer = Timer(const Duration(seconds: 8), () {
+      sub?.close();
+      debugPrint('[App] incomingCallProvider timed out — call may have ended');
+    });
+
+    sub = ref.listenManual(incomingCallProvider, (_, next) {
+      final session = next.valueOrNull;
+      if (session != null) {
+        timeoutTimer?.cancel();
+        sub?.close();
+        debugPrint('[App] incomingCallProvider emitted → navigating');
+        ref.read(_routerNotifierProvider.notifier).notifyListeners();
+      }
+    }, fireImmediately: true);
   }
 
   @override

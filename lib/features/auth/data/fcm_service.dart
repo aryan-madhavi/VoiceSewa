@@ -1,59 +1,85 @@
 // lib/features/auth/data/fcm_service.dart
 //
-// Manages the FCM lifecycle:
-//   1. Save FCM token to Firestore users/{uid}/fcmToken on init and rotation
-//   2. Foreground FCM messages → show local notification via NotificationService
-//   3. Background tap (onMessageOpenedApp) → call onCallNotificationTap
-//   4. Terminated tap (getInitialMessage) → call onCallNotificationTap
+// FIX (Bug A): saveToken() is now triggered by FirebaseAuth.authStateChanges()
+// so it runs the moment the user is confirmed signed-in, not at app init when
+// currentUser can still be null.
 //
-// The local notification tap (banner tap while app is open or in shade) is
-// handled entirely by NotificationService via onDidReceiveNotificationResponse.
-// FcmService only handles raw FCM message taps (background/terminated).
+// FIX (Bug C): Covers all sign-in paths (email, Google, cold start) because
+// authStateChanges() fires for all of them.
+//
+// FIX (Bug 5 from before): token also refreshed on AppLifecycleState.resumed.
+
+import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../../core/constants.dart';
 import '../../translate_call/data/notification_service.dart';
 
-class FcmService {
+class FcmService with WidgetsBindingObserver {
   FcmService({
     required FirebaseAuth auth,
     required FirebaseFirestore firestore,
   })  : _auth = auth,
         _firestore = firestore;
 
-  final FirebaseAuth _auth;
+  final FirebaseAuth      _auth;
   final FirebaseFirestore _firestore;
 
+  StreamSubscription<User?>? _authSub;
+  bool _observerRegistered = false;
+
   /// Call once from CallTranslateApp after ProviderScope is ready.
-  /// [onCallNotificationTap] is invoked with the sessionId whenever the user
-  /// opens the app by tapping an FCM notification (background or terminated).
   Future<void> init({
     required void Function(String sessionId) onCallNotificationTap,
   }) async {
-    // 1. Save token to Firestore
-    await saveToken();
+    // FIX (Bug A + C): Listen to auth state changes. Every time the user
+    // signs in (any method, including cold start where currentUser resolves
+    // asynchronously), immediately save the FCM token to Firestore.
+    // This replaces the one-shot saveToken() call at init time which raced
+    // against Firebase Auth resolving the current user.
+    _authSub?.cancel();
+    _authSub = _auth.authStateChanges().listen((user) {
+      if (user != null) {
+        debugPrint('[FCM] auth state: signed in uid=${user.uid}, saving token');
+        saveToken();
+      }
+    });
 
-    // 2. Re-save whenever FCM rotates the token
+    // Re-save whenever FCM rotates the token
     FirebaseMessaging.instance.onTokenRefresh.listen((_) => saveToken());
 
-    // 3. Foreground FCM message — show local notification
+    // Refresh on foreground resume — FCM may rotate while app is backgrounded
+    if (!_observerRegistered) {
+      WidgetsBinding.instance.addObserver(this);
+      _observerRegistered = true;
+    }
+
+    // Foreground FCM message — show local notification
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
-    // 4. Background tap — app was in background, user tapped FCM notification
+    // Background tap
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       debugPrint('[FCM] onMessageOpenedApp tap');
       _routeTap(message, onCallNotificationTap);
     });
 
-    // 5. Terminated tap — app was closed, user tapped FCM notification
+    // Terminated tap
     final initial = await FirebaseMessaging.instance.getInitialMessage();
     if (initial != null) {
       debugPrint('[FCM] getInitialMessage tap');
       _routeTap(initial, onCallNotificationTap);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      saveToken();
     }
   }
 
@@ -84,9 +110,6 @@ class FcmService {
 
     debugPrint('[FCM] foreground incoming call message');
 
-    // FCM does not show a notification when app is foregrounded.
-    // Show one manually via flutter_local_notifications so the user sees the
-    // banner and can tap it — NotificationService handles the tap.
     NotificationService.instance.showIncomingCall(
       sessionId:    message.data['sessionId']    ?? '',
       callerUid:    message.data['callerUid']    ?? '',
@@ -109,5 +132,13 @@ class FcmService {
     if (sessionId == null || sessionId.isEmpty) return;
 
     onTap(sessionId);
+  }
+
+  void dispose() {
+    _authSub?.cancel();
+    if (_observerRegistered) {
+      WidgetsBinding.instance.removeObserver(this);
+      _observerRegistered = false;
+    }
   }
 }

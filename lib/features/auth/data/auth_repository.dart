@@ -109,20 +109,22 @@ class AuthRepository {
     required String email,
     bool merge = false,
   }) async {
-    final profile = UserProfile(
-      uid:         uid,
-      displayName: displayName,
-      email:       email,
-      language:    'hi-IN', // default — user can change from home screen
-      createdAt:   DateTime.now(),
-    );
+    // FIX (Bug B): Never write fcmToken here — UserProfile.toFirestore()
+    // would write fcmToken:null (token unknown at sign-up time), which
+    // overwrites any previously saved token even under merge:true because
+    // the key is explicitly present. FcmService.saveToken() handles the
+    // token via its authStateChanges() listener instead.
+    final data = <String, dynamic>{
+      'uid':         uid,
+      'displayName': displayName,
+      'email':       email,
+      'language':    'hi-IN',
+      'createdAt':   FieldValue.serverTimestamp(),
+    };
 
     await _firestore
         .collection(AppConstants.usersCollection)
         .doc(uid)
-        .set(
-          profile.toFirestore(),
-          merge ? SetOptions(merge: true) : null,
-        );
+        .set(data, SetOptions(merge: true));
   }
 }

@@ -11,6 +11,7 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -214,16 +215,63 @@ class TranslateCallRepository {
   // ── Firestore: stream incoming ringing calls ──────────────────────────────
 
   Stream<CallSession?> watchIncomingCall(String receiverUid) {
+    // FIX: Add a createdAt age filter so stale ringing docs left over from
+    // crashed/failed calls are ignored. Any ringing doc older than
+    // ringingTimeout cannot be a live call — the caller's miss timer
+    // would have fired by then. This prevents the app from auto-routing
+    // to the incoming call screen on startup due to leftover Firestore docs.
+    final cutoff = Timestamp.fromDate(
+      DateTime.now().subtract(AppConstants.ringingTimeout),
+    );
+
     return _firestore
         .collection(AppConstants.callsCollection)
         .where('receiverUid', isEqualTo: receiverUid)
         .where('status',      isEqualTo: CallStatus.ringing.name)
+        .where('createdAt',   isGreaterThan: cutoff)
         .orderBy('createdAt', descending: true)
         .limit(1)
         .snapshots()
         .map((snap) => snap.docs.isEmpty
             ? null
             : CallSession.fromFirestore(snap.docs.first));
+  }
+
+  // ── Firestore: clean up stale ringing docs for this user ─────────────────
+  // Called from CallController.build() on every app start / hot restart.
+  // Marks any ringing doc older than ringingTimeout as missed so they never
+  // resurface in watchIncomingCall.
+
+  Future<void> cleanupStaleRingingCalls(String callerUid) async {
+    final cutoff = Timestamp.fromDate(
+      DateTime.now().subtract(AppConstants.ringingTimeout),
+    );
+
+    // Clean up calls the user initiated (as caller) that never got answered
+    final staleOutgoing = await _firestore
+        .collection(AppConstants.callsCollection)
+        .where('callerUid', isEqualTo: callerUid)
+        .where('status',    isEqualTo: CallStatus.ringing.name)
+        .where('createdAt', isLessThanOrEqualTo: cutoff)
+        .get();
+
+    // Clean up calls targeted at this user (as receiver) that were never answered
+    final staleIncoming = await _firestore
+        .collection(AppConstants.callsCollection)
+        .where('receiverUid', isEqualTo: callerUid)
+        .where('status',      isEqualTo: CallStatus.ringing.name)
+        .where('createdAt',   isLessThanOrEqualTo: cutoff)
+        .get();
+
+    final allStale = {...staleOutgoing.docs, ...staleIncoming.docs};
+    if (allStale.isEmpty) return;
+
+    final batch = _firestore.batch();
+    for (final doc in allStale) {
+      batch.update(doc.reference, {'status': CallStatus.missed.name});
+    }
+    await batch.commit();
+    debugPrint('[Repo] cleaned up ${allStale.length} stale ringing doc(s)');
   }
 
   // ── Firestore: update user language ──────────────────────────────────────

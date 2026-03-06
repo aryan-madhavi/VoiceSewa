@@ -16,9 +16,23 @@ class ActiveCallScreen extends ConsumerWidget {
     final call = ref.watch(callControllerProvider).valueOrNull
         ?? const CallState();
 
-    final partnerName = call.session?.receiverName.isNotEmpty == true
-        ? call.session!.receiverName
-        : call.session?.callerName ?? '';
+    final user        = ref.watch(firebaseAuthProvider).currentUser;
+    final session     = call.session;
+
+    // FIX (Bug 1 display): Determine partner name from the perspective of the
+    // current user. Previously this always showed receiverName regardless of
+    // which side of the call you were on, meaning the receiver saw their own
+    // name as "partner".
+    final String partnerName;
+    if (session == null) {
+      partnerName = '';
+    } else if (session.callerUid == user?.uid) {
+      // I am the caller → partner is the receiver
+      partnerName = session.receiverName;
+    } else {
+      // I am the receiver → partner is the caller
+      partnerName = session.callerName;
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.callBg,
@@ -84,7 +98,7 @@ class ActiveCallScreen extends ConsumerWidget {
 
 class _TopBar extends StatelessWidget {
   const _TopBar({required this.partnerName, required this.callDuration});
-  final String partnerName;
+  final String   partnerName;
   final Duration callDuration;
 
   @override
@@ -259,9 +273,9 @@ class _CaptionBox extends StatelessWidget {
           Text(
             label.toUpperCase(),
             style: const TextStyle(
-              color:       AppTheme.callTextSecondary,
-              fontSize:    10,
-              fontWeight:  FontWeight.w700,
+              color:        AppTheme.callTextSecondary,
+              fontSize:     10,
+              fontWeight:   FontWeight.w700,
               letterSpacing: 1,
             ),
           ),
@@ -291,7 +305,6 @@ class _CaptionBox extends StatelessWidget {
                       )
                     : Text(
                         text,
-                        // bodyMedium replaces the removed caption style
                         style: const TextStyle(
                           color:    AppTheme.callTextPrimary,
                           fontSize: 16,
@@ -358,12 +371,12 @@ class _ControlButton extends StatelessWidget {
     this.size = 56,
     this.glow = false,
   });
-  final IconData    icon;
-  final String      label;
-  final Color       color;
+  final IconData     icon;
+  final String       label;
+  final Color        color;
   final VoidCallback onTap;
-  final double      size;
-  final bool        glow;
+  final double       size;
+  final bool         glow;
 
   @override
   Widget build(BuildContext context) {
@@ -379,8 +392,8 @@ class _ControlButton extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: glow
                   ? [BoxShadow(
-                      color:       color.withOpacity(0.45),
-                      blurRadius:  18,
+                      color:        color.withOpacity(0.45),
+                      blurRadius:   18,
                       spreadRadius: 2,
                     )]
                   : null,

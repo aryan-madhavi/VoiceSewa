@@ -42,9 +42,9 @@ class CallState {
     this.error,
   });
 
-  final CallPhase    phase;
-  final String?      sessionId;
-  final CallSession? session;
+  final CallPhase     phase;
+  final String?       sessionId;
+  final CallSession?  session;
   final CallLanguage? myLanguage;
   final CallLanguage? partnerLanguage;
   final String        myTranscript;
@@ -59,16 +59,16 @@ class CallState {
   bool get isIdle    => phase == CallPhase.idle;
 
   CallState copyWith({
-    CallPhase?  phase,
-    String?     sessionId,
-    CallSession? session,
+    CallPhase?    phase,
+    String?       sessionId,
+    CallSession?  session,
     CallLanguage? myLanguage,
     CallLanguage? partnerLanguage,
-    String?     myTranscript,
-    String?     partnerTranscript,
-    bool?       isMuted,
-    Duration?   callDuration,
-    String?     error,
+    String?       myTranscript,
+    String?       partnerTranscript,
+    bool?         isMuted,
+    Duration?     callDuration,
+    String?       error,
   }) =>
       CallState(
         phase:             phase             ?? this.phase,
@@ -87,7 +87,9 @@ class CallState {
 // ── Controller ────────────────────────────────────────────────────────────────
 
 class CallController extends AsyncNotifier<CallState> {
-  final _recorder   = AudioRecorder();
+  final _recorder = AudioRecorder();
+
+  // just_audio player — receives WAV-wrapped PCM chunks via _WavStreamAudioSource.
   final _player     = AudioPlayer();
   final _audioQueue = StreamController<Uint8List>.broadcast();
 
@@ -104,6 +106,21 @@ class CallController extends AsyncNotifier<CallState> {
   @override
   Future<CallState> build() async {
     ref.onDispose(_cleanup);
+
+    // FIX: Clean up any stale ringing docs left over from previous crashed
+    // or failed calls. Without this, watchIncomingCall picks them up on every
+    // app start and routes both phones to the call screen automatically.
+    final user = ref.read(firebaseAuthProvider).currentUser;
+    if (user != null) {
+      try {
+        await ref
+            .read(translateCallRepositoryProvider)
+            .cleanupStaleRingingCalls(user.uid);
+      } catch (e) {
+        debugPrint('[CallController] stale call cleanup error: $e');
+      }
+    }
+
     return const CallState();
   }
 
@@ -128,7 +145,6 @@ class CallController extends AsyncNotifier<CallState> {
       final repo = ref.read(translateCallRepositoryProvider);
       final user = ref.read(firebaseAuthProvider).currentUser!;
 
-      // Fetch receiver FCM token — required for Cloud Function to send FCM
       final receiverFcmToken = await repo.fetchReceiverFcmToken(receiverUid);
       if (receiverFcmToken == null) {
         state = AsyncData(const CallState(
@@ -136,10 +152,8 @@ class CallController extends AsyncNotifier<CallState> {
         return;
       }
 
-      // Create backend session first — get the sessionId
       final sessionId = await repo.createBackendSession();
 
-      // Write Firestore call doc — Cloud Function picks this up and sends FCM
       final session = CallSession(
         sessionId:        sessionId,
         callerUid:        user.uid,
@@ -153,6 +167,12 @@ class CallController extends AsyncNotifier<CallState> {
         receiverFcmToken: receiverFcmToken,
       );
 
+      // FIX (Bug 3): Attach the Firestore watcher BEFORE setting state to
+      // ringingOutgoing. This eliminates the race where the receiver accepts
+      // while the listener is still being attached, causing the caller to miss
+      // the status=active update and sit on ringingOutgoing until timeout.
+      _watchForAnswer(sessionId, myLanguage, partnerLanguage);
+
       await repo.createCallDoc(session);
 
       state = AsyncData(CallState(
@@ -163,10 +183,6 @@ class CallController extends AsyncNotifier<CallState> {
         partnerLanguage: partnerLanguage,
       ));
 
-      // Watch Firestore for receiver accepting / declining
-      _watchForAnswer(sessionId, myLanguage, partnerLanguage);
-
-      // Auto-miss after ringingTimeout
       _ringingTimer = Timer(AppConstants.ringingTimeout, () {
         _handleMissed(sessionId);
       });
@@ -178,17 +194,7 @@ class CallController extends AsyncNotifier<CallState> {
 
   // ── Accept call (receiver) ────────────────────────────────────────────────
   //
-  // ORDER IS CRITICAL:
-  //   1. Do NOT set AsyncLoading — keeps state stable on /incoming-call
-  //   2. Dismiss notification
-  //   3. Connect WebSocket — receiver joins backend session first
-  //   4. Update Firestore status=active — caller's watcher triggers, caller connects WS
-  //   5. Set phase=connecting — router NOW transitions to /active-call
-  //      (WS is already live so call_started can arrive immediately)
-  //   6. Start connecting timeout guard
-  //
-  // Setting phase=connecting BEFORE step 3 would cause the router redirect
-  // to fire mid-flight, breaking the WS handshake.
+  // ORDER IS CRITICAL — see inline comments.
 
   Future<void> acceptCall({
     required CallSession  incomingSession,
@@ -203,13 +209,14 @@ class CallController extends AsyncNotifier<CallState> {
       }
 
       final repo          = ref.read(translateCallRepositoryProvider);
+      // FIX (Bug 1 / display): The receiver's partner is the CALLER,
+      // so partnerLanguage must be derived from callerLang, not receiverLang.
       final partnerLang   = CallLanguage.fromSourceLang(incomingSession.callerLang);
       final notifications = ref.read(notificationServiceProvider);
 
-      // 1. Dismiss notification banner
       await notifications.dismissIncomingCall(incomingSession.sessionId);
 
-      // 2. Connect WebSocket — MUST happen before Firestore update
+      // 1. Connect WS — receiver joins session first
       await _connectAndStartAudio(
         sessionId:       incomingSession.sessionId,
         myLanguage:      myLanguage,
@@ -217,11 +224,12 @@ class CallController extends AsyncNotifier<CallState> {
       );
       debugPrint('[CallController] receiver WS connected ok');
 
-      // 3. Signal caller via Firestore — they will now connect their WS
+      // 2. Signal caller — they will now connect their own WS
       await repo.updateCallStatus(incomingSession.sessionId, CallStatus.active);
       debugPrint('[CallController] Firestore status=active written');
 
-      // 4. Set connecting phase — router transitions to /active-call
+      // 3. Transition to connecting — router moves to /active-call
+      //    (WS already live so call_started can arrive immediately)
       state = AsyncData(CallState(
         phase:           CallPhase.connecting,
         sessionId:       incomingSession.sessionId,
@@ -230,7 +238,6 @@ class CallController extends AsyncNotifier<CallState> {
         partnerLanguage: partnerLang,
       ));
 
-      // 5. Guard against call_started never arriving
       _startConnectingTimeout(incomingSession.sessionId);
 
     } catch (e, st) {
@@ -335,8 +342,7 @@ class CallController extends AsyncNotifier<CallState> {
         switch (session.status) {
 
           case CallStatus.active:
-            // Receiver's WS is already connected (they called connectWebSocket
-            // before writing status=active). Safe to connect now.
+            // Receiver's WS is already connected. Safe to connect now.
             _ringingTimer?.cancel();
 
             state = AsyncData(CallState(
@@ -444,6 +450,8 @@ class CallController extends AsyncNotifier<CallState> {
         }
 
       case WsAudioEvent(:final pcmBytes):
+        // Feed raw PCM into the queue — _WavStreamAudioSource wraps each
+        // chunk with a WAV header so just_audio can decode it.
         _audioQueue.add(pcmBytes);
 
       case WsPartnerLeftEvent():
@@ -504,8 +512,19 @@ class CallController extends AsyncNotifier<CallState> {
 
   // ── Audio ─────────────────────────────────────────────────────────────────
 
+  // FIX (Bug 2): just_audio's StreamAudioSource requires a decodable audio
+  // container — it cannot play raw PCM with contentType:'audio/raw'.
+  // The fix is to keep just_audio but wrap each incoming PCM chunk with a
+  // minimal WAV header before handing it to the stream. _WavStreamAudioSource
+  // (defined at the bottom of this file) does this transparently.
+  // No dependency change needed — just_audio stays in pubspec.yaml as-is.
   Future<void> _startPlayback() async {
-    final source = _PcmStreamAudioSource(_audioQueue.stream);
+    final source = _WavStreamAudioSource(
+      _audioQueue.stream,
+      sampleRate:  AppConstants.audioSampleRate,
+      numChannels: 1,
+      bitDepth:    16,
+    );
     await _player.setAudioSource(source);
     await _player.play();
   }
@@ -564,8 +583,10 @@ class CallController extends AsyncNotifier<CallState> {
     _wsEventSub?.cancel();
     _audioStreamSub?.cancel();
 
+    // Stop just_audio player cleanly
+    try { await _player.stop(); } catch (_) {}
+
     try { await _recorder.stop(); } catch (_) {}
-    try { await _player.stop();   } catch (_) {}
 
     try {
       await ref.read(translateCallRepositoryProvider).disconnectWebSocket();
@@ -592,20 +613,79 @@ class CallController extends AsyncNotifier<CallState> {
   }
 }
 
-// ── PCM stream audio source for just_audio ────────────────────────────────────
+// ── WAV-wrapping stream audio source for just_audio ───────────────────────────
+//
+// just_audio's StreamAudioSource requires a decodable container format.
+// Raw PCM bytes (what the backend sends) have no header, so just_audio
+// produces silence or throws. The fix: prepend a WAV header to each chunk.
+//
+// WAV format for our stream:
+//   - PCM16 (linear, little-endian)
+//   - 16 000 Hz sample rate
+//   - 1 channel (mono)
 
-class _PcmStreamAudioSource extends StreamAudioSource {
-  _PcmStreamAudioSource(this._stream);
-  final Stream<Uint8List> _stream;
+class _WavStreamAudioSource extends StreamAudioSource {
+  _WavStreamAudioSource(
+    this._pcmStream, {
+    required this.sampleRate,
+    required this.numChannels,
+    required this.bitDepth,
+  });
+
+  final Stream<Uint8List> _pcmStream;
+  final int sampleRate;
+  final int numChannels;
+  final int bitDepth;
+
+  // Builds a 44-byte WAV header. Because total length is unknown at stream
+  // start we write the length of *this chunk only* — each chunk is a
+  // self-contained, valid WAV that just_audio can decode independently.
+  Uint8List _wavHeader(int pcmDataLength) {
+    final byteRate   = sampleRate * numChannels * (bitDepth ~/ 8);
+    final blockAlign = numChannels * (bitDepth ~/ 8);
+    final totalSize  = pcmDataLength + 36;
+
+    final h = ByteData(44);
+    // RIFF
+    h.setUint8(0,  0x52); h.setUint8(1,  0x49);
+    h.setUint8(2,  0x46); h.setUint8(3,  0x46);
+    h.setUint32(4, totalSize,    Endian.little);
+    // WAVE
+    h.setUint8(8,  0x57); h.setUint8(9,  0x41);
+    h.setUint8(10, 0x56); h.setUint8(11, 0x45);
+    // fmt
+    h.setUint8(12, 0x66); h.setUint8(13, 0x6D);
+    h.setUint8(14, 0x74); h.setUint8(15, 0x20);
+    h.setUint32(16, 16,           Endian.little); // sub-chunk size
+    h.setUint16(20, 1,            Endian.little); // PCM
+    h.setUint16(22, numChannels,  Endian.little);
+    h.setUint32(24, sampleRate,   Endian.little);
+    h.setUint32(28, byteRate,     Endian.little);
+    h.setUint16(32, blockAlign,   Endian.little);
+    h.setUint16(34, bitDepth,     Endian.little);
+    // data
+    h.setUint8(36, 0x64); h.setUint8(37, 0x61);
+    h.setUint8(38, 0x74); h.setUint8(39, 0x61);
+    h.setUint32(40, pcmDataLength, Endian.little);
+
+    return h.buffer.asUint8List();
+  }
 
   @override
   Future<StreamAudioResponse> request([int? start, int? end]) async {
+    final wrappedStream = _pcmStream.map((pcm) {
+      final wav = Uint8List(44 + pcm.length);
+      wav.setAll(0, _wavHeader(pcm.length));
+      wav.setAll(44, pcm);
+      return wav;
+    });
+
     return StreamAudioResponse(
       sourceLength:  null,
       contentLength: null,
       offset:        start ?? 0,
-      contentType:   'audio/raw',
-      stream:        _stream,
+      contentType:   'audio/wav',
+      stream:        wrappedStream,
     );
   }
 }
