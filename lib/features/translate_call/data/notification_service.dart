@@ -1,15 +1,21 @@
 // lib/features/translate_call/data/notification_service.dart
 //
-// Wraps flutter_local_notifications.
-// Responsible for:
-//   - Creating the Android "Incoming Calls" high-priority channel on init
-//   - Showing a full-screen / heads-up incoming call notification
-//   - Dismissing it after the user accepts or declines
-//   - Routing the user to the incoming call screen when they tap the notification
+// Singleton that owns flutter_local_notifications for the call feature.
 //
-// This is a plain singleton — no Riverpod needed here because it must
-// also be accessible from the top-level FCM background handler in main.dart
-// (which runs before ProviderScope exists).
+// Tap scenarios handled:
+//   A) App FOREGROUND  — user sees banner, taps it
+//      → onDidReceiveNotificationResponse fires on main isolate
+//      → _onTapForeground() → _onNotificationTap callback → router refresh
+//
+//   B) App BACKGROUND  — user taps notification in shade
+//      → onDidReceiveNotificationResponse fires on main isolate (same as A)
+//
+//   C) App TERMINATED  — user taps notification, app cold-starts
+//      → getNotificationAppLaunchDetails() checked in _handleLaunchNotification()
+//      → called from init() which is re-called after ProviderScope is ready
+//
+// The _onNotificationTap callback is set by CallTranslateApp after ProviderScope
+// is ready, so it can safely call ref.read() and trigger router navigation.
 
 import 'dart:convert';
 
@@ -18,7 +24,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../../../core/constants.dart';
 
-// ── Notification payload ──────────────────────────────────────────────────────
+// ── Payload ───────────────────────────────────────────────────────────────────
 
 class CallNotificationPayload {
   const CallNotificationPayload({
@@ -35,13 +41,13 @@ class CallNotificationPayload {
   final String callerLang;
   final String receiverLang;
 
-  factory CallNotificationPayload.fromJson(Map<String, dynamic> json) =>
+  factory CallNotificationPayload.fromJson(Map<String, dynamic> j) =>
       CallNotificationPayload(
-        sessionId:    json['sessionId']    as String,
-        callerUid:    json['callerUid']    as String,
-        callerName:   json['callerName']   as String,
-        callerLang:   json['callerLang']   as String,
-        receiverLang: json['receiverLang'] as String,
+        sessionId:    j['sessionId']    as String,
+        callerUid:    j['callerUid']    as String,
+        callerName:   j['callerName']   as String,
+        callerLang:   j['callerLang']   as String,
+        receiverLang: j['receiverLang'] as String,
       );
 
   Map<String, dynamic> toJson() => {
@@ -60,7 +66,7 @@ class CallNotificationPayload {
       return CallNotificationPayload.fromJson(
           jsonDecode(raw) as Map<String, dynamic>);
     } catch (e) {
-      debugPrint('[NotificationService] Failed to decode payload: $e');
+      debugPrint('[NotificationService] payload decode error: $e');
       return null;
     }
   }
@@ -74,30 +80,35 @@ class NotificationService {
 
   final _plugin = FlutterLocalNotificationsPlugin();
 
-  // Whether the plugin has been initialised at least once.
-  // The tap callback is stored separately so it survives re-init calls
-  // from the background isolate (which can't navigate anyway).
+  // Tracks whether _plugin.initialize() has been called.
   bool _pluginInitialised = false;
 
-  // Callback registered by the app root. Called with sessionId when the
-  // user taps an incoming call notification.
+  // Set by CallTranslateApp.initState() once ProviderScope is ready.
+  // Receives the sessionId from a notification tap.
   void Function(String sessionId)? _onNotificationTap;
 
   // ── Register tap handler ──────────────────────────────────────────────────
-  // Called once from CallTranslateApp.initState() with a handler that
-  // can navigate via the router. Must be called AFTER ProviderScope is ready.
+  // Must be called before init() so that _handleLaunchNotification can use it.
 
   void setOnNotificationTap(void Function(String sessionId) handler) {
     _onNotificationTap = handler;
+    debugPrint('[NotificationService] tap handler registered');
   }
 
   // ── Init ──────────────────────────────────────────────────────────────────
-  // Safe to call from both main() and the background FCM isolate.
-  // The background isolate cannot navigate, so we only register the
-  // onDidReceiveNotificationResponse when we have a tap handler registered.
+  // Called from:
+  //   1. main() — early init so the Android channel exists
+  //   2. _backgroundFcmHandler — background isolate (no tap handler here)
+  //   3. CallTranslateApp.initState postFrameCallback — re-call after
+  //      tap handler is registered, picks up launch notification
 
   Future<void> init() async {
-    if (_pluginInitialised) return;
+    if (_pluginInitialised) {
+      // Already initialised — just check for launch notification in case
+      // the tap handler was registered after the first init() call.
+      await _handleLaunchNotification();
+      return;
+    }
 
     const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -108,66 +119,58 @@ class NotificationService {
     );
 
     await _plugin.initialize(
-      const InitializationSettings(
-        android: androidSettings,
-        iOS:     iosSettings,
-      ),
-      // This fires when the user taps a local notification while the app
-      // is in the foreground OR when the app is opened via a notification tap.
+      const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      // Fires when user taps notification while app is FOREGROUND or BACKGROUND
       onDidReceiveNotificationResponse: _onTapForeground,
-      // This fires when the notification is tapped while the app is in
-      // the background (but not terminated) on older plugin versions.
+      // Background isolate tap — can't navigate, just log
       onDidReceiveBackgroundNotificationResponse: _onTapBackground,
     );
 
     await _createCallChannel();
     _pluginInitialised = true;
 
-    // Check if the app was launched by tapping a notification while terminated
     await _handleLaunchNotification();
   }
 
-  // ── Handle app launch from notification ───────────────────────────────────
-  // When the app is fully terminated and the user taps the notification,
-  // getNotificationAppLaunchDetails() returns the payload.
+  // ── Launch detection (TERMINATED tap) ─────────────────────────────────────
 
   Future<void> _handleLaunchNotification() async {
+    if (_onNotificationTap == null) return; // no handler yet — skip
+
     final details = await _plugin.getNotificationAppLaunchDetails();
     if (details == null || !details.didNotificationLaunchApp) return;
 
-    final payload = CallNotificationPayload.tryDecode(
-        details.notificationResponse?.payload);
+    final payload =
+        CallNotificationPayload.tryDecode(details.notificationResponse?.payload);
     if (payload == null) return;
 
-    debugPrint('[NotificationService] App launched from notification: '
+    debugPrint('[NotificationService] app launched by tap, '
         'sessionId=${payload.sessionId}');
 
-    // Delay slightly to allow ProviderScope / router to be ready
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Small delay to let the router settle after cold start
+    await Future.delayed(const Duration(milliseconds: 600));
     _onNotificationTap?.call(payload.sessionId);
   }
 
-  // ── Tap handlers ──────────────────────────────────────────────────────────
+  // ── Foreground / background tap ───────────────────────────────────────────
 
   void _onTapForeground(NotificationResponse response) {
-    debugPrint('[NotificationService] Foreground tap, payload=${response.payload}');
+    debugPrint('[NotificationService] tap (fg/bg), payload=${response.payload}');
     final payload = CallNotificationPayload.tryDecode(response.payload);
     if (payload == null) return;
     _onNotificationTap?.call(payload.sessionId);
   }
 
-  // Top-level function required by flutter_local_notifications for background
-  // tap handling. Must be annotated @pragma('vm:entry-point').
-  // It cannot call instance methods directly, so it re-routes through the
-  // singleton's stored callback.
+  // Must be top-level or static for the background isolate callback.
+  @pragma('vm:entry-point')
   static void _onTapBackground(NotificationResponse response) {
-    // This runs in a background isolate on some Android versions.
-    // We can't navigate from here, but the foreground handler + launch
-    // details cover all real cases. Log for debugging only.
-    debugPrint('[NotificationService] Background tap, payload=${response.payload}');
+    // Background isolate — cannot navigate. Foreground handler + launch
+    // details cover all real navigation cases.
+    debugPrint('[NotificationService] bg-isolate tap (no-op), '
+        'payload=${response.payload}');
   }
 
-  // ── Channel setup ─────────────────────────────────────────────────────────
+  // ── Channel ───────────────────────────────────────────────────────────────
 
   Future<void> _createCallChannel() async {
     const channel = AndroidNotificationChannel(
@@ -179,14 +182,13 @@ class NotificationService {
       enableVibration: true,
       showBadge:       true,
     );
-
     await _plugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
   }
 
-  // ── Show incoming call notification ───────────────────────────────────────
+  // ── Show ──────────────────────────────────────────────────────────────────
 
   Future<void> showIncomingCall({
     required String sessionId,
@@ -195,7 +197,7 @@ class NotificationService {
     required String callerLang,
     required String receiverLang,
   }) async {
-    await init();
+    await init(); // safe to call multiple times
 
     final payload = CallNotificationPayload(
       sessionId:    sessionId,
@@ -212,9 +214,9 @@ class NotificationService {
       importance:         Importance.max,
       priority:           Priority.max,
       category:           AndroidNotificationCategory.call,
-      fullScreenIntent:   true,   // shows over lock screen
-      autoCancel:         false,  // stays until user acts
-      ongoing:            true,   // cannot be swiped away
+      fullScreenIntent:   true,
+      autoCancel:         false,
+      ongoing:            true,
       ticker:             'Incoming call from $callerName',
       styleInformation:   BigTextStyleInformation(
         callerName,

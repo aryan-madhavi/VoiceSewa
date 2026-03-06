@@ -19,11 +19,11 @@ import 'providers.dart';
 
 enum CallPhase {
   idle,
-  ringingOutgoing,
-  ringingIncoming,
-  connecting,
-  active,
-  ended,
+  ringingOutgoing, // Caller waiting — receiver notified via FCM
+  ringingIncoming, // Receiver on incoming-call screen
+  connecting,      // WS handshake in progress, waiting for call_started
+  active,          // Both connected, translation pipeline running
+  ended,           // Brief ended state before returning to idle
 }
 
 // ── CallState ─────────────────────────────────────────────────────────────────
@@ -42,16 +42,16 @@ class CallState {
     this.error,
   });
 
-  final CallPhase phase;
-  final String? sessionId;
+  final CallPhase    phase;
+  final String?      sessionId;
   final CallSession? session;
   final CallLanguage? myLanguage;
   final CallLanguage? partnerLanguage;
-  final String myTranscript;
-  final String partnerTranscript;
-  final bool isMuted;
-  final Duration callDuration;
-  final String? error;
+  final String        myTranscript;
+  final String        partnerTranscript;
+  final bool          isMuted;
+  final Duration      callDuration;
+  final String?       error;
 
   bool get isActive  => phase == CallPhase.active;
   bool get isRinging => phase == CallPhase.ringingOutgoing ||
@@ -59,27 +59,27 @@ class CallState {
   bool get isIdle    => phase == CallPhase.idle;
 
   CallState copyWith({
-    CallPhase? phase,
-    String? sessionId,
+    CallPhase?  phase,
+    String?     sessionId,
     CallSession? session,
     CallLanguage? myLanguage,
     CallLanguage? partnerLanguage,
-    String? myTranscript,
-    String? partnerTranscript,
-    bool? isMuted,
-    Duration? callDuration,
-    String? error,
+    String?     myTranscript,
+    String?     partnerTranscript,
+    bool?       isMuted,
+    Duration?   callDuration,
+    String?     error,
   }) =>
       CallState(
-        phase:             phase            ?? this.phase,
-        sessionId:         sessionId        ?? this.sessionId,
-        session:           session          ?? this.session,
-        myLanguage:        myLanguage       ?? this.myLanguage,
-        partnerLanguage:   partnerLanguage  ?? this.partnerLanguage,
-        myTranscript:      myTranscript     ?? this.myTranscript,
+        phase:             phase             ?? this.phase,
+        sessionId:         sessionId         ?? this.sessionId,
+        session:           session           ?? this.session,
+        myLanguage:        myLanguage        ?? this.myLanguage,
+        partnerLanguage:   partnerLanguage   ?? this.partnerLanguage,
+        myTranscript:      myTranscript      ?? this.myTranscript,
         partnerTranscript: partnerTranscript ?? this.partnerTranscript,
-        isMuted:           isMuted          ?? this.isMuted,
-        callDuration:      callDuration     ?? this.callDuration,
+        isMuted:           isMuted           ?? this.isMuted,
+        callDuration:      callDuration      ?? this.callDuration,
         error:             error,
       );
 }
@@ -107,11 +107,11 @@ class CallController extends AsyncNotifier<CallState> {
     return const CallState();
   }
 
-  // ── Initiate call (caller side) ───────────────────────────────────────────
+  // ── Initiate call (caller) ────────────────────────────────────────────────
 
   Future<void> initiateCall({
-    required String receiverUid,
-    required String receiverName,
+    required String       receiverUid,
+    required String       receiverName,
     required CallLanguage myLanguage,
     required CallLanguage partnerLanguage,
   }) async {
@@ -121,24 +121,25 @@ class CallController extends AsyncNotifier<CallState> {
       final micOk = await _requestMic();
       if (!micOk) {
         state = AsyncData(const CallState(
-          error: 'Microphone permission is required to make calls.',
-        ));
+            error: 'Microphone permission is required to make calls.'));
         return;
       }
 
       final repo = ref.read(translateCallRepositoryProvider);
       final user = ref.read(firebaseAuthProvider).currentUser!;
 
+      // Fetch receiver FCM token — required for Cloud Function to send FCM
       final receiverFcmToken = await repo.fetchReceiverFcmToken(receiverUid);
       if (receiverFcmToken == null) {
         state = AsyncData(const CallState(
-          error: 'Could not reach this contact. They may be offline.',
-        ));
+            error: 'Could not reach this contact. They may be offline.'));
         return;
       }
 
+      // Create backend session first — get the sessionId
       final sessionId = await repo.createBackendSession();
 
+      // Write Firestore call doc — Cloud Function picks this up and sends FCM
       final session = CallSession(
         sessionId:        sessionId,
         callerUid:        user.uid,
@@ -162,8 +163,10 @@ class CallController extends AsyncNotifier<CallState> {
         partnerLanguage: partnerLanguage,
       ));
 
+      // Watch Firestore for receiver accepting / declining
       _watchForAnswer(sessionId, myLanguage, partnerLanguage);
 
+      // Auto-miss after ringingTimeout
       _ringingTimer = Timer(AppConstants.ringingTimeout, () {
         _handleMissed(sessionId);
       });
@@ -173,31 +176,29 @@ class CallController extends AsyncNotifier<CallState> {
     }
   }
 
-  // ── Accept call (receiver side) ───────────────────────────────────────────
+  // ── Accept call (receiver) ────────────────────────────────────────────────
   //
-  // KEY ORDER:
-  //   1. Keep phase=ringingIncoming (stay on incoming-call screen)
-  //   2. Connect WebSocket — receiver joins backend session
-  //   3. Update Firestore status=active — caller sees it and connects
-  //   4. ONLY THEN set phase=connecting — router now transitions to active-call
+  // ORDER IS CRITICAL:
+  //   1. Do NOT set AsyncLoading — keeps state stable on /incoming-call
+  //   2. Dismiss notification
+  //   3. Connect WebSocket — receiver joins backend session first
+  //   4. Update Firestore status=active — caller's watcher triggers, caller connects WS
+  //   5. Set phase=connecting — router NOW transitions to /active-call
+  //      (WS is already live so call_started can arrive immediately)
+  //   6. Start connecting timeout guard
   //
-  // Setting phase=connecting earlier would trigger the router redirect to
-  // /active-call BEFORE the WS is established, breaking the connection flow.
+  // Setting phase=connecting BEFORE step 3 would cause the router redirect
+  // to fire mid-flight, breaking the WS handshake.
 
   Future<void> acceptCall({
-    required CallSession incomingSession,
+    required CallSession  incomingSession,
     required CallLanguage myLanguage,
   }) async {
-    // Do NOT set AsyncLoading here — it clears the state and the router
-    // would see callPhase=null and possibly redirect away from /incoming-call.
-    // Instead keep current state while we do the setup work.
-
     try {
       final micOk = await _requestMic();
       if (!micOk) {
         state = AsyncData(const CallState(
-          error: 'Microphone permission required.',
-        ));
+            error: 'Microphone permission required.'));
         return;
       }
 
@@ -205,24 +206,22 @@ class CallController extends AsyncNotifier<CallState> {
       final partnerLang   = CallLanguage.fromSourceLang(incomingSession.callerLang);
       final notifications = ref.read(notificationServiceProvider);
 
-      // Dismiss notification banner immediately on tap
+      // 1. Dismiss notification banner
       await notifications.dismissIncomingCall(incomingSession.sessionId);
 
-      // Step 1: Connect WebSocket — receiver must be on backend BEFORE
-      // updating Firestore, otherwise caller connects first and waits alone.
+      // 2. Connect WebSocket — MUST happen before Firestore update
       await _connectAndStartAudio(
         sessionId:       incomingSession.sessionId,
         myLanguage:      myLanguage,
         partnerLanguage: partnerLang,
       );
-      debugPrint('[CallController] Receiver WS connected');
+      debugPrint('[CallController] receiver WS connected ok');
 
-      // Step 2: Now signal caller via Firestore
+      // 3. Signal caller via Firestore — they will now connect their WS
       await repo.updateCallStatus(incomingSession.sessionId, CallStatus.active);
       debugPrint('[CallController] Firestore status=active written');
 
-      // Step 3: ONLY NOW set connecting phase — router transitions to /active-call.
-      // WS is already established so call_started can arrive immediately.
+      // 4. Set connecting phase — router transitions to /active-call
       state = AsyncData(CallState(
         phase:           CallPhase.connecting,
         sessionId:       incomingSession.sessionId,
@@ -231,7 +230,7 @@ class CallController extends AsyncNotifier<CallState> {
         partnerLanguage: partnerLang,
       ));
 
-      // Guard: if call_started never arrives within 30s, abort
+      // 5. Guard against call_started never arriving
       _startConnectingTimeout(incomingSession.sessionId);
 
     } catch (e, st) {
@@ -246,20 +245,18 @@ class CallController extends AsyncNotifier<CallState> {
     }
   }
 
-  // ── Decline call (receiver side) ──────────────────────────────────────────
+  // ── Decline call (receiver) ───────────────────────────────────────────────
 
   Future<void> declineCall(String sessionId) async {
     final repo          = ref.read(translateCallRepositoryProvider);
     final notifications = ref.read(notificationServiceProvider);
 
     await notifications.dismissIncomingCall(sessionId);
-
     try {
       await repo.updateCallStatus(sessionId, CallStatus.declined);
     } catch (e) {
       debugPrint('[CallController] declineCall error: $e');
     }
-
     state = const AsyncData(CallState());
   }
 
@@ -319,18 +316,14 @@ class CallController extends AsyncNotifier<CallState> {
     if (current == null || !current.isActive) return;
 
     final muted = !current.isMuted;
-    if (muted) {
-      _recorder.pause();
-    } else {
-      _recorder.resume();
-    }
+    if (muted) { _recorder.pause(); } else { _recorder.resume(); }
     state = AsyncData(current.copyWith(isMuted: muted));
   }
 
   // ── Watch Firestore for receiver response (caller side) ───────────────────
 
   void _watchForAnswer(
-    String sessionId,
+    String       sessionId,
     CallLanguage myLanguage,
     CallLanguage partnerLanguage,
   ) {
@@ -340,9 +333,10 @@ class CallController extends AsyncNotifier<CallState> {
     _firestoreSub = repo.watchCallSession(sessionId).listen(
       (session) async {
         switch (session.status) {
+
           case CallStatus.active:
-            // Receiver is already on the backend WS (they connected before
-            // writing Firestore). Safe to connect our WS now.
+            // Receiver's WS is already connected (they called connectWebSocket
+            // before writing status=active). Safe to connect now.
             _ringingTimer?.cancel();
 
             state = AsyncData(CallState(
@@ -361,7 +355,7 @@ class CallController extends AsyncNotifier<CallState> {
               );
               _startConnectingTimeout(sessionId);
             } catch (e) {
-              debugPrint('[CallController] Caller WS connect error: $e');
+              debugPrint('[CallController] caller WS connect error: $e');
               _handleWsFatalError('Connection failed. Please try again.');
             }
 
@@ -369,8 +363,7 @@ class CallController extends AsyncNotifier<CallState> {
             _ringingTimer?.cancel();
             await _cleanup();
             state = const AsyncData(
-              CallState(phase: CallPhase.ended, error: 'Call was declined'),
-            );
+                CallState(phase: CallPhase.ended, error: 'Call was declined'));
             await Future.delayed(const Duration(seconds: 2));
             state = const AsyncData(CallState());
 
@@ -383,8 +376,7 @@ class CallController extends AsyncNotifier<CallState> {
           case CallStatus.missed:
             await _cleanup();
             state = const AsyncData(
-              CallState(phase: CallPhase.ended, error: 'No answer'),
-            );
+                CallState(phase: CallPhase.ended, error: 'No answer'));
             await Future.delayed(const Duration(seconds: 2));
             state = const AsyncData(CallState());
 
@@ -400,7 +392,7 @@ class CallController extends AsyncNotifier<CallState> {
   // ── Connect WS + mic + playback ───────────────────────────────────────────
 
   Future<void> _connectAndStartAudio({
-    required String sessionId,
+    required String       sessionId,
     required CallLanguage myLanguage,
     required CallLanguage partnerLanguage,
   }) async {
@@ -425,7 +417,7 @@ class CallController extends AsyncNotifier<CallState> {
     await _startRecording();
   }
 
-  // ── WebSocket event handler ───────────────────────────────────────────────
+  // ── WS event handler ─────────────────────────────────────────────────────
 
   void _handleWsEvent(WsEvent event) {
     final current = state.valueOrNull ?? const CallState();
@@ -438,11 +430,8 @@ class CallController extends AsyncNotifier<CallState> {
         _connectingTimeoutTimer?.cancel();
         _callStartTime = DateTime.now();
         _startCallTimer();
-        state = AsyncData(current.copyWith(
-          phase: CallPhase.active,
-          error: null,
-        ));
-        debugPrint('[CallController] Call active');
+        state = AsyncData(current.copyWith(phase: CallPhase.active, error: null));
+        debugPrint('[CallController] call active');
 
       case WsTranscriptEvent(:final text, :final isFinal, :final lang):
         final isMe = lang == current.myLanguage?.sourceLang;
@@ -458,7 +447,7 @@ class CallController extends AsyncNotifier<CallState> {
         _audioQueue.add(pcmBytes);
 
       case WsPartnerLeftEvent():
-        debugPrint('[CallController] Partner left');
+        debugPrint('[CallController] partner left');
         hangUp();
 
       case WsErrorEvent(:final code, :final message):
@@ -476,15 +465,12 @@ class CallController extends AsyncNotifier<CallState> {
 
   void _startConnectingTimeout(String sessionId) {
     _connectingTimeoutTimer?.cancel();
-    _connectingTimeoutTimer = Timer(
-      const Duration(seconds: 30),
-      () {
-        if (state.valueOrNull?.phase == CallPhase.connecting) {
-          debugPrint('[CallController] Connecting timeout');
-          _handleWsFatalError('Could not connect. Please try again.');
-        }
-      },
-    );
+    _connectingTimeoutTimer = Timer(const Duration(seconds: 30), () {
+      if (state.valueOrNull?.phase == CallPhase.connecting) {
+        debugPrint('[CallController] connecting timeout');
+        _handleWsFatalError('Could not connect. Please try again.');
+      }
+    });
   }
 
   void _handleWsFatalError(String message) {
@@ -544,22 +530,23 @@ class CallController extends AsyncNotifier<CallState> {
     _callTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       final s = state.valueOrNull;
       if (s == null || !s.isActive) return;
-      state = AsyncData(s.copyWith(
-        callDuration: s.callDuration + const Duration(seconds: 1),
-      ));
+      state = AsyncData(
+          s.copyWith(callDuration: s.callDuration + const Duration(seconds: 1)));
     });
   }
 
   Future<void> _handleMissed(String sessionId) async {
     if (state.valueOrNull?.phase != CallPhase.ringingOutgoing) return;
     try {
-      final repo = ref.read(translateCallRepositoryProvider);
-      await repo.updateCallStatus(sessionId, CallStatus.missed);
+      await ref
+          .read(translateCallRepositoryProvider)
+          .updateCallStatus(sessionId, CallStatus.missed);
     } catch (e) {
       debugPrint('[CallController] _handleMissed error: $e');
     }
     await _cleanup();
-    state = const AsyncData(CallState(phase: CallPhase.ended, error: 'No answer'));
+    state = const AsyncData(
+        CallState(phase: CallPhase.ended, error: 'No answer'));
     await Future.delayed(const Duration(seconds: 2));
     state = const AsyncData(CallState());
   }
@@ -581,8 +568,7 @@ class CallController extends AsyncNotifier<CallState> {
     try { await _player.stop();   } catch (_) {}
 
     try {
-      final repo = ref.read(translateCallRepositoryProvider);
-      await repo.disconnectWebSocket();
+      await ref.read(translateCallRepositoryProvider).disconnectWebSocket();
     } catch (_) {}
 
     _callTimer              = null;
@@ -606,7 +592,7 @@ class CallController extends AsyncNotifier<CallState> {
   }
 }
 
-// ── Custom just_audio source for raw PCM stream ───────────────────────────────
+// ── PCM stream audio source for just_audio ────────────────────────────────────
 
 class _PcmStreamAudioSource extends StreamAudioSource {
   _PcmStreamAudioSource(this._stream);

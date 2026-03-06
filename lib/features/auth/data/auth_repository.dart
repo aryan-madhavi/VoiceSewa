@@ -1,11 +1,7 @@
 // lib/features/auth/data/auth_repository.dart
 //
-// Wraps FirebaseAuth for all authentication operations AND writes the
-// initial Firestore user profile document at users/{uid} on first sign-in.
-//
-// Firestore user doc schema:
-//   uid, displayName, email, language (default "hi-IN"),
-//   fcmToken (set later by FcmService), createdAt
+// Wraps FirebaseAuth and writes the initial users/{uid} Firestore document
+// on sign-up so other users can discover each other in the contact list.
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,75 +12,29 @@ import '../domain/user_profile.dart';
 
 class AuthRepository {
   AuthRepository({
-    required FirebaseAuth auth,
+    required FirebaseAuth      auth,
     required FirebaseFirestore firestore,
-  })  : _auth = auth,
+  })  : _auth      = auth,
         _firestore = firestore;
 
-  final FirebaseAuth _auth;
+  final FirebaseAuth      _auth;
   final FirebaseFirestore _firestore;
   final _googleSignIn = GoogleSignIn();
 
-  // ── Stream ────────────────────────────────────────────────────────────────
-
   Stream<User?> authStateChanges() => _auth.authStateChanges();
-
   User? get currentUser => _auth.currentUser;
 
-  // ── Firestore helper ──────────────────────────────────────────────────────
-
-  /// Creates or merges a user profile document at users/{uid}.
-  /// Safe to call multiple times — uses SetOptions(merge: true).
-  Future<void> _upsertUserProfile({
-    required String uid,
-    required String displayName,
-    required String email,
-  }) async {
-    final ref = _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(uid);
-
-    // Only set createdAt if the doc doesn't exist yet
-    final snap = await ref.get();
-    if (!snap.exists) {
-      await ref.set(
-        UserProfile(
-          uid:         uid,
-          displayName: displayName,
-          email:       email,
-          language:    'hi-IN', // default; user can update in HomeScreen
-          createdAt:   DateTime.now(),
-        ).toFirestore(),
-      );
-    } else {
-      // Update mutable fields in case name/email changed (e.g. Google profile update)
-      await ref.set(
-        {'displayName': displayName, 'email': email},
-        SetOptions(merge: true),
-      );
-    }
-  }
-
-  // ── Email / password ──────────────────────────────────────────────────────
+  // ── Email / password sign-in ──────────────────────────────────────────────
 
   Future<UserCredential> signInWithEmail({
     required String email,
     required String password,
-  }) async {
-    final credential = await _auth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    // Ensure profile exists (handles users who signed up before this code)
-    if (credential.user != null) {
-      await _upsertUserProfile(
-        uid:         credential.user!.uid,
-        displayName: credential.user!.displayName ?? email.split('@').first,
-        email:       email,
-      );
-    }
-    return credential;
-  }
+  }) =>
+      _auth.signInWithEmailAndPassword(email: email, password: password);
+
+  // ── Email / password sign-up ──────────────────────────────────────────────
+  // Creates the Firebase Auth account AND writes users/{uid} to Firestore
+  // so the user appears in other users' contact lists immediately.
 
   Future<UserCredential> signUpWithEmail({
     required String email,
@@ -95,21 +45,23 @@ class AuthRepository {
       email:    email,
       password: password,
     );
-    // Set display name in Firebase Auth
+
     await credential.user?.updateDisplayName(displayName);
 
-    // Create Firestore profile immediately
+    // Write Firestore user doc
     if (credential.user != null) {
-      await _upsertUserProfile(
+      await _writeUserProfile(
         uid:         credential.user!.uid,
         displayName: displayName,
         email:       email,
       );
     }
+
     return credential;
   }
 
-  // ── Google ────────────────────────────────────────────────────────────────
+  // ── Google sign-in ────────────────────────────────────────────────────────
+  // Uses merge:true so existing users don't lose their fcmToken or language.
 
   Future<UserCredential?> signInWithGoogle() async {
     final googleUser = await _googleSignIn.signIn();
@@ -120,15 +72,18 @@ class AuthRepository {
       accessToken: googleAuth.accessToken,
       idToken:     googleAuth.idToken,
     );
+
     final userCredential = await _auth.signInWithCredential(credential);
 
     if (userCredential.user != null) {
-      await _upsertUserProfile(
+      await _writeUserProfile(
         uid:         userCredential.user!.uid,
         displayName: userCredential.user!.displayName ?? googleUser.displayName ?? '',
         email:       userCredential.user!.email ?? googleUser.email,
+        merge:       true, // don't overwrite existing language/fcmToken
       );
     }
+
     return userCredential;
   }
 
@@ -145,4 +100,29 @@ class AuthRepository {
 
   Future<void> sendPasswordResetEmail(String email) =>
       _auth.sendPasswordResetEmail(email: email);
+
+  // ── Firestore write ───────────────────────────────────────────────────────
+
+  Future<void> _writeUserProfile({
+    required String uid,
+    required String displayName,
+    required String email,
+    bool merge = false,
+  }) async {
+    final profile = UserProfile(
+      uid:         uid,
+      displayName: displayName,
+      email:       email,
+      language:    'hi-IN', // default — user can change from home screen
+      createdAt:   DateTime.now(),
+    );
+
+    await _firestore
+        .collection(AppConstants.usersCollection)
+        .doc(uid)
+        .set(
+          profile.toFirestore(),
+          merge ? SetOptions(merge: true) : null,
+        );
+  }
 }

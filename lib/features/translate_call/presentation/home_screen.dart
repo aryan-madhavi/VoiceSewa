@@ -1,8 +1,8 @@
 // lib/features/translate_call/presentation/home_screen.dart
 //
-// Contact list populated live from Firestore via allUsersProvider.
+// Contact list streamed live from Firestore via allUsersProvider.
 // Language strip seeded from currentUserProfileProvider and persisted
-// back to Firestore on change.
+// back to Firestore when changed.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,6 +21,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  // Track whether we've seeded the language picker from Firestore yet.
+  // We only do this once so manual changes aren't overwritten on each rebuild.
   bool _languageInitialised = false;
 
   @override
@@ -30,8 +32,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final profileAsync = ref.watch(currentUserProfileProvider);
     final theme        = Theme.of(context);
 
-    // Seed selectedLanguageProvider from the user's stored Firestore
-    // preference once on first load — not on every rebuild.
+    // Seed language picker from the user's stored Firestore preference
+    // on first load only — avoids overwriting manual in-session changes.
     profileAsync.whenData((profile) {
       if (profile != null && !_languageInitialised) {
         _languageInitialised = true;
@@ -67,6 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Language selector strip
           _LanguageStrip(
             selected: myLanguage,
             onTap:    () => _showLanguageSheet(context, ref),
@@ -91,7 +94,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: Text(
-                    'Could not load contacts: $e',
+                    'Could not load contacts:\n$e',
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -105,7 +108,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   itemBuilder: (_, i) => _ContactTile(
                     user:       users[i],
                     myLanguage: myLanguage,
-                    onCall: () => _call(context, ref, users[i], myLanguage),
+                    onCall:     () =>
+                        _call(context, ref, users[i], myLanguage),
                   ),
                 );
               },
@@ -115,6 +119,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
+
+  // ── Language bottom sheet ─────────────────────────────────────────────────
 
   void _showLanguageSheet(BuildContext context, WidgetRef ref) {
     showModalBottomSheet(
@@ -162,6 +168,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // Persist language choice to Firestore
   void _saveLanguage(WidgetRef ref, CallLanguage lang) {
     final uid = ref.read(firebaseAuthProvider).currentUser?.uid;
     if (uid == null) return;
@@ -170,11 +177,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .updateUserLanguage(uid, lang.sourceLang);
   }
 
+  // ── Initiate call ─────────────────────────────────────────────────────────
+  // FCM token is fetched inside initiateCall() — no need to pass it here.
+
   Future<void> _call(
-    BuildContext context,
-    WidgetRef ref,
-    UserProfile contact,
-    CallLanguage myLanguage,
+    BuildContext  context,
+    WidgetRef     ref,
+    UserProfile   contact,
+    CallLanguage  myLanguage,
   ) async {
     final partnerLanguage = CallLanguage.fromSourceLang(contact.language);
     await ref.read(callControllerProvider.notifier).initiateCall(
@@ -317,7 +327,7 @@ class _ContactTile extends StatelessWidget {
             ),
           ),
 
-          // Disabled when contact has no FCM token (never opened the app)
+          // Disabled if contact has no FCM token (never opened the app)
           Tooltip(
             message: canCall
                 ? 'Call ${user.displayName}'

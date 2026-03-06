@@ -1,6 +1,9 @@
 // lib/features/translate_call/data/translate_call_repository.dart
 //
-// Owns all communication with the backend and Firestore for the call lifecycle.
+// All communication with the backend and Firestore:
+//   REST      — POST /session, DELETE /session/:id
+//   Firestore — CRUD call docs, history entries, FCM token fetch, streams
+//   WebSocket — connect, send PCM audio, receive events, keep-alive ping
 
 import 'dart:async';
 import 'dart:convert';
@@ -22,7 +25,7 @@ sealed class WsEvent {}
 
 class WsConnectedEvent extends WsEvent {
   WsConnectedEvent({required this.userIndex, required this.sessionId});
-  final int userIndex;
+  final int    userIndex;
   final String sessionId;
 }
 
@@ -38,7 +41,7 @@ class WsTranscriptEvent extends WsEvent {
     required this.lang,
   });
   final String text;
-  final bool isFinal;
+  final bool   isFinal;
   final String lang;
 }
 
@@ -59,36 +62,33 @@ class WsErrorEvent extends WsEvent {
 
 class TranslateCallRepository {
   TranslateCallRepository({
-    required FirebaseAuth auth,
+    required FirebaseAuth      auth,
     required FirebaseFirestore firestore,
-  })  : _auth = auth,
+  })  : _auth      = auth,
         _firestore = firestore;
 
-  final FirebaseAuth _auth;
+  final FirebaseAuth      _auth;
   final FirebaseFirestore _firestore;
 
-  WebSocketChannel? _channel;
+  WebSocketChannel?            _channel;
   StreamSubscription<dynamic>? _wsSub;
-  Timer? _pingTimer;
+  Timer?                       _pingTimer;
 
   final _wsEventController = StreamController<WsEvent>.broadcast();
-
   Stream<WsEvent> get wsEvents => _wsEventController.stream;
 
-  // ── Auth helper ───────────────────────────────────────────────────────────
+  // ── Auth ──────────────────────────────────────────────────────────────────
 
   Future<String> _idToken() async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Not authenticated');
-    // Force refresh to ensure token is valid — important after long backgrounding
-    final token = await user.getIdToken(true);
+    final token = await user.getIdToken();
     if (token == null) throw Exception('Failed to get ID token');
     return token;
   }
 
   // ── Firestore: fetch receiver FCM token ───────────────────────────────────
-  // Requires: users collection read is open to any authenticated user.
-  // See firestore.rules — allow read: if isAuth();
+  // Called at call-initiation time so we always use the freshest token.
 
   Future<String?> fetchReceiverFcmToken(String receiverUid) async {
     final snap = await _firestore
@@ -96,21 +96,20 @@ class TranslateCallRepository {
         .doc(receiverUid)
         .get();
     if (!snap.exists) return null;
-    final data = snap.data() as Map<String, dynamic>;
-    return data['fcmToken'] as String?;
+    return (snap.data() as Map<String, dynamic>)['fcmToken'] as String?;
   }
 
   // ── REST: create backend session ──────────────────────────────────────────
 
   Future<String> createBackendSession() async {
-    final token = await _idToken();
+    final token    = await _idToken();
     final response = await http.post(
       Uri.parse('${AppConstants.backendBaseUrl}/session'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type':  'application/json',
       },
-    ).timeout(const Duration(seconds: 15));
+    );
 
     if (response.statusCode != 201) {
       throw Exception(
@@ -130,9 +129,9 @@ class TranslateCallRepository {
       await http.delete(
         Uri.parse('${AppConstants.backendBaseUrl}/session/$sessionId'),
         headers: {'Authorization': 'Bearer $token'},
-      ).timeout(const Duration(seconds: 10));
+      );
     } catch (_) {
-      // Best-effort
+      // Best-effort — session TTL-expires on backend regardless
     }
   }
 
@@ -141,22 +140,24 @@ class TranslateCallRepository {
   Future<void> createCallDoc(CallSession session) async {
     final batch = _firestore.batch();
 
-    final callRef = _firestore
-        .collection(AppConstants.callsCollection)
-        .doc(session.sessionId);
-    batch.set(callRef, session.toFirestore());
+    batch.set(
+      _firestore.collection(AppConstants.callsCollection).doc(session.sessionId),
+      session.toFirestore(),
+    );
 
     for (final uid in [session.callerUid, session.receiverUid]) {
       final entry = CallHistoryEntry.fromSession(
         session:    session,
         currentUid: uid,
       );
-      final histRef = _firestore
-          .collection(AppConstants.usersCollection)
-          .doc(uid)
-          .collection(AppConstants.callHistorySubcollection)
-          .doc(session.sessionId);
-      batch.set(histRef, entry.toFirestore());
+      batch.set(
+        _firestore
+            .collection(AppConstants.usersCollection)
+            .doc(uid)
+            .collection(AppConstants.callHistorySubcollection)
+            .doc(session.sessionId),
+        entry.toFirestore(),
+      );
     }
 
     await batch.commit();
@@ -165,18 +166,14 @@ class TranslateCallRepository {
   // ── Firestore: update call status ─────────────────────────────────────────
 
   Future<void> updateCallStatus(
-    String sessionId,
+    String     sessionId,
     CallStatus status, {
-    DateTime? endedAt,
-    int? durationSeconds,
+    DateTime?  endedAt,
+    int?       durationSeconds,
   }) async {
     final data = <String, dynamic>{'status': status.name};
-    if (endedAt != null) {
-      data['endedAt'] = Timestamp.fromDate(endedAt);
-    }
-    if (durationSeconds != null) {
-      data['durationSeconds'] = durationSeconds;
-    }
+    if (endedAt != null)        data['endedAt']         = Timestamp.fromDate(endedAt);
+    if (durationSeconds != null) data['durationSeconds'] = durationSeconds;
 
     await _firestore
         .collection(AppConstants.callsCollection)
@@ -184,34 +181,26 @@ class TranslateCallRepository {
         .update(data);
   }
 
+  // ── Firestore: update history entry ──────────────────────────────────────
+
   Future<void> updateHistoryEntry(
-    String uid,
-    String sessionId,
+    String              uid,
+    String              sessionId,
     Map<String, dynamic> data,
   ) async {
-    final firestoreData = data.map((key, value) {
-      if (value is DateTime) return MapEntry(key, Timestamp.fromDate(value));
-      return MapEntry(key, value);
-    });
+    // Convert DateTime values to Timestamps for Firestore
+    final fsData = data.map((k, v) =>
+        MapEntry(k, v is DateTime ? Timestamp.fromDate(v) : v));
 
     await _firestore
         .collection(AppConstants.usersCollection)
         .doc(uid)
         .collection(AppConstants.callHistorySubcollection)
         .doc(sessionId)
-        .update(firestoreData);
+        .update(fsData);
   }
 
-  // ── Firestore: update user language ──────────────────────────────────────
-
-  Future<void> updateUserLanguage(String uid, String sourceLang) async {
-    await _firestore
-        .collection(AppConstants.usersCollection)
-        .doc(uid)
-        .set({'language': sourceLang}, SetOptions(merge: true));
-  }
-
-  // ── Firestore: stream call doc (signalling) ───────────────────────────────
+  // ── Firestore: stream call doc ────────────────────────────────────────────
 
   Stream<CallSession> watchCallSession(String sessionId) {
     return _firestore
@@ -237,14 +226,27 @@ class TranslateCallRepository {
             : CallSession.fromFirestore(snap.docs.first));
   }
 
+  // ── Firestore: update user language ──────────────────────────────────────
+
+  Future<void> updateUserLanguage(String uid, String sourceLang) async {
+    await _firestore
+        .collection(AppConstants.usersCollection)
+        .doc(uid)
+        .set({'language': sourceLang}, SetOptions(merge: true));
+  }
+
   // ── WebSocket: connect ────────────────────────────────────────────────────
+  //
+  // Calls await _channel!.ready so that any TLS / auth / routing error
+  // surfaces immediately as an exception rather than failing silently on
+  // the first send.
 
   Future<void> connectWebSocket({
-    required String sessionId,
+    required String       sessionId,
     required CallLanguage myLanguage,
     required CallLanguage partnerLanguage,
   }) async {
-    // Ensure any previous connection is fully torn down
+    // Tear down any existing connection cleanly first
     await disconnectWebSocket();
 
     final token = await _idToken();
@@ -261,8 +263,8 @@ class TranslateCallRepository {
 
     _channel = WebSocketChannel.connect(uri);
 
-    // Await the ready future so connection errors surface immediately
-    // rather than silently failing on the first send.
+    // await ready throws if the TCP/TLS handshake or the server's HTTP 101
+    // upgrade fails — this surfaces errors before we start the audio pipeline.
     try {
       await _channel!.ready;
     } catch (e) {
@@ -272,22 +274,18 @@ class TranslateCallRepository {
 
     _wsSub = _channel!.stream.listen(
       _onWsData,
-      onError: (err) {
-        _wsEventController.add(
-          WsErrorEvent(code: 'WS_ERROR', message: err.toString()),
-        );
-      },
-      onDone: () {
-        // Stream closed — either partner left or connection dropped
-        _wsEventController.add(WsPartnerLeftEvent());
-      },
+      onError: (err) => _wsEventController.add(
+          WsErrorEvent(code: 'WS_ERROR', message: err.toString())),
+      onDone: () => _wsEventController.add(WsPartnerLeftEvent()),
     );
 
-    // Keep-alive ping every 20s to prevent Cloud Run idle timeout
+    // Keep-alive ping every 20 s — prevents Cloud Run from closing idle conn
     _pingTimer = Timer.periodic(AppConstants.wsPingInterval, (_) {
       _sendJson({'type': 'ping'});
     });
   }
+
+  // ── WebSocket: receive ────────────────────────────────────────────────────
 
   void _onWsData(dynamic data) {
     if (data is List<int>) {
@@ -296,8 +294,7 @@ class TranslateCallRepository {
       _wsEventController.add(WsAudioEvent(data));
     } else if (data is String) {
       try {
-        final msg = jsonDecode(data) as Map<String, dynamic>;
-        _onWsJson(msg);
+        _onWsJson(jsonDecode(data) as Map<String, dynamic>);
       } catch (_) {}
     }
   }
@@ -326,11 +323,11 @@ class TranslateCallRepository {
           code:    msg['code']    as String? ?? 'UNKNOWN',
           message: msg['message'] as String? ?? 'Unknown error',
         ));
-      // 'pong' silently ignored
+      // 'pong' and unknown types silently ignored
     }
   }
 
-  // ── WebSocket: send audio ─────────────────────────────────────────────────
+  // ── WebSocket: send ───────────────────────────────────────────────────────
 
   void sendAudio(Uint8List pcmBytes) {
     if (_channel == null) return;

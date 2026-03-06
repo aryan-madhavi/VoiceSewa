@@ -24,6 +24,8 @@ import 'features/translate_call/presentation/outgoing_call_screen.dart';
 import 'firebase_options.dart';
 
 // ── Background FCM handler ────────────────────────────────────────────────────
+// Runs in a separate isolate when app is terminated or backgrounded.
+// Must be top-level and annotated.
 
 @pragma('vm:entry-point')
 Future<void> _backgroundFcmHandler(RemoteMessage message) async {
@@ -43,18 +45,17 @@ Future<void> _backgroundFcmHandler(RemoteMessage message) async {
 
 // ── Router notifier ───────────────────────────────────────────────────────────
 //
-// Redirect rules (in priority order):
-//   1. Auth loading          → /splash
-//   2. Not logged in         → /login
-//   3. On auth screen        → /home
-//   4. ringingOutgoing       → /outgoing-call
-//   5. connecting OR active  → /active-call
-//      BUT: if currently on /incoming-call, stay there.
-//      acceptCall() connects the WS first, THEN sets phase=connecting.
-//      We must not redirect away from /incoming-call mid-setup or the
-//      WS connect gets interrupted before Firestore is updated.
-//   6. ended                 → /home (from call screens only)
-//   7. Incoming call (Firestore) → /incoming-call
+// REDIRECT PRIORITY:
+//   1. Auth loading             → /splash
+//   2. Not logged in            → /login
+//   3. On auth/splash screen    → /home
+//   4. ringingOutgoing          → /outgoing-call
+//   5. connecting OR active:
+//        • if currently on /incoming-call → STAY (acceptCall is mid-flight,
+//          WS not connected yet — must not interrupt)
+//        • otherwise                      → /active-call
+//   6. ended                    → /home  (from call screens)
+//   7. incomingCall != null     → /incoming-call
 //   8. On /incoming-call with no session → /home
 
 class _RouterNotifier extends AsyncNotifier<void> implements ChangeNotifier {
@@ -68,24 +69,15 @@ class _RouterNotifier extends AsyncNotifier<void> implements ChangeNotifier {
     notifyListeners();
   }
 
-  @override
-  void addListener(VoidCallback listener) => _listeners.add(listener);
-
-  @override
-  void removeListener(VoidCallback listener) => _listeners.remove(listener);
+  @override void addListener(VoidCallback l)    => _listeners.add(l);
+  @override void removeListener(VoidCallback l) => _listeners.remove(l);
+  @override bool get hasListeners               => _listeners.isNotEmpty;
+  @override void dispose()                      => _listeners.clear();
 
   @override
   void notifyListeners() {
-    for (final l in List<VoidCallback>.from(_listeners)) {
-      l();
-    }
+    for (final l in List<VoidCallback>.from(_listeners)) l();
   }
-
-  @override
-  bool get hasListeners => _listeners.isNotEmpty;
-
-  @override
-  void dispose() => _listeners.clear();
 
   String? redirect(BuildContext context, GoRouterState state) {
     final authAsync     = ref.read(currentUserProvider);
@@ -93,51 +85,52 @@ class _RouterNotifier extends AsyncNotifier<void> implements ChangeNotifier {
     final incomingAsync = ref.read(incomingCallProvider);
     final loc           = state.matchedLocation;
 
-    if (authAsync.isLoading) {
-      return loc == '/splash' ? null : '/splash';
-    }
+    // 1. Auth loading
+    if (authAsync.isLoading) return loc == '/splash' ? null : '/splash';
 
     final isLoggedIn   = authAsync.valueOrNull != null;
     final callPhase    = callAsync.valueOrNull?.phase;
     final incomingCall = incomingAsync.valueOrNull;
 
+    // 2. Not logged in
     if (!isLoggedIn) {
       const authRoutes = {'/login', '/signup', '/forgot-password'};
       return authRoutes.contains(loc) ? null : '/login';
     }
 
+    // 3. On auth/splash screen while logged in
     if (loc == '/login' || loc == '/signup' ||
         loc == '/forgot-password' || loc == '/splash') {
       return '/home';
     }
 
+    // 4. Caller is ringing
     if (callPhase == CallPhase.ringingOutgoing) {
       return loc == '/outgoing-call' ? null : '/outgoing-call';
     }
 
-    // CRITICAL: Do NOT redirect away from /incoming-call while the user is
-    // accepting the call. acceptCall() sets phase=connecting only AFTER the
-    // WS is connected and Firestore is updated. If we redirect to /active-call
-    // the moment phase=connecting is seen, it happens before the WS connects.
-    //
-    // Rule: only go to /active-call if we are NOT on /incoming-call.
+    // 5. Connecting or active
+    //    IMPORTANT: stay on /incoming-call while acceptCall() is executing.
+    //    acceptCall() connects WS first, updates Firestore second, then sets
+    //    phase=connecting. Redirecting away mid-flight breaks the WS handshake.
     if (callPhase == CallPhase.connecting || callPhase == CallPhase.active) {
-      if (loc == '/incoming-call') return null; // stay — setup still in progress
+      if (loc == '/incoming-call') return null; // acceptCall still running
       return loc == '/active-call' ? null : '/active-call';
     }
 
+    // 6. Call ended — go home from any call screen
     if (callPhase == CallPhase.ended) {
       const callScreens = {'/outgoing-call', '/incoming-call', '/active-call'};
       return callScreens.contains(loc) ? '/home' : null;
     }
 
+    // 7. Incoming call from Firestore
     if (incomingCall != null) {
       return loc == '/incoming-call' ? null : '/incoming-call';
     }
 
-    if (loc == '/incoming-call') {
-      return '/home';
-    }
+    // 8. Stale /incoming-call with no session
+    if (loc == '/incoming-call') return '/home';
 
     return null;
   }
@@ -188,11 +181,10 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-// ── Splash screen ─────────────────────────────────────────────────────────────
+// ── Splash ────────────────────────────────────────────────────────────────────
 
 class _SplashScreen extends StatelessWidget {
   const _SplashScreen();
-
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
@@ -201,28 +193,20 @@ class _SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'VoiceSewa',
-              style: TextStyle(
-                color:        AppTheme.primary,
-                fontSize:     36,
-                fontWeight:   FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
-            ),
+            Text('VoiceSewa',
+                style: TextStyle(
+                  color:        AppTheme.primary,
+                  fontSize:     36,
+                  fontWeight:   FontWeight.bold,
+                  letterSpacing: 0.5,
+                )),
             SizedBox(height: 8),
-            Text(
-              'Translate',
-              style: TextStyle(
-                color:    AppTheme.callTextSecondary,
-                fontSize: 18,
-              ),
-            ),
+            Text('Translate',
+                style: TextStyle(
+                    color: AppTheme.callTextSecondary, fontSize: 18)),
             SizedBox(height: 48),
             CircularProgressIndicator(
-              color:       AppTheme.primary,
-              strokeWidth: 2.5,
-            ),
+                color: AppTheme.primary, strokeWidth: 2.5),
           ],
         ),
       ),
@@ -234,7 +218,6 @@ class _SplashScreen extends StatelessWidget {
 
 class CallTranslateApp extends ConsumerStatefulWidget {
   const CallTranslateApp({super.key});
-
   @override
   ConsumerState<CallTranslateApp> createState() => _CallTranslateAppState();
 }
@@ -244,26 +227,35 @@ class _CallTranslateAppState extends ConsumerState<CallTranslateApp> {
   void initState() {
     super.initState();
 
-    // Wire up the local notification tap callback.
-    // This fires when the user taps the heads-up banner (foreground) or
-    // the notification shade (background). It triggers a router refresh
-    // which routes to /incoming-call where the user sees the accept/decline UI.
+    // ── Step 1: Register the notification tap handler FIRST ──────────────
+    // This must happen before the second init() call below so that
+    // _handleLaunchNotification() (called inside init()) can use it.
+    //
+    // What happens on tap:
+    //   • The incomingCallProvider Firestore stream already has the session
+    //     (it started as soon as the user logged in).
+    //   • We just need to trigger a router re-evaluation — it will see
+    //     incomingCall != null and redirect to /incoming-call automatically.
     NotificationService.instance.setOnNotificationTap((sessionId) {
-      debugPrint('[App] Notification tap → session $sessionId');
-      // The incomingCallProvider Firestore stream already has the session.
-      // Just notify the router to re-evaluate — it will redirect to
-      // /incoming-call because incomingCall != null.
+      debugPrint('[App] notification tap → sessionId=$sessionId');
+      // Trigger router refresh — incomingCallProvider has the session,
+      // redirect rule will send user to /incoming-call.
       ref.read(_routerNotifierProvider.notifier).notifyListeners();
     });
 
+    // ── Step 2: Re-init NotificationService now that tap handler is set ──
+    // The first init() was called in main() before ProviderScope existed,
+    // so _onNotificationTap was null then. Re-calling init() here picks up
+    // any launch notification (TERMINATED tap scenario).
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Re-init picks up any notification that launched the app while terminated
       NotificationService.instance.init();
 
+      // ── Step 3: Init FCM service ─────────────────────────────────────
+      // Handles FCM background/terminated taps (onMessageOpenedApp /
+      // getInitialMessage). Same router-refresh approach as above.
       ref.read(fcmServiceProvider).init(
         onCallNotificationTap: (sessionId) {
-          // FCM background/terminated tap — same as local notification tap.
-          debugPrint('[FCM] Tap → session $sessionId');
+          debugPrint('[FCM] tap → sessionId=$sessionId');
           ref.read(_routerNotifierProvider.notifier).notifyListeners();
         },
       );
@@ -291,8 +283,13 @@ Future<void> main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Register background FCM handler before runApp
   FirebaseMessaging.onBackgroundMessage(_backgroundFcmHandler);
 
+  // Early init — creates the Android notification channel.
+  // _onNotificationTap is NOT set yet (ProviderScope doesn't exist yet),
+  // so launch-notification detection is deferred to the second init() call
+  // in CallTranslateApp.initState (after tap handler is registered).
   await NotificationService.instance.init();
 
   await FirebaseMessaging.instance.requestPermission(

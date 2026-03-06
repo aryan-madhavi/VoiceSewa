@@ -1,11 +1,5 @@
 // lib/features/translate_call/application/providers.dart
-//
-// Providers scoped to the translate_call feature.
-// Firebase singletons (firebaseAuthProvider, firestoreProvider,
-// currentUserProvider, currentUserProfileProvider) live in
-// auth/application/auth_providers.dart and are imported from there.
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants.dart';
@@ -21,8 +15,7 @@ import '../domain/call_session.dart';
 import 'call_controller.dart';
 import 'call_history_controller.dart';
 
-// Re-export auth providers so the rest of translate_call only needs
-// to import this one file.
+// Re-export auth providers so the rest of translate_call only imports this file
 export '../../auth/application/auth_providers.dart'
     show
         firebaseAuthProvider,
@@ -64,8 +57,6 @@ final callHistoryRepositoryProvider = Provider<CallHistoryRepository>(
 
 // ── Language selection ────────────────────────────────────────────────────────
 
-/// Initialised from the user's Firestore profile once it loads.
-/// Defaults to hindi until the profile is available.
 final selectedLanguageProvider = StateProvider<CallLanguage>(
   (_) => CallLanguage.hindi,
 );
@@ -101,10 +92,10 @@ final incomingCallProvider = StreamProvider<CallSession?>(
   },
 );
 
-// ── All users stream (contact list) ──────────────────────────────────────────
+// ── All users (contact list) ──────────────────────────────────────────────────
+// Streams all registered users from Firestore, excluding the current user.
+// Used by HomeScreen to show the callable contact list.
 
-/// Streams all registered users from Firestore, excluding the current user.
-/// Used by HomeScreen to display the contact list.
 final allUsersProvider = StreamProvider<List<UserProfile>>(
   (ref) {
     final userAsync = ref.watch(currentUserProvider);
@@ -119,7 +110,7 @@ final allUsersProvider = StreamProvider<List<UserProfile>>(
             .snapshots()
             .map((snap) => snap.docs
                 .map(UserProfile.fromFirestore)
-                .where((u) => u.uid != user.uid) // exclude self
+                .where((u) => u.uid != user.uid)
                 .toList());
       },
       loading: () => const Stream.empty(),

@@ -1,16 +1,15 @@
 // lib/features/auth/domain/user_profile.dart
 //
 // Firestore document stored at users/{uid}.
-// Created on sign-up, updated whenever FCM token rotates.
+// Written on sign-up and updated whenever FCM token rotates.
 //
 // Fields:
-//   uid           — Firebase Auth UID (also the doc ID)
-//   displayName   — set during sign-up / Google sign-in
-//   email         — user's email address
-//   language      — preferred spoken language (sourceLang BCP-47), e.g. "hi-IN"
-//                   defaults to "hi-IN" at creation, user can update from HomeScreen
-//   fcmToken      — latest FCM registration token (updated by FcmService)
-//   createdAt     — account creation timestamp
+//   uid         — Firebase Auth UID (also the doc ID)
+//   displayName — set during sign-up or Google sign-in
+//   email       — user's email address
+//   language    — BCP-47 sourceLang code e.g. "hi-IN", default "hi-IN"
+//   fcmToken    — latest FCM registration token (set by FcmService)
+//   createdAt   — account creation timestamp
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -24,15 +23,12 @@ class UserProfile {
     this.fcmToken,
   });
 
-  final String uid;
-  final String displayName;
-  final String email;
-
-  /// BCP-47 sourceLang code, e.g. "hi-IN"
-  final String language;
-
-  final DateTime createdAt;
-  final String? fcmToken;
+  final String    uid;
+  final String    displayName;
+  final String    email;
+  final String    language;   // BCP-47 sourceLang e.g. "hi-IN"
+  final DateTime  createdAt;
+  final String?   fcmToken;
 
   factory UserProfile.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
