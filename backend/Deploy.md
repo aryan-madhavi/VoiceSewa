@@ -142,6 +142,68 @@ Cloud Run terminates TLS, so use `https://` for REST and `wss://` for WebSocket 
 
 ---
 
+---
+
+## Railway Deployment (recommended for early/moderate scale)
+
+Railway deploys directly from GitHub, uses the existing `Dockerfile`, and injects environment variables from the dashboard — no Secret Manager, no Artifact Registry, no IAM setup.
+
+### 1. Create a Railway project
+
+1. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub repo
+2. Select this repository and set the **Root Directory** to `backend/`
+3. Railway detects `Dockerfile` automatically (configured in `railway.json`)
+
+### 2. Set environment variables in the Railway dashboard
+
+Go to your service → **Variables** and add:
+
+| Variable | Value |
+|---|---|
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | Full contents of your service account JSON key file |
+| `GOOGLE_CLOUD_PROJECT` | `voicesewa` |
+
+`PORT` is injected by Railway automatically — do not set it.
+
+To get the service account JSON:
+```bash
+gcloud iam service-accounts keys create /tmp/key.json \
+  --iam-account=voicesewa-backend@voicesewa.iam.gserviceaccount.com
+cat /tmp/key.json   # paste the full output into the Railway variable
+```
+
+The service account needs the same IAM roles as the Cloud Run setup (step 2 above).
+
+### 3. Generate a domain
+
+Railway service → **Settings → Networking → Generate Domain**
+
+You'll get a URL like `https://voicesewa-backend-production.up.railway.app`. Use this as `BACKEND_URL` when building the Flutter app.
+
+### 4. Deploy
+
+Every push to your connected branch triggers a redeploy automatically. To deploy manually:
+
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# From backend/
+railway login
+railway up
+```
+
+### 5. Update Flutter app
+
+```bash
+flutter build apk \
+  --dart-define=BACKEND_URL=https://voicesewa-backend-production.up.railway.app
+```
+
+See `app/lib/core/constants.dart` for full build instructions.
+
+---
+
 ## Local Development
 
 ```bash

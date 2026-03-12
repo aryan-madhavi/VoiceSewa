@@ -1,13 +1,41 @@
 class AppConstants {
   AppConstants._();
 
-  /// Override at build time:
-  ///   flutter run --dart-define=BACKEND_URL=https://your-cloud-run-url
+  // ── BACKEND URL ─────────────────────────────────────────────────────────────
+  // The value is injected at build time via --dart-define so the APK/IPA never
+  // needs to be rebuilt just because the server URL changes.
+  //
+  // ── Local dev ───────────────────────────────────────────────────────────────
+  //   Android emulator  → http://10.0.2.2:8080   (default below)
+  //   iOS simulator     → http://localhost:8080
+  //   Physical device   → http://<your-LAN-IP>:8080
+  //
+  //   flutter run --dart-define=BACKEND_URL=http://192.168.1.10:8080
+  //
+  // ── Railway deployment ──────────────────────────────────────────────────────
+  //   1. Go to your Railway project → Settings → Domains → Generate Domain
+  //      (or add a custom domain). Railway gives you a URL like:
+  //        https://voicesewa-backend-production.up.railway.app
+  //
+  //   2. Build the app with that URL:
+  //        flutter build apk \
+  //          --dart-define=BACKEND_URL=https://voicesewa-backend-production.up.railway.app
+  //
+  //      Note: Railway terminates TLS, so use https:// — NOT http://.
+  //      The backendWsUrl getter below automatically converts it to wss://.
+  //
+  // ── Cloud Run deployment ────────────────────────────────────────────────────
+  //   Same pattern — just substitute the Cloud Run service URL:
+  //        flutter build apk \
+  //          --dart-define=BACKEND_URL=https://voicesewa-backend-xxxx-as.a.run.app
+  //
   static const String backendUrl = String.fromEnvironment(
     'BACKEND_URL',
     defaultValue: 'http://10.0.2.2:8080', // Android emulator → localhost
   );
 
+  // Converts http → ws and https → wss automatically.
+  // No change needed here when switching between Railway / Cloud Run / local.
   static String get backendWsUrl =>
       backendUrl.replaceFirst(RegExp(r'^http'), 'ws');
 }
