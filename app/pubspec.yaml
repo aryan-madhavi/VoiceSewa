@@ -1,0 +1,58 @@
+name: call_translate
+description: Auto-translating call feature for VoiceSewa.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.15.0
+  firebase_auth: ^5.7.0
+  cloud_firestore: ^5.6.0
+  firebase_messaging: ^15.2.0
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Navigation
+  go_router: ^14.8.1
+
+  # Audio capture (PCM16 stream at 16 kHz)
+  record: ^5.2.0
+
+  # Audio playback (TTS MP3 responses)
+  audioplayers: ^6.0.0
+
+  # WebSocket
+  web_socket_channel: ^3.0.0
+
+  # HTTP
+  http: ^1.2.2
+
+  # Storage
+  shared_preferences: ^2.3.4
+
+  # Models
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+dependency_overrides:
+  record_linux: ^1.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.14
+  riverpod_generator: ^2.6.1
+  freezed: ^2.5.7
+  json_serializable: ^6.9.0
+
+flutter:
+  uses-material-design: true

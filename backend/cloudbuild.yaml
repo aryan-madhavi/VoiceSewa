@@ -1,0 +1,45 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - -t
+      - asia-south1-docker.pkg.dev/$PROJECT_ID/voicesewa/backend:$COMMIT_SHA
+      - -t
+      - asia-south1-docker.pkg.dev/$PROJECT_ID/voicesewa/backend:latest
+      - .
+
+  # Push both tags
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - --all-tags
+      - asia-south1-docker.pkg.dev/$PROJECT_ID/voicesewa/backend
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - voicesewa-backend
+      - --image=asia-south1-docker.pkg.dev/$PROJECT_ID/voicesewa/backend:$COMMIT_SHA
+      - --region=asia-south1
+      - --platform=managed
+      - --service-account=voicesewa-backend@$PROJECT_ID.iam.gserviceaccount.com
+      - --set-secrets=/secrets/sa-key.json=voicesewa-sa-key:latest
+      - --set-env-vars=GOOGLE_APPLICATION_CREDENTIALS=/secrets/sa-key.json,GOOGLE_CLOUD_PROJECT=$PROJECT_ID
+      - --allow-unauthenticated
+      - --min-instances=0
+      - --max-instances=10
+      - --concurrency=80
+      - --timeout=3600
+      - --port=8080
+      - --quiet
+
+images:
+  - asia-south1-docker.pkg.dev/$PROJECT_ID/voicesewa/backend:$COMMIT_SHA
+  - asia-south1-docker.pkg.dev/$PROJECT_ID/voicesewa/backend:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY
