@@ -96,7 +96,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     required String quotationId,
     required String messageId,
   }) async {
-    final url = Uri.parse("https://fomoha8938hutudns.app.n8n.cloud/webhook/translate");
+    final url = Uri.parse("https://veyame4820devlug.app.n8n.cloud/webhook/translate");
 
     try {
       await http.post(

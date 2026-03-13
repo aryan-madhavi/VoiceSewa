@@ -24,7 +24,7 @@ class VoiceBotController extends Notifier<bool> {
 
     try {
       final response = await http.post(
-        Uri.parse('https://fomoha8938hutudns.app.n8n.cloud/webhook/chat'),
+        Uri.parse('https://veyame4820devlug.app.n8n.cloud/webhook/chat'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
