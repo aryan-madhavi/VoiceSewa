@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:voicesewa_client/core/constants/color_constants.dart';
 import 'package:voicesewa_client/core/extensions/context_extensions.dart';
 import 'package:voicesewa_client/features/quotations/providers/chat_provider.dart';
-import 'package:voicesewa_client/features/quotations/prsentation/voice_call_page.dart';
+import 'package:voicesewa_client/features/call/providers/call_providers.dart';
 import 'package:voicesewa_client/shared/models/quotation_model.dart';
 
 import '../../../core/providers/language_provider.dart';
@@ -113,18 +113,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  Future<void> _callWorker(String workerName) async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VoiceCallPage(
-          jobId: widget.jobId,
-          workerId: widget.workerId,
-          // channelId: widget.jobId,
-          workerName: workerName,
-        ),
-      ),
-    );
+  void _callWorker(String workerName) {
+    ref.read(callControllerProvider.notifier).startCall(widget.workerId);
   }
 
   @override

@@ -57,9 +57,10 @@ dependencies:
   geocoding: ^4.0.0
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
-  agora_rtc_engine: ^6.3.2
   record: ^6.2.0
   audioplayers: ^6.5.1
+  web_socket_channel: ^3.0.0
+  freezed_annotation: ^2.4.4
 
 
 dev_dependencies:
