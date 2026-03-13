@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
 import 'package:voicesewa_worker/core/constants/color_constants.dart';
-import 'package:voicesewa_worker/features/jobs/presentation/voice_call_page.dart';
+import 'package:voicesewa_worker/features/call/providers/call_providers.dart';
 import 'package:voicesewa_worker/features/jobs/providers/job_provider.dart';
 import 'package:voicesewa_worker/features/profile/providers/worker_profile_provider.dart';
 import 'package:voicesewa_worker/shared/models/job_model.dart';
@@ -107,16 +107,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       }
     }
 
-  Future<void> _callClient(String clientName) async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VoiceCallPage(
-          // channelId: widget.job.jobId,
-          clientName: clientName,
-        ),
-      ),
-    );
+  void _callClient(String clientName) {
+    ref.read(callControllerProvider.notifier).startCall(widget.job.clientUid);
   }
 
   @override

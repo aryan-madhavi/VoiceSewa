@@ -17,14 +17,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.66"
-  agora_rtc_engine:
-    dependency: "direct main"
-    description:
-      name: agora_rtc_engine
-      sha256: "6559294d18ce4445420e19dbdba10fb58cac955cd8f22dbceae26716e194d70e"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.5.3"
   analyzer:
     dependency: transitive
     description:
@@ -477,6 +469,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  freezed_annotation:
+    dependency: "direct main"
+    description:
+      name: freezed_annotation
+      sha256: c2e2d632dd9b8a2b7751117abcfc2b4888ecfe181bd9fca7170d9ef02e595fe2
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.4"
   frontend_server_client:
     dependency: transitive
     description:
@@ -701,14 +701,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
-  iris_method_channel:
-    dependency: transitive
-    description:
-      name: iris_method_channel
-      sha256: bfb5cfc6c6eae42da8cd1b35977a72d8b8881848a5dfc3d672e4760a907d11a0
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.4"
   js:
     dependency: transitive
     description:
@@ -1499,7 +1491,7 @@ packages:
     source: hosted
     version: "1.0.1"
   web_socket_channel:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: web_socket_channel
       sha256: d645757fb0f4773d602444000a8131ff5d48c9e47adfe9772652dd1a4f2d45c8
