@@ -55,7 +55,7 @@ class LanguageOption {
 const List<LanguageOption> kSupportedLanguages = [
   LanguageOption(code: 'mr-IN', name: 'Marathi',           nativeName: 'मराठी'),
   LanguageOption(code: 'hi-IN', name: 'Hindi',             nativeName: 'हिंदी'),
-  LanguageOption(code: 'en-IN', name: 'English (India)',   nativeName: 'English'),
+  LanguageOption(code: 'en-US', name: 'English (India)',   nativeName: 'English'),
   LanguageOption(code: 'en-US', name: 'English (US)',      nativeName: 'English'),
   LanguageOption(code: 'ta-IN', name: 'Tamil',             nativeName: 'தமிழ்'),
   LanguageOption(code: 'te-IN', name: 'Telugu',            nativeName: 'తెలుగు'),

@@ -10,7 +10,7 @@ import '../../../core/providers/language_provider.dart';
 // ── BCP-47 language code mapping ───────────────────────────────────────────────
 
 const _localeToBcp47 = {
-  'en': 'en-IN',
+  'en': 'en-US',
   'hi': 'hi-IN',
   'mr': 'mr-IN',
   'gu': 'gu-IN',
@@ -61,7 +61,7 @@ class CallController extends AsyncNotifier<CallPhase> {
 
   String _myLang() {
     final locale = ref.read(localeProvider);
-    return _localeToBcp47[locale.languageCode] ?? 'en-IN';
+    return _localeToBcp47[locale.languageCode] ?? 'en-US';
   }
 
   void _handleIncomingSignal(CallSignal signal) {

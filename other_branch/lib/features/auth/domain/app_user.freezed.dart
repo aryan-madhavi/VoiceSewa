@@ -141,7 +141,7 @@ class _$AppUserImpl implements _AppUser {
       {required this.uid,
       required this.email,
       this.displayName = '',
-      this.lang = 'en-IN'});
+      this.lang = 'en-US'});
 
   factory _$AppUserImpl.fromJson(Map<String, dynamic> json) =>
       _$$AppUserImplFromJson(json);
