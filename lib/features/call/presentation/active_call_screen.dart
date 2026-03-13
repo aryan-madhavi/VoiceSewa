@@ -6,7 +6,7 @@ import '../providers/call_providers.dart';
 import '../../../core/providers/language_provider.dart';
 
 const _localeToBcp47 = {
-  'en': 'en-IN',
+  'en': 'en-US',
   'hi': 'hi-IN',
   'mr': 'mr-IN',
   'gu': 'gu-IN',
@@ -21,7 +21,7 @@ class ActiveCallScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final transcripts = ref.watch(transcriptsProvider);
     final locale = ref.watch(localeProvider);
-    final myLang = _localeToBcp47[locale.languageCode] ?? 'en-IN';
+    final myLang = _localeToBcp47[locale.languageCode] ?? 'en-US';
 
     return Scaffold(
       appBar: AppBar(

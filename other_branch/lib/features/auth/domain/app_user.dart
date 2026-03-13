@@ -11,7 +11,7 @@ class AppUser with _$AppUser {
     @Default('') String displayName,
 
     /// BCP-47 language code stored in Firestore, e.g. 'mr-IN'
-    @Default('en-IN') String lang,
+    @Default('en-US') String lang,
   }) = _AppUser;
 
   factory AppUser.fromJson(Map<String, dynamic> json) =>

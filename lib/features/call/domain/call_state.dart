@@ -71,7 +71,7 @@ class CallSignal {
       sessionId: id,
       callerUid: data['callerUid'] as String,
       receiverUid: data['receiverUid'] as String,
-      callerLang: data['callerLang'] as String? ?? 'en-IN',
+      callerLang: data['callerLang'] as String? ?? 'en-US',
       status: data['status'] as String? ?? 'ringing',
     );
   }

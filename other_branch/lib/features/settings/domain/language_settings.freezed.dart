@@ -106,7 +106,7 @@ class __$$LanguageSettingsImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$LanguageSettingsImpl implements _LanguageSettings {
-  const _$LanguageSettingsImpl({this.lang = 'en-IN'});
+  const _$LanguageSettingsImpl({this.lang = 'en-US'});
 
   factory _$LanguageSettingsImpl.fromJson(Map<String, dynamic> json) =>
       _$$LanguageSettingsImplFromJson(json);
