@@ -37,42 +37,75 @@ class App extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       theme: lightThemeData,
-      builder: (context, child) => _CallOverlay(child: child!),
-      home: AppGate(),
+      home: const _CallListener(child: AppGate()),
       routes: AppRoutes.routes,
     );
   }
 }
 
-/// Renders call screens (outgoing / incoming / active) as a full-screen overlay
-/// on top of the entire navigation stack. The overlay is driven purely by
-/// [callControllerProvider] state so it works from any screen in the app.
-class _CallOverlay extends ConsumerWidget {
-  const _CallOverlay({required this.child});
+/// Listens to [callControllerProvider] and imperatively pushes / removes
+/// a call route onto the root Navigator so that call screens are proper
+/// Navigator routes — giving them a full Overlay context (required by
+/// Tooltip, FloatingActionButton, AppBar back-button, etc.).
+class _CallListener extends ConsumerStatefulWidget {
+  const _CallListener({required this.child});
 
   final Widget child;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final callPhaseAsync = ref.watch(callControllerProvider);
+  ConsumerState<_CallListener> createState() => _CallListenerState();
+}
 
-    return callPhaseAsync.maybeWhen(
-      data: (phase) {
-        if (phase is IdlePhase || phase is EndedPhase) return child;
+class _CallListenerState extends ConsumerState<_CallListener> {
+  Route<void>? _callRoute;
 
-        return Stack(
-          children: [
-            child,
-            Positioned.fill(child: _buildCallScreen(phase)),
-          ],
-        );
-      },
-      orElse: () => child,
+  void _pushCallScreen() {
+    if (_callRoute != null) return;
+    _callRoute = MaterialPageRoute<void>(
+      settings: const RouteSettings(name: '/call'),
+      builder: (_) => const _CallScreenRouter(),
     );
+    Navigator.of(context, rootNavigator: true).push(_callRoute!);
   }
 
-  Widget _buildCallScreen(CallPhase phase) {
+  void _popCallScreen() {
+    if (_callRoute == null) return;
+    Navigator.of(context, rootNavigator: true).removeRoute(_callRoute!);
+    _callRoute = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<AsyncValue<CallPhase>>(callControllerProvider, (_, next) {
+      final phase = next.asData?.value;
+      if (phase == null) return;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (phase is IdlePhase || phase is EndedPhase) {
+          _popCallScreen();
+        } else {
+          _pushCallScreen();
+        }
+      });
+    });
+
+    return widget.child;
+  }
+}
+
+/// Watches [callControllerProvider] and renders the correct call screen
+/// based on the current phase. Runs inside a real Navigator route so all
+/// widgets (Tooltip, Overlay, etc.) work correctly.
+class _CallScreenRouter extends ConsumerWidget {
+  const _CallScreenRouter();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final phase = ref.watch(callControllerProvider).asData?.value;
+
     if (phase is OutgoingPhase) return OutgoingCallScreen(phase: phase);
+
     if (phase is IncomingPhase) {
       return IncomingCallScreen(
         signal: CallSignal(
@@ -84,8 +117,10 @@ class _CallOverlay extends ConsumerWidget {
         ),
       );
     }
+
     if (phase is ActivePhase) return ActiveCallScreen(phase: phase);
-    // ConnectingPhase — show a simple loading screen
+
+    // ConnectingPhase or brief transition
     return const Scaffold(
       body: Center(
         child: Column(
