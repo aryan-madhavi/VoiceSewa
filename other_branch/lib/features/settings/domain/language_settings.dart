@@ -7,7 +7,7 @@ part 'language_settings.g.dart';
 class LanguageSettings with _$LanguageSettings {
   const factory LanguageSettings({
     /// BCP-47 language code the user speaks, e.g. 'mr-IN'
-    @Default('en-US') String lang,
+    @Default('en-IN') String lang,
   }) = _LanguageSettings;
 
   factory LanguageSettings.fromJson(Map<String, dynamic> json) =>

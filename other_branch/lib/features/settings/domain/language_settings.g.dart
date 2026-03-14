@@ -9,7 +9,7 @@ part of 'language_settings.dart';
 _$LanguageSettingsImpl _$$LanguageSettingsImplFromJson(
         Map<String, dynamic> json) =>
     _$LanguageSettingsImpl(
-      lang: json['lang'] as String? ?? 'en-US',
+      lang: json['lang'] as String? ?? 'en-IN',
     );
 
 Map<String, dynamic> _$$LanguageSettingsImplToJson(

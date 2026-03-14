@@ -13,7 +13,7 @@ class LanguageRepository {
   final AuthRepository _authRepo;
 
   LanguageSettings load() {
-    final lang = _prefs.getString(_kLangKey) ?? 'en-US';
+    final lang = _prefs.getString(_kLangKey) ?? 'en-IN';
     return LanguageSettings(lang: lang);
   }
 

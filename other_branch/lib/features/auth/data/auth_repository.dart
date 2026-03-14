@@ -49,7 +49,7 @@ class AuthRepository {
         .collection(FirestoreCollections.users)
         .doc(uid)
         .get();
-    return (snap.data()?['lang'] as String?) ?? 'en-US';
+    return (snap.data()?['lang'] as String?) ?? 'en-IN';
   }
 }
 
