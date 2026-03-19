@@ -106,6 +106,16 @@ router.delete('/session/:id', requireAuth, (req, res) => {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
+  // Notify any connected partner BEFORE deleting the session. Without this,
+  // deleteSession() removes the session from memory first, and the subsequent
+  // ws 'close' event can no longer find it to send partner_left.
+  const partnerLeft = JSON.stringify({ type: 'partner_left' });
+  for (const [slotUid, slot] of Object.entries(session.slots)) {
+    if (slotUid !== uid && slot.ws.readyState === 1 /* OPEN */) {
+      slot.ws.send(partnerLeft);
+    }
+  }
+
   deleteSession(req.params.id);
   res.status(204).send();
 });
