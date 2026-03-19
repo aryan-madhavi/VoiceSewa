@@ -11,7 +11,10 @@ async function requireAuth(req, res, next) {
     return res.status(401).json({ error: 'Missing Bearer token' });
   }
   try {
-    req.user = await verifyToken(auth.slice(7));
+    // checkRevoked: false matches the WebSocket handler — the 1-hour JWT
+    // expiry is sufficient; the extra revocation network call causes
+    // spurious "invalid token" failures on fresh logins.
+    req.user = await verifyToken(auth.slice(7), { checkRevoked: false });
     next();
   } catch {
     res.status(401).json({ error: 'Invalid or expired token' });
