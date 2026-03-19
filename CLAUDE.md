@@ -11,7 +11,7 @@ VoiceSewa is a multilingual voice-assisted job platform for blue-collar services
 ```
 backend/          Node.js translation server (run here for the backend)
 app/
-  call_translate/ Flutter standalone app (later integrate into voicesewa_client / voicesewa_worker)
+  auto_call_translate/ Flutter standalone app (later integrate into voicesewa_client / voicesewa_worker)
 ```
 
 ---
@@ -85,15 +85,15 @@ ACTIVE_TTL_MS=7200000   # TTL once both connected (2 h)
 
 ---
 
-## Flutter App (`app/call_translate/`)
+## Flutter App (`app/auto_call_translate/`)
 
 ### First-time setup
 
 ```bash
-cd app/call_translate
+cd app/auto_call_translate
 
 # 1. Scaffold platform files (creates android/, ios/, etc.)
-flutter create . --project-name call_translate --org com.voicesewa
+flutter create . --project-name auto_call_translate --org com.voicesewa
 
 # 2. Add permissions to android/app/src/main/AndroidManifest.xml (inside <manifest>):
 #    <uses-permission android:name="android.permission.RECORD_AUDIO"/>

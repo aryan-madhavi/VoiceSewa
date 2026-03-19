@@ -95,7 +95,9 @@ class CallController extends AsyncNotifier<CallPhase> {
   /// Decline an incoming call without answering.
   Future<void> declineCall(String sessionId) async {
     try {
-      await _repo.updateCallStatus(sessionId, 'ended');
+      // endSession calls DELETE /session which notifies the caller via
+      // WebSocket (partner_left) before tearing down the session.
+      await _repo.endSession(sessionId);
     } catch (_) {
       // Best effort — always transition to idle so the UI clears.
     }
@@ -105,6 +107,7 @@ class CallController extends AsyncNotifier<CallPhase> {
   /// Hang up the active call.
   Future<void> endCall() async {
     _connectingTimer?.cancel();
+    ref.read(speakerProvider.notifier).state = true;
     final current = state.valueOrNull;
     final sessionId = switch (current) {
       OutgoingPhase(:final sessionId) => sessionId,
@@ -141,28 +144,43 @@ class CallController extends AsyncNotifier<CallPhase> {
           case 'error':
             _connectingTimer?.cancel();
             unawaited(_repo.disconnect());
+            ref.read(callEndReasonProvider.notifier).state = 'Connection lost';
             state = const AsyncData(CallPhase.ended(reason: 'Connection lost'));
         }
       },
     );
 
-    // If the partner's WebSocket is gone (they dropped before receiver accepted),
-    // the backend will never send call_started. Bail out after 30 s.
+    // If the partner's WebSocket never arrives, the backend will never send
+    // call_started. Bail out after 30 s for both the caller (OutgoingPhase)
+    // and the receiver (ConnectingPhase).
     _connectingTimer?.cancel();
     _connectingTimer = Timer(const Duration(seconds: 30), () {
-      if (state.valueOrNull is ConnectingPhase) {
+      final s = state.valueOrNull;
+      if (s is OutgoingPhase || s is ConnectingPhase) {
         unawaited(_repo.disconnect());
-        state = const AsyncData(CallPhase.ended(reason: 'Partner did not connect'));
+        ref.read(callEndReasonProvider.notifier).state = 'Partner did not answer';
+        state = const AsyncData(CallPhase.ended(reason: 'Partner did not answer'));
       }
     });
   }
 
-  void _handlePartnerLeft(String sessionId) {
+  Future<void> _handlePartnerLeft(String sessionId) async {
     unawaited(_repo.endSession(sessionId));
     ref.read(transcriptsProvider.notifier).clear();
-    state = const AsyncData(CallPhase.ended(reason: 'Partner left the call'));
+    ref.read(callEndReasonProvider.notifier).state = 'The other party has left the call';
+    state = const AsyncData(CallPhase.ended(reason: 'The other party has left the call'));
+    await Future.delayed(const Duration(seconds: 2));
+    state = const AsyncData(CallPhase.idle());
   }
 }
 
 final callControllerProvider =
     AsyncNotifierProvider<CallController, CallPhase>(CallController.new);
+
+/// Tracks whether audio is currently routed to the speaker (true) or
+/// earpiece (false). Reset to true when a call ends.
+final speakerProvider = StateProvider<bool>((ref) => true);
+
+/// Holds a pending end-of-call reason to show as an alert.
+/// Set when the call ends with a reason; cleared after the dialog is shown.
+final callEndReasonProvider = StateProvider<String?>((ref) => null);

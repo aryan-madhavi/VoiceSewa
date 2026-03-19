@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "431243640261",
-    "project_id": "voicesewa",
-    "storage_bucket": "voicesewa.firebasestorage.app"
+    "project_number": "221047757778",
+    "project_id": "autocalltranslate",
+    "storage_bucket": "autocalltranslate.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:431243640261:android:6a3b6d186086714293dfac",
+        "mobilesdk_app_id": "1:221047757778:android:ddfa650b10b38a5607460b",
         "android_client_info": {
-          "package_name": "com.example.call_translate"
+          "package_name": "com.carbonari.auto_call_translate"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAa2I-7TTJ96aHU-Ab7wvdKy79hJbnkD9s"
+          "current_key": "AIzaSyDAnttyFc6SpKhvBPDfDD1fNo7_vPlAM6A"
         }
       ],
       "services": {
@@ -26,15 +26,15 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:431243640261:android:cb30687f94c4336493dfac",
+        "mobilesdk_app_id": "1:221047757778:android:269f5cd3e985b9bc07460b",
         "android_client_info": {
-          "package_name": "com.example.voicesewa_client"
+          "package_name": "com.voicesewa.auto_call_translate"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAa2I-7TTJ96aHU-Ab7wvdKy79hJbnkD9s"
+          "current_key": "AIzaSyDAnttyFc6SpKhvBPDfDD1fNo7_vPlAM6A"
         }
       ],
       "services": {
@@ -45,26 +45,7 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:431243640261:android:147e3d236f85e74893dfac",
-        "android_client_info": {
-          "package_name": "com.example.voicesewa_worker"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAa2I-7TTJ96aHU-Ab7wvdKy79hJbnkD9s"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:431243640261:android:bdf5256eeadf779193dfac",
+        "mobilesdk_app_id": "1:221047757778:android:1aa8a246ae72519907460b",
         "android_client_info": {
           "package_name": "com.voicesewa.call_translate"
         }
@@ -72,7 +53,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAa2I-7TTJ96aHU-Ab7wvdKy79hJbnkD9s"
+          "current_key": "AIzaSyDAnttyFc6SpKhvBPDfDD1fNo7_vPlAM6A"
         }
       ],
       "services": {

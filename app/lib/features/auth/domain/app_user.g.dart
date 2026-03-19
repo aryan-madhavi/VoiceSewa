@@ -9,15 +9,17 @@ part of 'app_user.dart';
 _$AppUserImpl _$$AppUserImplFromJson(Map<String, dynamic> json) =>
     _$AppUserImpl(
       uid: json['uid'] as String,
-      email: json['email'] as String,
+      phoneNumber: json['phoneNumber'] as String? ?? '',
       displayName: json['displayName'] as String? ?? '',
       lang: json['lang'] as String? ?? 'en-IN',
+      isOnboarded: json['isOnboarded'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$AppUserImplToJson(_$AppUserImpl instance) =>
     <String, dynamic>{
       'uid': instance.uid,
-      'email': instance.email,
+      'phoneNumber': instance.phoneNumber,
       'displayName': instance.displayName,
       'lang': instance.lang,
+      'isOnboarded': instance.isOnboarded,
     };

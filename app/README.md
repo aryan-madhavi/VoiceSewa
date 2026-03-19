@@ -1,4 +1,4 @@
-# call_translate
+# auto_call_translate
 
 A new Flutter project.
 

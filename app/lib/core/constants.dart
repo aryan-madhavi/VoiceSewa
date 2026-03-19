@@ -2,40 +2,14 @@ class AppConstants {
   AppConstants._();
 
   // ── BACKEND URL ─────────────────────────────────────────────────────────────
-  // The value is injected at build time via --dart-define so the APK/IPA never
-  // needs to be rebuilt just because the server URL changes.
-  //
-  // ── Local dev ───────────────────────────────────────────────────────────────
-  //   Android emulator  → http://10.0.2.2:8080   (default below)
-  //   iOS simulator     → http://localhost:8080
-  //   Physical device   → http://<your-LAN-IP>:8080
-  //
-  //   flutter run --dart-define=BACKEND_URL=http://192.168.1.10:8080
-  //
-  // ── Railway deployment ──────────────────────────────────────────────────────
-  //   1. Go to your Railway project → Settings → Domains → Generate Domain
-  //      (or add a custom domain). Railway gives you a URL like:
-  //        https://voicesewa-backend-production.up.railway.app
-  //
-  //   2. Build the app with that URL:
-  //        flutter build apk \
-  //          --dart-define=BACKEND_URL=https://voicesewa-backend-production.up.railway.app
-  //
-  //      Note: Railway terminates TLS, so use https:// — NOT http://.
-  //      The backendWsUrl getter below automatically converts it to wss://.
-  //
-  // ── Cloud Run deployment ────────────────────────────────────────────────────
-  //   Same pattern — just substitute the Cloud Run service URL:
-  //        flutter build apk \
-  //          --dart-define=BACKEND_URL=https://voicesewa-backend-xxxx-as.a.run.app
-  //
-  static const String backendUrl = String.fromEnvironment(
-    'BACKEND_URL',
-    defaultValue: 'http://10.0.2.2:8080', // Android emulator → localhost
-  );
+  // To point at a local dev server temporarily change this to:
+  //   'http://10.0.2.2:8080'  Android emulator
+  //   'http://localhost:8080' iOS simulator
+  //   'http://<LAN-IP>:8080'  physical device on the same network
+  static const String backendUrl =
+      'https://voicesewa-production.up.railway.app';
 
-  // Converts http → ws and https → wss automatically.
-  // No change needed here when switching between Railway / Cloud Run / local.
+  // Converts https → wss automatically for WebSocket connections.
   static String get backendWsUrl =>
       backendUrl.replaceFirst(RegExp(r'^http'), 'ws');
 }
@@ -72,4 +46,30 @@ class FirestoreCollections {
   FirestoreCollections._();
   static const String calls = 'calls';
   static const String users = 'users';
+  // Each document ID is an E.164 phone number; value: { uid: String }
+  // Direct document reads — no collection query or composite index needed.
+  static const String phoneIndex = 'phone_index';
+}
+
+/// Normalise any Indian phone number string to E.164 (+91XXXXXXXXXX).
+///
+/// Handles all common formats saved in device contacts:
+///   9876543210      → +919876543210  (bare 10-digit)
+///   09876543210     → +919876543210  (STD leading-0, 11-digit)
+///   919876543210    → +919876543210  (country code without +)
+///   +91 98765 43210 → +919876543210  (already E.164 with spaces)
+String toE164(String raw) {
+  final digits = raw.replaceAll(RegExp(r'[^\d]'), '');
+  // Already E.164 — strip spaces/dashes and reattach the +
+  if (raw.trim().startsWith('+')) return '+$digits';
+  // STD format: leading 0 + 10-digit number = 11 digits
+  if (digits.length == 11 && digits.startsWith('0')) {
+    return '+91${digits.substring(1)}';
+  }
+  // Bare 10-digit Indian mobile number
+  if (digits.length == 10) return '+91$digits';
+  // Country code present without +: 91XXXXXXXXXX
+  if (digits.length == 12 && digits.startsWith('91')) return '+$digits';
+  // Best effort for anything else
+  return '+$digits';
 }

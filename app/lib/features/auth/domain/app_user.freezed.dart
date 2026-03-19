@@ -21,11 +21,17 @@ AppUser _$AppUserFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$AppUser {
   String get uid => throw _privateConstructorUsedError;
-  String get email => throw _privateConstructorUsedError;
+
+  /// E.164 phone number, e.g. '+919876543210'. Set by Firebase Phone Auth.
+  String get phoneNumber => throw _privateConstructorUsedError;
   String get displayName => throw _privateConstructorUsedError;
 
   /// BCP-47 language code stored in Firestore, e.g. 'mr-IN'
   String get lang => throw _privateConstructorUsedError;
+
+  /// False until the user completes the onboarding language-selection step.
+  /// The router redirects to /onboarding while this is false.
+  bool get isOnboarded => throw _privateConstructorUsedError;
 
   /// Serializes this AppUser to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -41,7 +47,12 @@ abstract class $AppUserCopyWith<$Res> {
   factory $AppUserCopyWith(AppUser value, $Res Function(AppUser) then) =
       _$AppUserCopyWithImpl<$Res, AppUser>;
   @useResult
-  $Res call({String uid, String email, String displayName, String lang});
+  $Res call(
+      {String uid,
+      String phoneNumber,
+      String displayName,
+      String lang,
+      bool isOnboarded});
 }
 
 /// @nodoc
@@ -60,18 +71,19 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
   @override
   $Res call({
     Object? uid = null,
-    Object? email = null,
+    Object? phoneNumber = null,
     Object? displayName = null,
     Object? lang = null,
+    Object? isOnboarded = null,
   }) {
     return _then(_value.copyWith(
       uid: null == uid
           ? _value.uid
           : uid // ignore: cast_nullable_to_non_nullable
               as String,
-      email: null == email
-          ? _value.email
-          : email // ignore: cast_nullable_to_non_nullable
+      phoneNumber: null == phoneNumber
+          ? _value.phoneNumber
+          : phoneNumber // ignore: cast_nullable_to_non_nullable
               as String,
       displayName: null == displayName
           ? _value.displayName
@@ -81,6 +93,10 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
           ? _value.lang
           : lang // ignore: cast_nullable_to_non_nullable
               as String,
+      isOnboarded: null == isOnboarded
+          ? _value.isOnboarded
+          : isOnboarded // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -92,7 +108,12 @@ abstract class _$$AppUserImplCopyWith<$Res> implements $AppUserCopyWith<$Res> {
       __$$AppUserImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String uid, String email, String displayName, String lang});
+  $Res call(
+      {String uid,
+      String phoneNumber,
+      String displayName,
+      String lang,
+      bool isOnboarded});
 }
 
 /// @nodoc
@@ -109,18 +130,19 @@ class __$$AppUserImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? uid = null,
-    Object? email = null,
+    Object? phoneNumber = null,
     Object? displayName = null,
     Object? lang = null,
+    Object? isOnboarded = null,
   }) {
     return _then(_$AppUserImpl(
       uid: null == uid
           ? _value.uid
           : uid // ignore: cast_nullable_to_non_nullable
               as String,
-      email: null == email
-          ? _value.email
-          : email // ignore: cast_nullable_to_non_nullable
+      phoneNumber: null == phoneNumber
+          ? _value.phoneNumber
+          : phoneNumber // ignore: cast_nullable_to_non_nullable
               as String,
       displayName: null == displayName
           ? _value.displayName
@@ -130,6 +152,10 @@ class __$$AppUserImplCopyWithImpl<$Res>
           ? _value.lang
           : lang // ignore: cast_nullable_to_non_nullable
               as String,
+      isOnboarded: null == isOnboarded
+          ? _value.isOnboarded
+          : isOnboarded // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -139,17 +165,21 @@ class __$$AppUserImplCopyWithImpl<$Res>
 class _$AppUserImpl implements _AppUser {
   const _$AppUserImpl(
       {required this.uid,
-      required this.email,
+      this.phoneNumber = '',
       this.displayName = '',
-      this.lang = 'en-IN'});
+      this.lang = 'en-IN',
+      this.isOnboarded = false});
 
   factory _$AppUserImpl.fromJson(Map<String, dynamic> json) =>
       _$$AppUserImplFromJson(json);
 
   @override
   final String uid;
+
+  /// E.164 phone number, e.g. '+919876543210'. Set by Firebase Phone Auth.
   @override
-  final String email;
+  @JsonKey()
+  final String phoneNumber;
   @override
   @JsonKey()
   final String displayName;
@@ -159,9 +189,15 @@ class _$AppUserImpl implements _AppUser {
   @JsonKey()
   final String lang;
 
+  /// False until the user completes the onboarding language-selection step.
+  /// The router redirects to /onboarding while this is false.
+  @override
+  @JsonKey()
+  final bool isOnboarded;
+
   @override
   String toString() {
-    return 'AppUser(uid: $uid, email: $email, displayName: $displayName, lang: $lang)';
+    return 'AppUser(uid: $uid, phoneNumber: $phoneNumber, displayName: $displayName, lang: $lang, isOnboarded: $isOnboarded)';
   }
 
   @override
@@ -170,15 +206,19 @@ class _$AppUserImpl implements _AppUser {
         (other.runtimeType == runtimeType &&
             other is _$AppUserImpl &&
             (identical(other.uid, uid) || other.uid == uid) &&
-            (identical(other.email, email) || other.email == email) &&
+            (identical(other.phoneNumber, phoneNumber) ||
+                other.phoneNumber == phoneNumber) &&
             (identical(other.displayName, displayName) ||
                 other.displayName == displayName) &&
-            (identical(other.lang, lang) || other.lang == lang));
+            (identical(other.lang, lang) || other.lang == lang) &&
+            (identical(other.isOnboarded, isOnboarded) ||
+                other.isOnboarded == isOnboarded));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, uid, email, displayName, lang);
+  int get hashCode => Object.hash(
+      runtimeType, uid, phoneNumber, displayName, lang, isOnboarded);
 
   /// Create a copy of AppUser
   /// with the given fields replaced by the non-null parameter values.
@@ -199,22 +239,30 @@ class _$AppUserImpl implements _AppUser {
 abstract class _AppUser implements AppUser {
   const factory _AppUser(
       {required final String uid,
-      required final String email,
+      final String phoneNumber,
       final String displayName,
-      final String lang}) = _$AppUserImpl;
+      final String lang,
+      final bool isOnboarded}) = _$AppUserImpl;
 
   factory _AppUser.fromJson(Map<String, dynamic> json) = _$AppUserImpl.fromJson;
 
   @override
   String get uid;
+
+  /// E.164 phone number, e.g. '+919876543210'. Set by Firebase Phone Auth.
   @override
-  String get email;
+  String get phoneNumber;
   @override
   String get displayName;
 
   /// BCP-47 language code stored in Firestore, e.g. 'mr-IN'
   @override
   String get lang;
+
+  /// False until the user completes the onboarding language-selection step.
+  /// The router redirects to /onboarding while this is false.
+  @override
+  bool get isOnboarded;
 
   /// Create a copy of AppUser
   /// with the given fields replaced by the non-null parameter values.

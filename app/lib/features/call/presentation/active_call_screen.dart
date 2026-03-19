@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/call_repository.dart';
 import '../domain/call_state.dart';
 import '../providers/call_providers.dart';
 import '../../settings/data/language_repository.dart';
@@ -20,6 +21,19 @@ class ActiveCallScreen extends ConsumerWidget {
         title: const Text('On Call'),
         automaticallyImplyLeading: false,
         actions: [
+          // Speaker / earpiece toggle
+          Builder(builder: (context) {
+            final isSpeaker = ref.watch(speakerProvider);
+            return IconButton(
+              icon: Icon(isSpeaker ? Icons.volume_up : Icons.hearing),
+              tooltip: isSpeaker ? 'Switch to earpiece' : 'Switch to speaker',
+              onPressed: () async {
+                final next = !isSpeaker;
+                ref.read(speakerProvider.notifier).state = next;
+                await ref.read(callRepositoryProvider).setSpeaker(next);
+              },
+            );
+          }),
           IconButton(
             icon: const Icon(Icons.call_end, color: Colors.red),
             tooltip: 'End call',
@@ -121,7 +135,7 @@ class _TranscriptBubble extends StatelessWidget {
               Text(
                 'Translated · ${entry.lang}',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: cs.onSecondaryContainer.withOpacity(.6),
+                      color: cs.onSecondaryContainer.withValues(alpha: .6),
                     ),
               ),
             Text(

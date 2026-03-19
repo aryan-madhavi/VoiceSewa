@@ -22,21 +22,21 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAa2I-7TTJ96aHU-Ab7wvdKy79hJbnkD9s',
-    appId: '1:431243640261:android:bdf5256eeadf779193dfac',
-    messagingSenderId: '431243640261',
-    projectId: 'voicesewa',
-    storageBucket: 'voicesewa.firebasestorage.app',
+    apiKey: 'AIzaSyDAnttyFc6SpKhvBPDfDD1fNo7_vPlAM6A',
+    appId: '1:221047757778:android:ddfa650b10b38a5607460b',
+    messagingSenderId: '221047757778',
+    projectId: 'autocalltranslate',
+    storageBucket: 'autocalltranslate.firebasestorage.app',
   );
 
   // Replace values below with output from `flutterfire configure`
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAjWIObUNj7w_j28aTwUE5Q4HokKXt-igE',
-    appId: '1:431243640261:ios:f35dc80b21de6bd993dfac',
-    messagingSenderId: '431243640261',
-    projectId: 'voicesewa',
-    storageBucket: 'voicesewa.firebasestorage.app',
+    apiKey: 'AIzaSyAXvsDJFVXUk5CKb9ZNYuBcV3M7l7VMlNs',
+    appId: '1:221047757778:ios:e58cdf9b80d8af1907460b',
+    messagingSenderId: '221047757778',
+    projectId: 'autocalltranslate',
+    storageBucket: 'autocalltranslate.firebasestorage.app',
     iosBundleId: 'com.voicesewa.callTranslate',
   );
 

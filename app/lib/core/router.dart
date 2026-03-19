@@ -61,36 +61,52 @@ class _ActiveCallRoute extends ConsumerWidget {
   }
 }
 
+/// Exposed so CallTranslateApp can show dialogs via the root navigator context.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final routerProvider = Provider<GoRouter>((ref) {
-  // Listenable that triggers router re-evaluation when auth or call state changes.
   final notifier = _RouterNotifier(ref);
 
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     refreshListenable: notifier,
     redirect: (context, state) {
       final authed = ref.read(authStateProvider).valueOrNull != null;
-      final onLogin = state.matchedLocation == '/login';
+      final loc = state.matchedLocation;
 
-      if (!authed) return onLogin ? null : '/login';
-      if (onLogin) return '/';
+      // Not signed in → always go to /login
+      if (!authed) return loc == '/login' ? null : '/login';
+      if (loc == '/login') return '/';
 
-      // Handle call phase redirects
+      // Signed in — check onboarding
+      final user = ref.read(currentUserProvider).valueOrNull;
+      if (user != null && !user.isOnboarded && loc != '/onboarding') {
+        return '/onboarding';
+      }
+
+      // Handle active call phase redirects
       final phase = ref.read(callControllerProvider).valueOrNull;
       if (phase != null) {
         return switch (phase) {
-          OutgoingPhase() => state.matchedLocation == '/call/outgoing' ? null : '/call/outgoing',
-          IncomingPhase() => state.matchedLocation == '/call/incoming' ? null : '/call/incoming',
+          OutgoingPhase() =>
+            loc == '/call/outgoing' ? null : '/call/outgoing',
+          IncomingPhase() =>
+            loc == '/call/incoming' ? null : '/call/incoming',
           ConnectingPhase() || ActivePhase() =>
-            state.matchedLocation == '/call/active' ? null : '/call/active',
-          EndedPhase() => '/',
-          // Idle (or any unmatched phase) while on a call screen → go home.
-          _ => state.matchedLocation.startsWith('/call/') ? '/' : null,
+            loc == '/call/active' ? null : '/call/active',
+          EndedPhase() => loc.startsWith('/call/') ? '/' : null,
+          _ => loc.startsWith('/call/') ? '/' : null,
         };
       }
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(
+        path: '/onboarding',
+        builder: (_, __) =>
+            const LanguageSettingsScreen(isOnboarding: true),
+      ),
       GoRoute(
         path: '/',
         builder: (_, __) => const HomeScreen(),
@@ -122,6 +138,7 @@ class _RouterNotifier extends ChangeNotifier {
   _RouterNotifier(this._ref) {
     _ref.listen(authStateProvider, (_, __) => notifyListeners());
     _ref.listen(callControllerProvider, (_, __) => notifyListeners());
+    _ref.listen(currentUserProvider, (_, __) => notifyListeners());
   }
   final Ref _ref;
 }
