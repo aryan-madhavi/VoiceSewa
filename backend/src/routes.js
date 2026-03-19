@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import admin from 'firebase-admin';
 import { verifyToken } from './firebaseAuth.js';
 import { createSession, getSession, deleteSession } from './sessionManager.js';
 
@@ -24,7 +25,7 @@ router.get('/health', (_req, res) => {
 // POST /session — caller creates a new session
 // Body: { receiverUid: string }
 // Returns: { sessionId: string }
-router.post('/session', requireAuth, (req, res) => {
+router.post('/session', requireAuth, async (req, res) => {
   const { receiverUid } = req.body;
   if (!receiverUid || typeof receiverUid !== 'string') {
     return res.status(400).json({ error: 'receiverUid is required' });
@@ -35,6 +36,42 @@ router.post('/session', requireAuth, (req, res) => {
   }
 
   const sessionId = createSession({ callerUid, receiverUid });
+
+  // Send FCM push to the receiver so they are notified even when the app is
+  // backgrounded or closed. The Firestore stream handles the actual call
+  // signalling once the app comes to the foreground.
+  try {
+    const receiverDoc = await admin
+      .firestore()
+      .collection('users')
+      .doc(receiverUid)
+      .get();
+    const fcmToken = receiverDoc.data()?.fcmToken;
+    if (fcmToken) {
+      await admin.messaging().send({
+        token: fcmToken,
+        data: {
+          type: 'incoming_call',
+          sessionId,
+          callerUid,
+        },
+        android: {
+          priority: 'high',
+        },
+        apns: {
+          payload: { aps: { contentAvailable: true } },
+          headers: { 'apns-priority': '10' },
+        },
+      });
+      console.log(`[fcm] Notified ${receiverUid} of incoming call`);
+    } else {
+      console.warn(`[fcm] No FCM token for receiver ${receiverUid}`);
+    }
+  } catch (fcmErr) {
+    // Never fail the session creation because FCM is best-effort.
+    console.warn('[fcm] Failed to send push:', fcmErr.message);
+  }
+
   res.status(201).json({ sessionId });
 });
 
