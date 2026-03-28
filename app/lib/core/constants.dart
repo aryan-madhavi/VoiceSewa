@@ -7,7 +7,7 @@ class AppConstants {
   //   'http://localhost:8080' iOS simulator
   //   'http://<LAN-IP>:8080'  physical device on the same network
   static const String backendUrl =
-      'https://voicesewa-production.up.railway.app';
+      'https://vaani-production.up.railway.app';
 
   // Converts https → wss automatically for WebSocket connections.
   static String get backendWsUrl =>

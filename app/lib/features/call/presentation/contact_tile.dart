@@ -6,7 +6,7 @@ import '../domain/app_contact.dart';
 
 // Website Url 
 const _websiteUrl = 
-    'https://aryan-madhavi.github.io/Vaani/'
+    'https://aryan-madhavi.github.io/Vaani/';
 
 // Download links shown in the invite message.
 const _androidUrl =
