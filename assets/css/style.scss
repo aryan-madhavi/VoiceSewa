@@ -3,38 +3,29 @@
 
 @import "minima";
 
-/* Light mode (default) */
+/* Smooth transition */
 body {
-  background-color: #ffffff;
-  color: #111111;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-/* Dark mode (auto based on system) */
+/* Dark mode */
 @media (prefers-color-scheme: dark) {
   body {
-    background-color: #121212;
-    color: #e0e0e0;
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
   }
 
   .site-header,
   .site-footer {
-    background-color: #1e1e1e;
-    border-color: #333;
+    background-color: #1e1e1e !important;
+    border-color: #333 !important;
   }
 
   a {
-    color: #90caf9;
+    color: #90caf9 !important;
   }
 
-  code {
-    background-color: #1e1e1e;
-  }
-
-  pre {
-    background-color: #1e1e1e;
-  }
-
-  table {
-    color: #e0e0e0;
+  pre, code {
+    background-color: #1e1e1e !important;
   }
 }
