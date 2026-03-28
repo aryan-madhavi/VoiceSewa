@@ -3,7 +3,7 @@
 
 @import "minima";
 
-/* Smooth transition */
+/* Smooth color transition */
 body {
   transition: background-color 0.3s, color 0.3s;
 }
@@ -25,8 +25,7 @@ body {
     color: #90caf9 !important;
   }
 
-  pre,
-  code {
+  pre, code {
     background-color: #1e1e1e !important;
   }
 }
