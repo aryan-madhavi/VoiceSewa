@@ -1,0 +1,40 @@
+---
+---
+
+@import "minima";
+
+/* Light mode (default) */
+body {
+  background-color: #ffffff;
+  color: #111111;
+}
+
+/* Dark mode (auto based on system) */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #121212;
+    color: #e0e0e0;
+  }
+
+  .site-header,
+  .site-footer {
+    background-color: #1e1e1e;
+    border-color: #333;
+  }
+
+  a {
+    color: #90caf9;
+  }
+
+  code {
+    background-color: #1e1e1e;
+  }
+
+  pre {
+    background-color: #1e1e1e;
+  }
+
+  table {
+    color: #e0e0e0;
+  }
+}
