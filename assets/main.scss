@@ -3,7 +3,7 @@
 
 @import "minima";
 
-/* Smooth color transitions */
+/* Smooth transitions for theme changes */
 body, .site-header, .site-footer {
   transition: background-color 0.3s, color 0.3s;
 }
@@ -27,6 +27,21 @@ body, .site-header, .site-footer {
 
   pre, code {
     background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+  }
+
+  /* Tables */
+  table {
+    border-color: #333 !important;
+  }
+
+  table th {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+  }
+
+  table td {
+    color: #e0e0e0 !important;
   }
 
   table tr:nth-child(even) {
@@ -36,23 +51,18 @@ body, .site-header, .site-footer {
   table tr:nth-child(odd) {
     background-color: #1a1a1a !important;
   }
-
-  table th, table td {
-    border-color: #333 !important;
-    color: #e0e0e0 !important;
-  }
 }
 
-/* Expand wrapper to full width */
+/* Wider content wrapper */
 .wrapper {
-  max-width: 1200px !important; /* wider than default 800px */
+  max-width: 1200px !important; /* expands from 800px */
   margin-left: auto !important;
   margin-right: auto !important;
   padding-left: 20px !important;
   padding-right: 20px !important;
 }
 
-/* Optional: full-width tables or images */
+/* Optional: full-width helper class for tables/images */
 .full-width {
   width: 100vw;
   margin-left: calc(-50vw + 50%);
