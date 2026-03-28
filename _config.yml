@@ -3,3 +3,10 @@ title: VoiceSewa
 description: Multilingual Voice-Assisted Job Platform
 sass:
   style: compressed
+defaults:
+  -
+    scope:
+      path: ""
+      type: "pages"
+    values:
+      css: "/assets/css/style.css"
